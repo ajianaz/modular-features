@@ -1,0 +1,689 @@
+## Relevant Files
+
+- `packages/database/src/schema/` - Database schema definitions for all features
+- `packages/shared/src/` - Shared utilities, types, and error classes
+- `packages/api/src/features/` - Feature modules with clean architecture
+- `packages/api/src/app.ts` - Main application entry point
+- `packages/api/src/server.ts` - Server configuration
+- `turbo.json` - Turborepo configuration
+- `docker-compose.yml` - Infrastructure setup
+- `.env.example` - Environment variables template
+
+### Notes
+
+- Each feature should be self-contained with all 4 clean architecture layers
+- Unit tests should be placed alongside the code files they test
+- Use `bun test` to run tests, `bun run lint` for linting
+- Database migrations should be created in packages/database
+
+## Instructions for Completing Tasks
+
+**IMPORTANT:** As you complete each task, check it off by changing `- [ ]` to `- [x]`. Update after completing each sub-task.
+
+## Tasks
+
+- [ ] 0.0 Create feature branch
+  - [ ] 0.1 Create and checkout new branch (`git checkout -b feature/modular-monolith-setup`)
+- [ ] 1.0 Setup Project Structure and Core Infrastructure
+  - [ ] 1.1 Configure monorepo packages structure (database, shared, api)
+    - [ ] 1.1.1 Create packages/shared with proper package.json
+    - [ ] 1.1.2 Create packages/api with proper package.json
+    - [ ] 1.1.3 Update root package.json workspaces configuration
+    - [ ] 1.1.4 Configure turbo.json for build dependencies
+  - [ ] 1.2 Setup TypeScript configuration and path aliases
+    - [ ] 1.2.1 Create root tsconfig.json with base settings
+    - [ ] 1.2.2 Configure package-specific tsconfig.json files
+    - [ ] 1.2.3 Setup path aliases (@/, @repo/database, @repo/shared)
+    - [ ] 1.2.4 Enable strict mode and proper compiler options
+  - [ ] 1.3 Configure ESLint and Prettier for code quality
+    - [ ] 1.3.1 Setup .eslintrc.js with TypeScript rules
+    - [ ] 1.3.2 Configure .prettierrc with formatting standards
+    - [ ] 1.3.3 Create .eslintignore and .prettierignore files
+    - [ ] 1.3.4 Add lint and format scripts to package.json
+  - [ ] 1.4 Setup Turborepo build system and scripts
+    - [ ] 1.4.1 Configure turbo.json with pipeline definitions
+    - [ ] 1.4.2 Setup build, test, lint, and dev scripts
+    - [ ] 1.4.3 Configure cache strategies for faster builds
+    - [ ] 1.4.4 Setup package dependency management
+  - [ ] 1.5 Create Docker Compose for local development
+    - [ ] 1.5.1 Create docker-compose.yml with PostgreSQL
+    - [ ] 1.5.2 Add Redis for caching and rate limiting
+    - [ ] 1.5.3 Configure volume mounts and networking
+    - [ ] 1.5.4 Add environment variable configuration
+  - [ ] 1.6 Setup environment variables and configuration
+    - [ ] 1.6.1 Create .env.example with all required variables
+    - [ ] 1.6.2 Setup configuration validation with Zod
+    - [ ] 1.6.3 Create environment-specific configs (dev, prod, test)
+    - [ ] 1.6.4 Add secret management guidelines
+- [ ] 2.0 Implement Database Layer
+  - [ ] 2.1 Setup Drizzle ORM configuration
+    - [ ] 2.1.1 Configure drizzle.config.ts with database connection
+    - [ ] 2.1.2 Setup migration and generation scripts
+    - [ ] 2.1.3 Configure connection pooling and options
+    - [ ] 2.1.4 Create database client singleton
+  - [ ] 2.2 Create database schema for all features
+    - [ ] 2.2.1 Define auth schema (users, sessions, oauth_accounts)
+    - [ ] 2.2.2 Define user management schema (user_profiles, user_settings, user_roles)
+    - [ ] 2.2.3 Define payment schema (transactions, invoices, payment_methods)
+    - [ ] 2.2.4 Define order schema (orders, order_items, order_status_history)
+    - [ ] 2.2.5 Define subscription schema (subscription_plans, subscriptions, subscription_usage)
+    - [ ] 2.2.6 Define notification schema (notifications, notification_templates, notification_preferences)
+    - [ ] 2.2.7 Define audit schema (audit_logs, audit_events, system_logs)
+    - [ ] 2.2.8 Define quota schema (quota_limits, usage_tracking)
+  - [ ] 2.3 Create initial database migration
+    - [ ] 2.3.1 Generate migration files from schema
+    - [ ] 2.3.2 Add proper indexes for performance
+    - [ ] 2.3.3 Setup foreign key constraints
+    - [ ] 2.3.4 Add table comments and documentation
+  - [ ] 2.4 Setup database connection and client
+    - [ ] 2.4.1 Create database singleton with connection pooling
+    - [ ] 2.4.2 Setup transaction management utilities
+    - [ ] 2.4.3 Add connection health checks
+    - [ ] 2.4.4 Create database export functions for features
+  - [ ] 2.5 Create seed data for development
+    - [ ] 2.5.1 Create user seeds with test accounts
+    - [ ] 2.5.2 Add subscription plan seeds
+    - [ ] 2.5.3 Create notification template seeds
+    - [ ] 2.5.4 Add development quota settings
+- [ ] 3.0 Create Shared Package
+  - [ ] 3.1 Define common types and interfaces
+    - [ ] 3.1.1 Create base entity types and interfaces
+    - [ ] 3.1.2 Define common DTO types and request/response patterns
+    - [ ] 3.1.3 Create pagination and filtering types
+    - [ ] 3.1.4 Define user, payment, and notification types
+  - [ ] 3.2 Create domain error classes hierarchy
+    - [ ] 3.2.1 Create base DomainError class
+    - [ ] 3.2.2 Implement ValidationError class
+    - [ ] 3.2.3 Create NotFoundError and ConflictError classes
+    - [ ] 3.2.4 Implement AuthorizationError and AuthenticationError
+  - [ ] 3.3 Implement validation utilities and schemas
+    - [ ] 3.3.1 Create Zod schemas for common validations
+    - [ ] 3.3.2 Implement email and password validators
+    - [ ] 3.3.3 Add UUID and ID validation utilities
+    - [ ] 3.3.4 Create pagination parameter validation
+  - [ ] 3.4 Create common utility functions
+    - [ ] 3.4.1 Implement string manipulation utilities
+    - [ ] 3.4.2 Create date and timezone utilities
+    - [ ] 3.4.3 Add crypto and hashing utilities
+    - [ ] 3.4.4 Create error handling and response utilities
+  - [ ] 3.5 Define constants and configuration
+    - [ ] 3.5.1 Create HTTP status code constants
+    - [ ] 3.5.2 Define error code constants
+    - [ ] 3.5.3 Add application configuration constants
+    - [ ] 3.5.4 Create database and API version constants
+  - [ ] 3.6 Create event type definitions
+    - [ ] 3.6.1 Define user event types (created, updated, authenticated)
+    - [ ] 3.6.2 Define payment event types (initiated, completed, failed)
+    - [ ] 3.6.3 Create order and subscription event types
+    - [ ] 3.6.4 Define notification and audit event types
+- [ ] 4.0 Implement Authentication Feature
+  - [ ] 4.1 Create auth domain layer
+    - [ ] 4.1.1 Create User entity with validation methods
+    - [ ] 4.1.2 Create Session entity with token management
+    - [ ] 4.1.3 Define IUserRepository interface
+    - [ ] 4.1.4 Define IHashProvider and ITokenGenerator interfaces
+    - [ ] 4.1.5 Create auth-specific error classes
+  - [ ] 4.2 Implement auth application layer
+    - [ ] 4.2.1 Create LoginRequest and LoginResponse DTOs
+    - [ ] 4.2.2 Create RegisterRequest and RegisterResponse DTOs
+    - [ ] 4.2.3 Implement LoginUseCase with credential validation
+    - [ ] 4.2.4 Implement RegisterUseCase with user creation
+    - [ ] 4.2.5 Create RefreshTokenUseCase for token renewal
+    - [ ] 4.2.6 Implement LogoutUseCase for session invalidation
+  - [ ] 4.3 Build auth infrastructure
+    - [ ] 4.3.1 Implement UserRepository with Drizzle ORM
+    - [ ] 4.3.2 Create BcryptHashProvider implementation
+    - [ ] 4.3.3 Implement JWT token generator
+    - [ ] 4.3.4 Create Keycloak OAuth client integration
+    - [ ] 4.3.5 Setup session storage and management
+  - [ ] 4.4 Create auth presentation layer
+    - [ ] 4.4.1 Create LoginController with HTTP request handling
+    - [ ] 4.4.2 Create RegisterController with validation
+    - [ ] 4.4.3 Create RefreshTokenController
+    - [ ] 4.4.4 Create LogoutController
+    - [ ] 4.4.5 Implement authMiddleware for route protection
+    - [ ] 4.4.6 Create auth routes with proper HTTP methods
+  - [ ] 4.5 Setup dependency injection container
+    - [ ] 4.5.1 Create AuthContainer with dependency registration
+    - [ ] 4.5.2 Register all repositories and providers
+    - [ ] 4.5.3 Wire up use cases with proper dependencies
+    - [ ] 4.5.4 Create container tests for dependency resolution
+  - [ ] 4.6 Integrate BetterAuth with Keycloak
+    - [ ] 4.6.1 Setup BetterAuth configuration
+    - [ ] 4.6.2 Configure Keycloak OAuth2 provider
+    - [ ] 4.6.3 Implement session management with BetterAuth
+    - [ ] 4.6.4 Create user sync between Keycloak and local database
+  - [ ] 4.7 Write comprehensive tests for auth feature
+    - [ ] 4.7.1 Write unit tests for User entity validation
+    - [ ] 4.7.2 Create use case tests with mocked dependencies
+    - [ ] 4.7.3 Implement repository integration tests
+    - [ ] 4.7.4 Create E2E tests for auth API endpoints
+    - [ ] 4.7.5 Add middleware tests for authentication
+- [ ] 5.0 Implement User Management Feature
+  - [ ] 5.1 Create user domain entities and business logic
+    - [ ] 5.1.1 Create UserProfile entity with validation
+    - [ ] 5.1.2 Create UserSettings entity with preferences
+    - [ ] 5.1.3 Create UserRole entity with permission system
+    - [ ] 5.1.4 Define IUserProfileRepository interface
+    - [ ] 5.1.5 Create user-specific error classes
+  - [ ] 5.2 Implement user profile and settings use cases
+    - [ ] 5.2.1 Create GetUserProfileUseCase
+    - [ ] 5.2.2 Implement UpdateUserProfileUseCase
+    - [ ] 5.2.3 Create GetUserSettingsUseCase
+    - [ ] 5.2.4 Implement UpdateUserSettingsUseCase
+    - [ ] 5.2.5 Add UploadAvatarUseCase for profile pictures
+  - [ ] 5.3 Build user repository and database integration
+    - [ ] 5.3.1 Implement UserProfileRepository
+    - [ ] 5.3.2 Create UserSettingsRepository
+    - [ ] 5.3.3 Implement UserRoleRepository
+    - [ ] 5.3.4 Add file storage integration for avatars
+    - [ ] 5.3.5 Create database schema relationships
+  - [ ] 5.4 Create user management API endpoints
+    - [ ] 5.4.1 Create GetUserController with proper HTTP responses
+    - [ ] 5.4.2 Implement UpdateProfileController with validation
+    - [ ] 5.4.3 Create SettingsController with CRUD operations
+    - [ ] 5.4.4 Add AvatarUploadController with file handling
+    - [ ] 5.4.5 Create user routes with proper middleware
+  - [ ] 5.5 Implement user role and permission system
+    - [ ] 5.5.1 Define role hierarchy and permissions
+    - [ ] 5.5.2 Create permission checking utilities
+    - [ ] 5.5.3 Implement role assignment use cases
+    - [ ] 5.5.4 Add permission middleware for protected routes
+  - [ ] 5.6 Add user activity tracking
+    - [ ] 5.6.1 Create UserActivity entity for tracking
+    - [ ] 5.6.2 Implement activity logging middleware
+    - [ ] 5.6.3 Create activity repository and queries
+    - [ ] 5.6.4 Add activity reporting use cases
+  - [ ] 5.7 Write tests for user management
+    - [ ] 5.7.1 Create unit tests for user entities
+    - [ ] 5.7.2 Write use case tests with scenarios
+    - [ ] 5.7.3 Implement repository integration tests
+    - [ ] 5.7.4 Create E2E tests for user API
+    - [ ] 5.7.5 Add permission system tests
+- [ ] 6.0 Implement Payment Processing Feature
+  - [ ] 6.1 Create payment domain entities and interfaces
+    - [ ] 6.1.1 Create Transaction entity with status management
+    - [ ] 6.1.2 Create Invoice entity with billing logic
+    - [ ] 6.1.3 Create PaymentMethod entity with validation
+    - [ ] 6.1.4 Define IPaymentRepository interface
+    - [ ] 6.1.5 Define IPaymentProvider interface
+    - [ ] 6.1.6 Create payment-specific error classes
+  - [ ] 6.2 Implement multi-provider payment use cases
+    - [ ] 6.2.1 Create InitiatePaymentUseCase
+    - [ ] 6.2.2 Implement ProcessPaymentUseCase
+    - [ ] 6.2.3 Create HandleWebhookUseCase for provider callbacks
+    - [ ] 6.2.4 Implement RefundUseCase
+    - [ ] 6.2.5 Add GetTransactionStatusUseCase
+  - [ ] 6.3 Build integrations for Polar, Midtrans, Xendit, Coinbase
+    - [ ] 6.3.1 Implement PolarProvider for SaaS subscriptions
+    - [ ] 6.3.2 Create MidtransProvider for card and bank payments
+    - [ ] 6.3.3 Implement XenditProvider for e-wallet payments
+    - [ ] 6.3.4 Create CoinbaseProvider for crypto payments
+    - [ ] 6.3.5 Add provider abstraction and factory pattern
+  - [ ] 6.4 Create payment API endpoints and webhook handlers
+    - [ ] 6.4.1 Create InitiatePaymentController
+    - [ ] 6.4.2 Implement ProcessPaymentController
+    - [ ] 6.4.3 Create WebhookController for provider callbacks
+    - [ ] 6.4.4 Add GetTransactionController
+    - [ ] 6.4.5 Create payment routes with security
+  - [ ] 6.5 Implement transaction and invoice management
+    - [ ] 6.5.1 Create TransactionRepository with Drizzle
+    - [ ] 6.5.2 Implement InvoiceRepository with PDF generation
+    - [ ] 6.5.3 Add transaction status workflow management
+    - [ ] 6.5.4 Create invoice generation and delivery system
+  - [ ] 6.6 Add payment method storage and validation
+    - [ ] 6.6.1 Create PaymentMethodRepository
+    - [ ] 6.6.2 Implement payment method validation
+    - [ ] 6.6.3 Add secure payment method storage
+    - [ ] 6.6.4 Create default payment method management
+  - [ ] 6.7 Write tests for payment processing
+    - [ ] 6.7.1 Create unit tests for payment entities
+    - [ ] 6.7.2 Write use case tests with provider mocks
+    - [ ] 6.7.3 Implement provider integration tests
+    - [ ] 6.7.4 Create E2E tests for payment API
+    - [ ] 6.7.5 Add webhook processing tests
+- [ ] 7.0 Implement Order Management Feature
+  - [ ] 7.1 Create order domain entities and business rules
+    - [ ] 7.1.1 Create Order entity with validation
+    - [ ] 7.1.2 Create OrderItem entity with pricing
+    - [ ] 7.1.3 Create OrderStatusHistory entity
+    - [ ] 7.1.4 Define IOrderRepository interface
+    - [ ] 7.1.5 Create order-specific error classes
+  - [ ] 7.2 Implement order creation and tracking use cases
+    - [ ] 7.2.1 Create CreateOrderUseCase with validation
+    - [ ] 7.2.2 Implement GetOrderUseCase
+    - [ ] 7.2.3 Create UpdateOrderStatusUseCase
+    - [ ] 7.2.4 Add GetUserOrdersUseCase with pagination
+    - [ ] 7.2.5 Implement CancelOrderUseCase
+  - [ ] 7.3 Build order repository with status history
+    - [ ] 7.3.1 Implement OrderRepository with Drizzle
+    - [ ] 7.3.2 Create OrderStatusHistoryRepository
+    - [ ] 7.3.3 Add order item management
+    - [ ] 7.3.4 Implement order search and filtering
+  - [ ] 7.4 Create order management API endpoints
+    - [ ] 7.4.1 Create CreateOrderController
+    - [ ] 7.4.2 Implement GetOrderController
+    - [ ] 7.4.3 Create UpdateOrderController
+    - [ ] 7.4.4 Add GetUserOrdersController with pagination
+    - [ ] 7.4.5 Create order routes with authentication
+  - [ ] 7.5 Implement order status workflows
+    - [ ] 7.5.1 Define order status transitions
+    - [ ] 7.5.2 Create status validation logic
+    - [ ] 7.5.3 Implement status change notifications
+    - [ ] 7.5.4 Add status history tracking
+  - [ ] 7.6 Add order fulfillment tracking
+    - [ ] 7.6.1 Create fulfillment entities and relationships
+    - [ ] 7.6.2 Implement fulfillment tracking use cases
+    - [ ] 7.6.3 Add fulfillment status updates
+    - [ ] 7.6.4 Create fulfillment notification system
+  - [ ] 7.7 Write tests for order management
+    - [ ] 7.7.1 Create unit tests for order entities
+    - [ ] 7.7.2 Write use case tests with scenarios
+    - [ ] 7.7.3 Implement repository integration tests
+    - [ ] 7.7.4 Create E2E tests for order API
+    - [ ] 7.7.5 Add workflow and status tests
+- [ ] 8.0 Implement Subscription & Billing Feature
+  - [ ] 8.1 Create subscription domain entities
+    - [ ] 8.1.1 Create Subscription entity with lifecycle
+    - [ ] 8.1.2 Create SubscriptionPlan entity with pricing
+    - [ ] 8.1.3 Create SubscriptionUsage entity with metering
+    - [ ] 8.1.4 Define ISubscriptionRepository interface
+    - [ ] 8.1.5 Create subscription-specific error classes
+  - [ ] 8.2 Implement subscription plans and billing use cases
+    - [ ] 8.2.1 Create GetSubscriptionPlansUseCase
+    - [ ] 8.2.2 Implement CreateSubscriptionUseCase
+    - [ ] 8.2.3 Create CancelSubscriptionUseCase
+    - [ ] 8.2.4 Add GetSubscriptionUseCase
+    - [ ] 8.2.5 Implement ProcessBillingUseCase
+  - [ ] 8.3 Build recurring payment automation
+    - [ ] 8.3.1 Create billing cycle management
+    - [ ] 8.3.2 Implement automated renewal logic
+    - [ ] 8.3.3 Add failed payment retry mechanism
+    - [ ] 8.3.4 Create subscription expiration handling
+  - [ ] 8.4 Create subscription API endpoints
+    - [ ] 8.4.1 Create GetPlansController
+    - [ ] 8.4.2 Implement CreateSubscriptionController
+    - [ ] 8.4.3 Create CancelSubscriptionController
+    - [ ] 8.4.4 Add GetSubscriptionController
+    - [ ] 8.4.5 Create subscription routes with middleware
+  - [ ] 8.5 Implement usage-based billing and metering
+    - [ ] 8.5.1 Create usage tracking entities
+    - [ ] 8.5.2 Implement usage recording use cases
+    - [ ] 8.5.3 Add usage calculation and billing
+    - [ ] 8.5.4 Create usage reporting and analytics
+  - [ ] 8.6 Add plan upgrade/downgrade functionality
+    - [ ] 8.6.1 Create plan change use cases
+    - [ ] 8.6.2 Implement proration calculations
+    - [ ] 8.6.3 Add plan change validation
+    - [ ] 8.6.4 Create plan change notifications
+  - [ ] 8.7 Write tests for subscription management
+    - [ ] 8.7.1 Create unit tests for subscription entities
+    - [ ] 8.7.2 Write use case tests with billing scenarios
+    - [ ] 8.7.3 Implement billing automation tests
+    - [ ] 8.7.4 Create E2E tests for subscription API
+    - [ ] 8.7.5 Add usage and metering tests
+- [ ] 9.0 Implement Notification Service
+  - [ ] 9.1 Create notification domain entities
+    - [ ] 9.1.1 Create Notification entity with delivery status
+    - [ ] 9.1.2 Create NotificationTemplate entity with variables
+    - [ ] 9.1.3 Create NotificationPreference entity
+    - [ ] 9.1.4 Define INotificationRepository interface
+    - [ ] 9.1.5 Define INotificationProvider interface
+    - [ ] 9.1.6 Create notification-specific error classes
+  - [ ] 9.2 Implement multi-channel notification use cases
+    - [ ] 9.2.1 Create SendNotificationUseCase
+    - [ ] 9.2.2 Implement CreateNotificationUseCase
+    - [ ] 9.2.3 Add GetNotificationsUseCase
+    - [ ] 9.2.4 Create UpdateNotificationPreferenceUseCase
+    - [ ] 9.2.5 Implement BulkNotificationUseCase
+  - [ ] 9.3 Build integrations for email, SMS, push notifications
+    - [ ] 9.3.1 Implement SendGrid email provider
+    - [ ] 9.3.2 Create Twilio SMS provider
+    - [ ] 9.3.3 Implement Firebase push notification provider
+    - [ ] 9.3.4 Add in-app notification provider
+    - [ ] 9.3.5 Create provider factory and abstraction
+  - [ ] 9.4 Create notification templates and preferences
+    - [ ] 9.4.1 Create template rendering system
+    - [ ] 9.4.2 Implement template variables and substitution
+    - [ ] 9.4.3 Add preference management
+    - [ ] 9.4.4 Create default notification templates
+  - [ ] 9.5 Implement notification API endpoints
+    - [ ] 9.5.1 Create SendNotificationController
+    - [ ] 9.5.2 Implement GetNotificationsController
+    - [ ] 9.5.3 Create UpdatePreferencesController
+    - [ ] 9.5.4 Add MarkAsReadController
+    - [ ] 9.5.5 Create notification routes with authentication
+  - [ ] 9.6 Add delivery tracking and analytics
+    - [ ] 9.6.1 Create delivery status tracking
+    - [ ] 9.6.2 Implement delivery retry mechanism
+    - [ ] 9.6.3 Add delivery analytics and reporting
+    - [ ] 9.6.4 Create delivery failure handling
+  - [ ] 9.7 Write tests for notification service
+    - [ ] 9.7.1 Create unit tests for notification entities
+    - [ ] 9.7.2 Write use case tests with provider mocks
+    - [ ] 9.7.3 Implement provider integration tests
+    - [ ] 9.7.4 Create E2E tests for notification API
+    - [ ] 9.7.5 Add template and preference tests
+- [ ] 10.0 Implement Audit & Logging Feature
+  - [ ] 10.1 Create audit domain entities and interfaces
+    - [ ] 10.1.1 Create AuditLog entity with action tracking
+    - [ ] 10.1.2 Create AuditEvent entity with metadata
+    - [ ] 10.1.3 Create SystemLog entity with error tracking
+    - [ ] 10.1.4 Define IAuditRepository interface
+    - [ ] 10.1.5 Create audit-specific error classes
+  - [ ] 10.2 Implement comprehensive audit trail use cases
+    - [ ] 10.2.1 Create LogUserActionUseCase
+    - [ ] 10.2.2 Implement GetAuditLogsUseCase
+    - [ ] 10.2.3 Add LogSystemEventUseCase
+    - [ ] 10.2.4 Create GenerateComplianceReportUseCase
+    - [ ] 10.2.5 Implement SearchAuditLogsUseCase
+  - [ ] 10.3 Build audit logging infrastructure
+    - [ ] 10.3.1 Implement AuditRepository with efficient queries
+    - [ ] 10.3.2 Create audit logging middleware
+    - [ ] 10.3.3 Add audit event publisher
+    - [ ] 10.3.4 Create audit log cleanup and retention
+  - [ ] 10.4 Create audit API endpoints
+    - [ ] 10.4.1 Create GetAuditLogsController
+    - [ ] 10.4.2 Implement GetAuditEventsController
+    - [ ] 10.4.3 Create GenerateReportController
+    - [ ] 10.4.4 Add SearchLogsController
+    - [ ] 10.4.5 Create audit routes with admin access
+  - [ ] 10.5 Implement system event logging
+    - [ ] 10.5.1 Create system event categories
+    - [ ] 10.5.2 Implement structured logging
+    - [ ] 10.5.3 Add error and exception logging
+    - [ ] 10.5.4 Create log aggregation utilities
+  - [ ] 10.6 Add compliance report generation
+    - [ ] 10.6.1 Define compliance report templates
+    - [ ] 10.6.2 Implement report generation use cases
+    - [ ] 10.6.3 Add report scheduling and delivery
+    - [ ] 10.6.4 Create compliance data retention policies
+  - [ ] 10.7 Write tests for audit service
+    - [ ] 10.7.1 Create unit tests for audit entities
+    - [ ] 10.7.2 Write use case tests with audit scenarios
+    - [ ] 10.7.3 Implement middleware logging tests
+    - [ ] 10.7.4 Create E2E tests for audit API
+    - [ ] 10.7.5 Add compliance report tests
+- [ ] 11.0 Implement Rate Limiting & Quota Feature
+  - [ ] 11.1 Create quota domain entities and interfaces
+    - [ ] 11.1.1 Create QuotaLimit entity with plan-based rules
+    - [ ] 11.1.2 Create UsageTracking entity with real-time data
+    - [ ] 11.1.3 Define IQuotaRepository interface
+    - [ ] 11.1.4 Define IRateLimiter interface
+    - [ ] 11.1.5 Create quota-specific error classes
+  - [ ] 11.2 Implement rate limiting and quota use cases
+    - [ ] 11.2.1 Create CheckQuotaUseCase
+    - [ ] 11.2.2 Implement UpdateUsageUseCase
+    - [ ] 11.2.3 Add GetQuotaStatusUseCase
+    - [ ] 11.2.4 Create ResetQuotaUseCase
+    - [ ] 11.2.5 Implement RateLimitUseCase
+  - [ ] 11.3 Build quota tracking and enforcement
+    - [ ] 11.3.1 Implement QuotaRepository with Redis caching
+    - [ ] 11.3.2 Create real-time usage tracking
+    - [ ] 11.3.3 Add quota enforcement middleware
+    - [ ] 11.3.4 Create quota reset scheduling
+  - [ ] 11.4 Create quota API endpoints and middleware
+    - [ ] 11.4.1 Create GetQuotaStatusController
+    - [ ] 11.4.2 Implement GetUsageController
+    - [ ] 11.4.3 Create RateLimitMiddleware
+    - [ ] 11.4.4 Add QuotaEnforcementMiddleware
+    - [ ] 11.4.5 Create quota routes with admin access
+  - [ ] 11.5 Implement real-time usage tracking
+    - [ ] 11.5.1 Create usage tracking events
+    - [ ] 11.5.2 Implement usage calculation logic
+    - [ ] 11.5.3 Add usage analytics and reporting
+    - [ ] 11.5.4 Create usage warning system
+  - [ ] 11.6 Add quota reset schedules and warnings
+    - [ ] 11.6.1 Create reset scheduling system
+    - [ ] 11.6.2 Implement quota warning notifications
+    - [ ] 11.6.3 Add quota exceeded handling
+    - [ ] 11.6.4 Create quota management interface
+  - [ ] 11.7 Write tests for rate limiting service
+    - [ ] 11.7.1 Create unit tests for quota entities
+    - [ ] 11.7.2 Write use case tests with quota scenarios
+    - [ ] 11.7.3 Implement middleware tests
+    - [ ] 11.7.4 Create E2E tests for quota API
+    - [ ] 11.7.5 Add rate limiting performance tests
+- [ ] 12.0 Setup API Gateway and Global Middleware
+  - [ ] 12.1 Create main application router and middleware stack
+    - [ ] 12.1.1 Create main Hono app instance
+    - [ ] 12.1.2 Setup global middleware chain
+    - [ ] 12.1.3 Create request logging middleware
+    - [ ] 12.1.4 Add request timing middleware
+  - [ ] 12.2 Implement global authentication middleware
+    - [ ] 12.2.1 Create JWT token validation middleware
+    - [ ] 12.2.2 Implement session management middleware
+    - [ ] 12.2.3 Add user context middleware
+    - [ ] 12.2.4 Create authentication error handling
+  - [ ] 12.3 Add global error handling and logging
+    - [ ] 12.3.1 Create global error handler
+    - [ ] 12.3.2 Implement error response formatting
+    - [ ] 12.3.3 Add error logging and reporting
+    - [ ] 12.3.4 Create error monitoring integration
+  - [ ] 12.4 Setup CORS and security headers
+    - [ ] 12.4.1 Configure CORS middleware
+    - [ ] 12.4.2 Add security headers middleware
+    - [ ] 12.4.3 Implement rate limiting headers
+    - [ ] 12.4.4 Create content security policy
+  - [ ] 12.5 Implement request validation and rate limiting
+    - [ ] 12.5.1 Add request body validation middleware
+    - [ ] 12.5.2 Implement parameter validation
+    - [ ] 12.5.3 Create global rate limiting
+    - [ ] 12.5.4 Add request size limiting
+  - [ ] 12.6 Add API versioning and documentation
+    - [ ] 12.6.1 Implement API versioning strategy
+    - [ ] 12.6.2 Create OpenAPI/Swagger documentation
+    - [ ] 12.6.3 Add API documentation endpoints
+    - [ ] 12.6.4 Create version compatibility layer
+  - [ ] 12.7 Create health check endpoints
+    - [ ] 12.7.1 Implement basic health check
+    - [ ] 12.7.2 Add database health check
+    - [ ] 12.7.3 Create external service health checks
+    - [ ] 12.7.4 Add application metrics endpoint
+- [ ] 13.0 Implement Testing Infrastructure
+  - [ ] 13.1 Setup test database and fixtures
+    - [ ] 13.1.1 Create test database configuration
+    - [ ] 13.1.2 Setup test fixtures and seeds
+    - [ ] 13.1.3 Implement test database isolation
+    - [ ] 13.1.4 Add test data cleanup utilities
+  - [ ] 13.2 Configure test runners and coverage
+    - [ ] 13.2.1 Setup Vitest configuration
+    - [ ] 13.2.2 Configure test coverage reporting
+    - [ ] 13.2.3 Add test environment variables
+    - [ ] 13.2.4 Create test scripts and helpers
+  - [ ] 13.3 Create integration test utilities
+    - [ ] 13.3.1 Create test container setup
+    - [ ] 13.3.2 Implement database test utilities
+    - [ ] 13.3.3 Add HTTP client test utilities
+    - [ ] 13.3.4 Create mock external services
+  - [ ] 13.4 Setup E2E testing framework
+    - [ ] 13.4.1 Configure Playwright or Cypress
+    - [ ] 13.4.2 Create E2E test utilities
+    - [ ] 13.4.3 Add E2E test scenarios
+    - [ ] 13.4.4 Implement E2E test reporting
+  - [ ] 13.5 Implement test data factories and mocks
+    - [ ] 13.5.1 Create entity factory utilities
+    - [ ] 13.5.2 Implement request/response factories
+    - [ ] 13.5.3 Add external service mocks
+    - [ ] 13.5.4 Create test scenario builders
+  - [ ] 13.6 Create performance testing setup
+    - [ ] 13.6.1 Configure Artillery or K6
+    - [ ] 13.6.2 Create load testing scenarios
+    - [ ] 13.6.3 Add performance benchmarking
+    - [ ] 13.6.4 Implement performance reporting
+  - [ ] 13.7 Add test scripts and CI integration
+    - [ ] 13.7.1 Create comprehensive test scripts
+    - [ ] 13.7.2 Configure GitHub Actions for testing
+    - [ ] 13.7.3 Add test coverage reporting
+    - [ ] 13.7.4 Create test result notifications
+- [ ] 14.0 Setup Monitoring and Observability
+  - [ ] 14.1 Implement structured logging with Winston/Pino
+    - [ ] 14.1.1 Configure structured logging format
+    - [ ] 14.1.2 Create log levels and categories
+    - [ ] 14.1.3 Add log correlation IDs
+    - [ ] 14.1.4 Implement log rotation and retention
+  - [ ] 14.2 Setup metrics collection (Prometheus compatible)
+    - [ ] 14.2.1 Create custom metrics collection
+    - [ ] 14.2.2 Add HTTP request metrics
+    - [ ] 14.2.3 Implement database metrics
+    - [ ] 14.2.4 Create business metrics tracking
+  - [ ] 14.3 Create health check endpoints
+    - [ ] 14.3.1 Implement liveness and readiness probes
+    - [ ] 14.3.2 Add dependency health checks
+    - [ ] 14.3.3 Create health check aggregation
+    - [ ] 14.3.4 Add health check reporting
+  - [ ] 14.4 Implement error tracking and alerting
+    - [ ] 14.4.1 Setup Sentry or similar error tracking
+    - [ ] 14.4.2 Create error alerting rules
+    - [ ] 14.4.3 Add error grouping and analysis
+    - [ ] 14.4.4 Implement error notification system
+  - [ ] 14.5 Add application performance monitoring
+    - [ ] 14.5.1 Implement request tracing
+    - [ ] 14.5.2 Add performance metrics collection
+    - [ ] 14.5.3 Create performance dashboards
+    - [ ] 14.5.4 Add performance alerting
+  - [ ] 14.6 Create monitoring dashboard
+    - [ ] 14.6.1 Setup Grafana or similar dashboard
+    - [ ] 14.6.2 Create application metrics dashboards
+    - [ ] 14.6.3 Add business metrics visualization
+    - [ ] 14.6.4 Create alerting dashboard
+  - [ ] 14.7 Setup log aggregation and analysis
+    - [ ] 14.7.1 Configure log aggregation system
+    - [ ] 14.7.2 Add log search and filtering
+    - [ ] 14.7.3 Create log analysis tools
+    - [ ] 14.7.4 Implement log-based alerting
+- [ ] 15.0 Setup Development and Production Deployment
+  - [ ] 15.1 Create Docker images for production
+    - [ ] 15.1.1 Create optimized Dockerfile for production
+    - [ ] 15.1.2 Setup multi-stage builds
+    - [ ] 15.1.3 Create security-hardened images
+    - [ ] 15.1.4 Add health checks to containers
+  - [ ] 15.2 Setup CI/CD pipeline with GitHub Actions
+    - [ ] 15.2.1 Create build and test workflows
+    - [ ] 15.2.2 Setup automated deployment
+    - [ ] 15.2.3 Add security scanning
+    - [ ] 15.2.4 Create deployment approvals
+  - [ ] 15.3 Configure environment-specific settings
+    - [ ] 15.3.1 Create environment configurations
+    - [ ] 15.3.2 Setup secret management
+    - [ ] 15.3.3 Add environment validation
+    - [ ] 15.3.4 Create deployment configurations
+  - [ ] 15.4 Implement database migration automation
+    - [ ] 15.4.1 Create migration automation scripts
+    - [ ] 15.4.2 Add rollback automation
+    - [ ] 15.4.3 Create migration testing
+    - [ ] 15.4.4 Add migration monitoring
+  - [ ] 15.5 Setup backup and recovery procedures
+    - [ ] 15.5.1 Create automated database backups
+    - [ ] 15.5.2 Setup backup verification
+    - [ ] 15.5.3 Create recovery procedures
+    - [ ] 15.5.4 Add backup monitoring and alerting
+  - [ ] 15.6 Create deployment scripts and documentation
+    - [ ] 15.6.1 Write deployment scripts
+    - [ ] 15.6.2 Create deployment documentation
+    - [ ] 15.6.3 Add troubleshooting guides
+    - [ ] 15.6.4 Create runbooks for operations
+  - [ ] 15.7 Add monitoring and alerting for production
+    - [ ] 15.7.1 Setup production monitoring
+    - [ ] 15.7.2 Create production alerting rules
+    - [ ] 15.7.3 Add uptime monitoring
+    - [ ] 15.7.4 Create incident response procedures
+- [ ] 16.0 Final Integration and Quality Assurance
+  - [ ] 16.1 Perform end-to-end integration testing
+    - [ ] 16.1.1 Create comprehensive E2E test scenarios
+    - [ ] 16.1.2 Test all feature integrations
+    - [ ] 16.1.3 Verify data consistency across features
+    - [ ] 16.1.4 Test error handling and recovery
+  - [ ] 16.2 Conduct security audit and penetration testing
+    - [ ] 16.2.1 Perform security vulnerability scanning
+    - [ ] 16.2.2 Conduct penetration testing
+    - [ ] 16.2.3 Review authentication and authorization
+    - [ ] 16.2.4 Validate data encryption and protection
+  - [ ] 16.3 Optimize database queries and performance
+    - [ ] 16.3.1 Analyze and optimize slow queries
+    - [ ] 16.3.2 Add missing database indexes
+    - [ ] 16.3.3 Optimize connection pooling
+    - [ ] 16.3.4 Implement query caching strategies
+  - [ ] 16.4 Review and optimize API response times
+    - [ ] 16.4.1 Measure and optimize API latency
+    - [ ] 16.4.2 Implement response caching
+    - [ ] 16.4.3 Optimize payload sizes
+    - [ ] 16.4.4 Add compression and optimization
+  - [ ] 16.5 Complete comprehensive documentation
+    - [ ] 16.5.1 Review and update API documentation
+    - [ ] 16.5.2 Complete feature documentation
+    - [ ] 16.5.3 Add deployment documentation
+    - [ ] 16.5.4 Create troubleshooting guides
+  - [ ] 16.6 Validate clean architecture principles
+    - [ ] 16.6.1 Review dependency direction compliance
+    - [ ] 16.6.2 Verify layer separation
+    - [ ] 16.6.3 Check for circular dependencies
+    - [ ] 16.6.4 Validate testing coverage and quality
+  - [ ] 16.7 Prepare for MVP launch
+    - [ ] 16.7.1 Finalize MVP feature set
+    - [ ] 16.7.2 Conduct final security review
+    - [ ] 16.7.3 Prepare launch checklist
+    - [ ] 16.7.4 Create post-launch monitoring plan
+- [ ] 17.0 Documentation and Knowledge Transfer
+  - [ ] 17.1 Create comprehensive API documentation
+    - [ ] 17.1.1 Generate OpenAPI/Swagger documentation
+    - [ ] 17.1.2 Add request/response examples
+    - [ ] 17.1.3 Document authentication requirements
+    - [ ] 17.1.4 Create API usage tutorials
+  - [ ] 17.2 Write developer onboarding guide
+    - [ ] 17.2.1 Create development setup guide
+    - [ ] 17.2.2 Add architecture overview
+    - [ ] 17.2.3 Write coding standards and conventions
+    - [ ] 17.2.4 Create contribution guidelines
+  - [ ] 17.3 Document architecture decisions
+    - [ ] 17.3.1 Create ADR (Architecture Decision Records)
+    - [ ] 17.3.2 Document design patterns used
+    - [ ] 17.3.3 Add technology choices justification
+    - [ ] 17.3.4 Create evolution roadmap documentation
+  - [ ] 17.4 Create troubleshooting guide
+    - [ ] 17.4.1 Document common issues and solutions
+    - [ ] 17.4.2 Add debugging procedures
+    - [ ] 17.4.3 Create performance troubleshooting guide
+    - [ ] 17.4.4 Add security incident response guide
+  - [ ] 17.5 Document deployment procedures
+    - [ ] 17.5.1 Write deployment step-by-step guide
+    - [ ] 17.5.2 Add environment setup documentation
+    - [ ] 17.5.3 Create rollback procedures
+    - [ ] 17.5.4 Document monitoring and alerting setup
+  - [ ] 17.6 Create feature extraction guide for microservices
+    - [ ] 17.6.1 Document extraction criteria
+    - [ ] 17.6.2 Create extraction step-by-step guide
+    - [ ] 17.6.3 Add communication pattern documentation
+    - [ ] 17.6.4 Create data migration procedures
+  - [ ] 17.7 Prepare project README and contribution guidelines
+  - [ ] 18.0 Create AI Agents Documentation
+    - [ ] 18.1 Document backend architect agent commands
+    - [ ] 18.2 Document security engineer agent commands
+    - [ ] 18.3 Document DevOps engineer agent commands
+    - [ ] 18.4 Document testing specialist agent commands
+    - [ ] 18.5 Document data analyst agent commands
+    - [ ] 18.6 Document frontend integration agent commands
+    - [ ] 18.7 Document documentation agent commands
+    - [ ] 18.8 Create service-specific AI assistants
+  - [ ] 19.0 Create Implementation Timeline
+    - [ ] 19.1 Define weekly breakdown (Week 1-16)
+    - [ ] 19.2 Create milestone checkpoints
+    - [ ] 19.3 Setup progress tracking system
+    - [ ] 19.4 Define dependency relationships between tasks
+  - [ ] 20.0 Define Success Criteria & KPIs
+    - [ ] 20.1 Set technical KPIs (coverage, response times, etc.)
+    - [ ] 20.2 Define architectural KPIs (clean architecture compliance)
+    - [ ] 20.3 Establish operational KPIs (uptime, deployment time)
+    - [ ] 20.4 Create business KPIs (development time, bug resolution)
+  - [ ] 21.0 Setup Team Coordination
+    - [ ] 21.1 Assign service ownership to team members
+    - [ ] 21.2 Setup code review process
+    - [ ] 21.3 Establish weekly progress meetings
+    - [ ] 21.4 Create shared documentation space
+    - [ ] 21.5 Setup communication channels
+    - [ ] 21.6 Define decision-making processes
+    - [ ] 21.7 Create conflict resolution procedures
+    - [ ] 17.7.1 Update project README with comprehensive information
+    - [ ] 17.7.2 Add project overview and goals
+    - [ ] 17.7.3 Create contribution guidelines
+    - [ ] 17.7.4 Add license and legal information
