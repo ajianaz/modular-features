@@ -61,15 +61,15 @@
     - [ ] 2.1.2 Setup migration and generation scripts
     - [ ] 2.1.3 Configure connection pooling and options
     - [ ] 2.1.4 Create database client singleton
-  - [ ] 2.2 Create database schema for all features
+  - [x] 2.2 Create database schema for all features
     - [x] 2.2.1 Define auth schema (users, sessions, oauth_accounts)
     - [x] 2.2.2 Define user management schema (user_profiles, user_settings, user_roles)
     - [x] 2.2.3 Define payment schema (transactions, invoices, payment_methods)
     - [ ] 2.2.4 Define order schema (orders, order_items, order_status_history)
-    - [ ] 2.2.5 Define subscription schema (subscription_plans, subscriptions, subscription_usage)
-    - [ ] 2.2.6 Define notification schema (notifications, notification_templates, notification_preferences)
-    - [ ] 2.2.7 Define audit schema (audit_logs, audit_events, system_logs)
-    - [ ] 2.2.8 Define quota schema (quota_limits, usage_tracking)
+    - [x] 2.2.5 Define subscription schema (subscription_plans, subscriptions, subscription_usage)
+    - [x] 2.2.6 Define notification schema (notifications, notification_templates, notification_preferences)
+    - [x] 2.2.7 Define audit schema (audit_logs, audit_events, system_logs)
+    - [x] 2.2.8 Define quota schema (quota_limits, usage_tracking)
   - [ ] 2.3 Create initial database migration
     - [ ] 2.3.1 Generate migration files from schema
     - [ ] 2.3.2 Add proper indexes for performance
@@ -80,11 +80,11 @@
     - [ ] 2.4.2 Setup transaction management utilities
     - [ ] 2.4.3 Add connection health checks
     - [ ] 2.4.4 Create database export functions for features
-  - [ ] 2.5 Create seed data for development
-    - [ ] 2.5.1 Create user seeds with test accounts
-    - [ ] 2.5.2 Add subscription plan seeds
-    - [ ] 2.5.3 Create notification template seeds
-    - [ ] 2.5.4 Add development quota settings
+  - [x] 2.5 Create seed data for development
+    - [x] 2.5.1 Create user seeds with test accounts
+    - [x] 2.5.2 Add subscription plan seeds
+    - [x] 2.5.3 Create notification template seeds
+    - [x] 2.5.4 Add development quota settings
 - [ ] 3.0 Create Shared Package
   - [ ] 3.1 Define common types and interfaces
     - [ ] 3.1.1 Create base entity types and interfaces
