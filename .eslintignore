@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+packages/*/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Coverage
+coverage/
+packages/*/coverage/
+
+# Development
+.turbo/
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# TypeScript
+*.d.ts
+tsconfig.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test files
+**/fixtures/
+**/seeds/
+
+# Configuration files
+*.config.js
+*.config.ts
+bundler.config.js
+vitest.config.ts
+
+# Generated files
+generated/
+swagger/

@@ -1,0 +1,55 @@
+{
+  "name": "@modular-monolith/api",
+  "version": "1.0.0",
+  "description": "API layer with clean architecture for modular monolith",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun run src/server.ts",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "start": "bun run dist/server.js",
+    "db:migrate": "bun run ../database/src/migrate.ts",
+    "db:seed": "bun run ../database/src/seed.ts"
+  },
+  "keywords": [
+    "api",
+    "typescript",
+    "hono",
+    "clean-architecture",
+    "modular-monolith",
+    "rest",
+    "web-server"
+  ],
+  "author": "Modular Monolith Team",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.6.13",
+    "@hono/node-server": "^1.14.0",
+    "better-auth": "^1.4.5",
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "@modular-monolith/database": "workspace:*",
+    "@modular-monolith/shared": "workspace:*",
+    "@modular-monolith/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.6",
+    "typescript": "^5",
+    "eslint": "^8",
+    "prettier": "^3",
+    "vitest": "^2",
+    "@vitest/coverage-v8": "^2",
+    "tsx": "^4.19.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

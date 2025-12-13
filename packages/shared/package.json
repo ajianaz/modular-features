@@ -1,0 +1,61 @@
+{
+  "name": "@modular-monolith/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities, types, and error classes for modular monolith",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./src/*.ts",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "typescript",
+    "utilities",
+    "shared",
+    "modular-monolith",
+    "clean-architecture"
+  ],
+  "author": "Modular Monolith Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "^1.2.6",
+    "typescript": "^5",
+    "eslint": "^8",
+    "prettier": "^3",
+    "vitest": "^2",
+    "@vitest/coverage-v8": "^2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "better-auth": "^1.4.5"
+  }
+}
