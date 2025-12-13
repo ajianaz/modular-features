@@ -1,0 +1,41 @@
+{
+  "name": "modular-monolith",
+  "private": true,
+  "type": "module",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "better-auth": "^1.4.5",
+      "dotenv": "^17.2.2",
+      "zod": "^4.1.13"
+    }
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:native": "turbo -F native dev",
+    "dev:web": "turbo -F web dev",
+    "dev:server": "turbo -F server dev",
+    "db:push": "turbo -F @modular-monolith/db db:push",
+    "db:studio": "turbo -F @modular-monolith/db db:studio",
+    "db:generate": "turbo -F @modular-monolith/db db:generate",
+    "db:migrate": "turbo -F @modular-monolith/db db:migrate",
+    "db:start": "turbo -F @modular-monolith/db db:start",
+    "db:watch": "turbo -F @modular-monolith/db db:watch",
+    "db:stop": "turbo -F @modular-monolith/db db:stop",
+    "db:down": "turbo -F @modular-monolith/db db:down"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "@types/bun": "^1.2.6"
+  },
+  "packageManager": "bun@1.2.23"
+}
