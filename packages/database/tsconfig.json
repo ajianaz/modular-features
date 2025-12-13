@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "paths": {
+      "@repo/database": ["./src"],
+      "@repo/shared": ["../../packages/shared/src"],
+      "@repo/api": ["../../packages/api/src"],
+      "@repo/config": ["../../packages/config/src"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "drizzle.config.ts",
+    "migrations/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../config" }
+  ],
+  "ts-node": {
+    "esm": true
+  }
+}

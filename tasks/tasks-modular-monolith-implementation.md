@@ -45,26 +45,26 @@
     - [x] 1.4.2 Setup build, test, lint, and dev scripts
     - [x] 1.4.3 Configure cache strategies for faster builds
     - [x] 1.4.4 Setup package dependency management
-  - [ ] 1.5 Create Docker Compose for local development
-    - [ ] 1.5.1 Create docker-compose.yml with PostgreSQL
-    - [ ] 1.5.2 Add Redis for caching and rate limiting
-    - [ ] 1.5.3 Configure volume mounts and networking
-    - [ ] 1.5.4 Add environment variable configuration
+  - [x] 1.5 Create Docker Compose for local development
+    - [x] 1.5.1 Create docker-compose.yml with PostgreSQL
+    - [x] 1.5.2 Add Redis for caching and rate limiting
+    - [x] 1.5.3 Configure volume mounts and networking
+    - [x] 1.5.4 Add environment variable configuration
   - [ ] 1.6 Setup environment variables and configuration
-    - [ ] 1.6.1 Create .env.example with all required variables
+    - [x] 1.6.1 Create .env.example with all required variables
     - [ ] 1.6.2 Setup configuration validation with Zod
     - [ ] 1.6.3 Create environment-specific configs (dev, prod, test)
     - [ ] 1.6.4 Add secret management guidelines
 - [ ] 2.0 Implement Database Layer
-  - [ ] 2.1 Setup Drizzle ORM configuration
-    - [ ] 2.1.1 Configure drizzle.config.ts with database connection
+  - [x] 2.1 Setup Drizzle ORM configuration
+    - [x] 2.1.1 Configure drizzle.config.ts with database connection
     - [ ] 2.1.2 Setup migration and generation scripts
     - [ ] 2.1.3 Configure connection pooling and options
     - [ ] 2.1.4 Create database client singleton
   - [ ] 2.2 Create database schema for all features
-    - [ ] 2.2.1 Define auth schema (users, sessions, oauth_accounts)
-    - [ ] 2.2.2 Define user management schema (user_profiles, user_settings, user_roles)
-    - [ ] 2.2.3 Define payment schema (transactions, invoices, payment_methods)
+    - [x] 2.2.1 Define auth schema (users, sessions, oauth_accounts)
+    - [x] 2.2.2 Define user management schema (user_profiles, user_settings, user_roles)
+    - [x] 2.2.3 Define payment schema (transactions, invoices, payment_methods)
     - [ ] 2.2.4 Define order schema (orders, order_items, order_status_history)
     - [ ] 2.2.5 Define subscription schema (subscription_plans, subscriptions, subscription_usage)
     - [ ] 2.2.6 Define notification schema (notifications, notification_templates, notification_preferences)

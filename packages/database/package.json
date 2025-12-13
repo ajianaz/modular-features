@@ -1,7 +1,7 @@
 {
-  "name": "@modular-monolith/config",
+  "name": "@modular-monolith/database",
   "version": "1.0.0",
-  "description": "Configuration management with Zod validation for modular monolith",
+  "description": "Database layer with Drizzle ORM for modular monolith",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +19,9 @@
   },
   "files": [
     "dist/**/*",
-    "src/**/*"
+    "src/**/*",
+    "migrations/**/*",
+    "drizzle.config.ts"
   ],
   "scripts": {
     "build": "tsc",
@@ -31,28 +33,39 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "validate": "bun run src/validate-config.ts"
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "db:pull": "drizzle-kit pull",
+    "db:drop": "drizzle-kit drop",
+    "db:seed": "bun run src/seed.ts"
   },
   "keywords": [
-    "configuration",
-    "environment-variables",
-    "zod",
+    "database",
+    "drizzle-orm",
+    "postgresql",
     "typescript",
     "modular-monolith"
   ],
   "author": "Modular Monolith Team",
   "license": "MIT",
   "dependencies": {
-    "zod": "catalog:",
+    "drizzle-orm": "catalog:",
+    "postgres": "catalog:",
     "dotenv": "catalog:",
-    "@modular-monolith/shared": "workspace:*"
+    "zod": "catalog:",
+    "@modular-monolith/shared": "workspace:*",
+    "@modular-monolith/config": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.2.6",
+    "@types/pg": "^8.11.10",
     "typescript": "^5",
     "eslint": "^8",
     "prettier": "^3",
     "vitest": "^2",
-    "@vitest/coverage-v8": "^2"
+    "@vitest/coverage-v8": "^2",
+    "drizzle-kit": "catalog:"
   }
 }
