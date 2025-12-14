@@ -2,19 +2,23 @@
   "name": "@modular-monolith/shared",
   "version": "1.0.0",
   "description": "Shared utilities, types, and error classes for modular monolith",
-  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
+      "require": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./*": {
-      "import": "./src/*.ts",
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
+    "./config": {
+      "require": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
+    },
+    "./errors": {
+      "require": "./dist/errors/index.js",
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
     }
   },
   "files": [
