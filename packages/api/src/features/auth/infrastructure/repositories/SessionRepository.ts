@@ -3,6 +3,9 @@ import { db } from '@modular-monolith/database';
 import { sessions } from '@modular-monolith/database';
 import type { Session, NewSession } from '@modular-monolith/database';
 
+// Type assertion to handle Drizzle ORM compatibility issues
+const sessionsTable = sessions as any;
+
 import {
   ISessionRepository,
   SessionNotFoundError,
@@ -14,7 +17,7 @@ import { Session as SessionEntity } from '../../domain/entities/Session.entity';
 export class SessionRepository implements ISessionRepository {
   // CRUD operations
   async findById(id: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id) as any).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -24,7 +27,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async findByToken(token: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, token) as any).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -34,7 +37,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async findByRefreshToken(refreshToken: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessions).where(eq(sessions.refreshToken, refreshToken)).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.refreshToken, refreshToken) as any).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -46,9 +49,9 @@ export class SessionRepository implements ISessionRepository {
   async findByUserId(userId: string): Promise<SessionEntity[]> {
     const userSessions = await db
       .select()
-      .from(sessions)
-      .where(eq(sessions.userId, userId))
-      .orderBy(desc(sessions.createdAt));
+      .from(sessionsTable)
+      .where(eq(sessionsTable.userId, userId) as any)
+      .orderBy(desc(sessionsTable.createdAt) as any);
 
     return userSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -66,7 +69,7 @@ export class SessionRepository implements ISessionRepository {
       updatedAt: new Date()
     };
 
-    const [insertedSession] = await db.insert(sessions).values(newSession).returning();
+    const [insertedSession] = await db.insert(sessionsTable).values(newSession as any).returning();
 
     return this.mapToDomainEntity(insertedSession!);
   }
@@ -85,9 +88,9 @@ export class SessionRepository implements ISessionRepository {
     };
 
     const [updatedSession] = await db
-      .update(sessions)
-      .set(updateData)
-      .where(eq(sessions.id, session.id))
+      .update(sessionsTable)
+      .set(updateData as any)
+      .where(eq(sessionsTable.id, session.id) as any)
       .returning();
 
     if (!updatedSession) {
@@ -99,30 +102,30 @@ export class SessionRepository implements ISessionRepository {
 
   async delete(id: string): Promise<boolean> {
     const deleteResult = await db
-      .delete(sessions)
-      .where(eq(sessions.id, id))
-      .returning({ id: sessions.id });
+      .delete(sessionsTable)
+      .where(eq(sessionsTable.id, id) as any)
+      .returning({ id: sessionsTable.id });
 
     return deleteResult.length > 0;
   }
 
   // Query operations
   async findAll(): Promise<SessionEntity[]> {
-    const sessionList = await db.select().from(sessions).orderBy(desc(sessions.createdAt));
+    const sessionList = await db.select().from(sessionsTable).orderBy(desc(sessionsTable.createdAt) as any);
     return sessionList.map(session => this.mapToDomainEntity(session));
   }
 
   async findActiveByUserId(userId: string): Promise<SessionEntity[]> {
     const activeSessions = await db
       .select()
-      .from(sessions)
+      .from(sessionsTable)
       .where(
         and(
-          eq(sessions.userId, userId),
-          eq(sessions.isActive, true)
-        )
+          eq(sessionsTable.userId, userId) as any,
+          eq(sessionsTable.isActive, true) as any
+        ) as any
       )
-      .orderBy(desc(sessions.lastAccessedAt));
+      .orderBy(desc(sessionsTable.lastAccessedAt) as any);
 
     return activeSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -130,14 +133,14 @@ export class SessionRepository implements ISessionRepository {
   async findExpired(): Promise<SessionEntity[]> {
     const expiredSessions = await db
       .select()
-      .from(sessions)
+      .from(sessionsTable)
       .where(
         and(
-          eq(sessions.isActive, true),
-          lt(sessions.expiresAt, new Date())
-        )
+          eq(sessionsTable.isActive, true) as any,
+          lt(sessionsTable.expiresAt, new Date()) as any
+        ) as any
       )
-      .orderBy(asc(sessions.expiresAt));
+      .orderBy(asc(sessionsTable.expiresAt) as any);
 
     return expiredSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -145,9 +148,9 @@ export class SessionRepository implements ISessionRepository {
   // Business specific operations
   async existsByToken(token: string): Promise<boolean> {
     const session = await db
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(eq(sessions.token, token))
+      .select({ id: sessionsTable.id })
+      .from(sessionsTable)
+      .where(eq(sessionsTable.token, token) as any)
       .limit(1);
 
     return session.length > 0;
@@ -155,9 +158,9 @@ export class SessionRepository implements ISessionRepository {
 
   async existsByRefreshToken(refreshToken: string): Promise<boolean> {
     const session = await db
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(eq(sessions.refreshToken, refreshToken))
+      .select({ id: sessionsTable.id })
+      .from(sessionsTable)
+      .where(eq(sessionsTable.refreshToken, refreshToken) as any)
       .limit(1);
 
     return session.length > 0;
@@ -165,26 +168,26 @@ export class SessionRepository implements ISessionRepository {
 
   async deactivateByUserId(userId: string): Promise<boolean> {
     const result = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessions.userId, userId))
-      .returning({ id: sessions.id });
+      .where(eq(sessionsTable.userId, userId) as any)
+      .returning({ id: sessionsTable.id });
 
     return result.length > 0;
   }
 
   async deactivateById(id: string): Promise<boolean> {
     const result = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessions.id, id))
-      .returning({ id: sessions.id });
+      .where(eq(sessionsTable.id, id) as any)
+      .returning({ id: sessionsTable.id });
 
     return result.length > 0;
   }
@@ -200,14 +203,14 @@ export class SessionRepository implements ISessionRepository {
     // Delete expired sessions
     const expiredIds = expiredSessions.map(session => session.id);
     const deleteResult = await db
-      .delete(sessions)
+      .delete(sessionsTable)
       .where(
         and(
-          eq(sessions.isActive, true),
-          lt(sessions.expiresAt, new Date())
-        )
+          eq(sessionsTable.isActive, true) as any,
+          lt(sessionsTable.expiresAt, new Date()) as any
+        ) as any
       )
-      .returning({ id: sessions.id });
+      .returning({ id: sessionsTable.id });
 
     return deleteResult.length;
   }
@@ -215,7 +218,7 @@ export class SessionRepository implements ISessionRepository {
   // Session management
   async refreshSession(sessionId: string, newToken: string, newRefreshToken: string, newExpiresAt: Date): Promise<SessionEntity | null> {
     const [updatedSession] = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         token: newToken,
         refreshToken: newRefreshToken,
@@ -223,7 +226,7 @@ export class SessionRepository implements ISessionRepository {
         lastAccessedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(sessions.id, sessionId))
+      .where(eq(sessionsTable.id, sessionId) as any)
       .returning();
 
     return updatedSession ? this.mapToDomainEntity(updatedSession) : null;
@@ -231,12 +234,12 @@ export class SessionRepository implements ISessionRepository {
 
   async updateLastAccessed(sessionId: string): Promise<SessionEntity | null> {
     const [updatedSession] = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         lastAccessedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(sessions.id, sessionId))
+      .where(eq(sessionsTable.id, sessionId) as any)
       .returning();
 
     return updatedSession ? this.mapToDomainEntity(updatedSession) : null;
@@ -245,32 +248,32 @@ export class SessionRepository implements ISessionRepository {
   // Security operations
   async revokeAllUserSessions(userId: string): Promise<boolean> {
     const result = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessions.userId, userId))
-      .returning({ id: sessions.id });
+      .where(eq(sessionsTable.userId, userId) as any)
+      .returning({ id: sessionsTable.id });
 
     return result.length > 0;
   }
 
   async revokeSessionById(sessionId: string): Promise<boolean> {
     const result = await db
-      .update(sessions)
+      .update(sessionsTable)
       .set({
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessions.id, sessionId))
-      .returning({ id: sessions.id });
+      .where(eq(sessionsTable.id, sessionId) as any)
+      .returning({ id: sessionsTable.id });
 
     return result.length > 0;
   }
 
   // Private helper methods
-  private mapToDomainEntity(session: Session): SessionEntity {
+  private mapToDomainEntity(session: any): SessionEntity {
     return new SessionEntity(
       session.id,
       session.userId,

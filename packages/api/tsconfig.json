@@ -10,6 +10,7 @@
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
     "noEmit": false,
+    "skipLibCheck": true,
     "paths": {
       "@repo/database": ["../../packages/database/src"],
       "@repo/shared": ["../../packages/shared/src"],

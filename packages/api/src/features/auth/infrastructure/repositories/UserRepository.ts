@@ -16,7 +16,7 @@ import { User as UserEntity } from '../../domain/entities/User.entity';
 export class UserRepository implements IUserRepository {
   // CRUD operations
   async findById(id: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.id, id) as any).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -26,7 +26,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()) as any).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -36,7 +36,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByUsername(username: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.username, username) as any).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -59,7 +59,7 @@ export class UserRepository implements IUserRepository {
       updatedAt: new Date()
     };
 
-    const [insertedUser] = await db.insert(usersTable).values(newUser).returning();
+    const [insertedUser] = await db.insert(usersTable).values(newUser as any).returning();
 
     return this.mapToDomainEntity(insertedUser!);
   }
@@ -80,8 +80,8 @@ export class UserRepository implements IUserRepository {
 
     const [updatedUser] = await db
       .update(usersTable)
-      .set(updateData)
-      .where(eq(usersTable.id, user.id))
+      .set(updateData as any)
+      .where(eq(usersTable.id, user.id) as any)
       .returning();
 
     if (!updatedUser) {
@@ -94,7 +94,7 @@ export class UserRepository implements IUserRepository {
   async delete(id: string): Promise<boolean> {
     const deleteResult = await db
       .delete(usersTable)
-      .where(eq(usersTable.id, id))
+      .where(eq(usersTable.id, id) as any)
       .returning({ id: usersTable.id });
 
     return deleteResult.length > 0;
@@ -102,7 +102,7 @@ export class UserRepository implements IUserRepository {
 
   // Query operations
   async findAll(): Promise<UserEntity[]> {
-    const userList = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
+    const userList = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt) as any);
     return userList.map(user => this.mapToDomainEntity(user));
   }
 
@@ -142,8 +142,8 @@ export class UserRepository implements IUserRepository {
     const userList = await db
       .select()
       .from(usersTable)
-      .where(whereClause)
-      .orderBy(desc(usersTable.createdAt));
+      .where(whereClause as any)
+      .orderBy(desc(usersTable.createdAt) as any);
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
@@ -152,8 +152,8 @@ export class UserRepository implements IUserRepository {
     const userList = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.role, role))
-      .orderBy(asc(usersTable.name));
+      .where(eq(usersTable.role, role) as any)
+      .orderBy(asc(usersTable.name) as any);
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
@@ -162,8 +162,8 @@ export class UserRepository implements IUserRepository {
     const userList = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.status, status))
-      .orderBy(asc(usersTable.name));
+      .where(eq(usersTable.status, status) as any)
+      .orderBy(asc(usersTable.name) as any);
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
@@ -172,8 +172,8 @@ export class UserRepository implements IUserRepository {
     const activeUsers = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.status, 'active'))
-      .orderBy(asc(usersTable.name));
+      .where(eq(usersTable.status, 'active') as any)
+      .orderBy(asc(usersTable.name) as any);
 
     return activeUsers.map(user => this.mapToDomainEntity(user));
   }
@@ -184,14 +184,14 @@ export class UserRepository implements IUserRepository {
       .from(usersTable)
       .where(
         and(
-          eq(usersTable.status, 'active'),
+          eq(usersTable.status, 'active') as any,
           or(
-            eq(usersTable.role, 'admin'),
-            eq(usersTable.role, 'super_admin')
-          )
-        )
+            eq(usersTable.role, 'admin') as any,
+            eq(usersTable.role, 'super_admin') as any
+          ) as any
+        ) as any
       )
-      .orderBy(asc(usersTable.name));
+      .orderBy(asc(usersTable.name) as any);
 
     return adminUsers.map(user => this.mapToDomainEntity(user));
   }
@@ -201,7 +201,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.email, email.toLowerCase()))
+      .where(eq(usersTable.email, email.toLowerCase()) as any)
       .limit(1);
 
     return user.length > 0;
@@ -211,7 +211,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.id, id))
+      .where(eq(usersTable.id, id) as any)
       .limit(1);
 
     return user.length > 0;
@@ -221,7 +221,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.username, username))
+      .where(eq(usersTable.username, username) as any)
       .limit(1);
 
     return user.length > 0;
@@ -235,7 +235,7 @@ export class UserRepository implements IUserRepository {
         passwordHash,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -248,7 +248,7 @@ export class UserRepository implements IUserRepository {
         emailVerified: verified,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -258,7 +258,7 @@ export class UserRepository implements IUserRepository {
     const [updatedUser] = await db
       .update(usersTable)
       .set({ updatedAt: new Date() })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -272,7 +272,7 @@ export class UserRepository implements IUserRepository {
         status: 'active',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -285,7 +285,7 @@ export class UserRepository implements IUserRepository {
         status: 'inactive',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -298,7 +298,7 @@ export class UserRepository implements IUserRepository {
         status: 'suspended',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -311,7 +311,7 @@ export class UserRepository implements IUserRepository {
         role,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -333,8 +333,8 @@ export class UserRepository implements IUserRepository {
 
     const [updatedUser] = await db
       .update(usersTable)
-      .set(updateData)
-      .where(eq(usersTable.id, userId))
+      .set(updateData as any)
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -347,7 +347,7 @@ export class UserRepository implements IUserRepository {
         metadata,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId))
+      .where(eq(usersTable.id, userId) as any)
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
