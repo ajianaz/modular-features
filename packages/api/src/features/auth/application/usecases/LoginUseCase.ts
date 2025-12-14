@@ -13,6 +13,7 @@ import {
   AccountInactiveError,
   TooManyLoginAttemptsError
 } from '../../domain/errors/AuthenticationError';
+import { UserNotFoundError } from '../../domain/errors/UserNotFoundError';
 
 export class LoginUseCase {
   constructor(
@@ -28,7 +29,7 @@ export class LoginUseCase {
     // Find user by email
     const user = await this.userRepository.findByEmail(email.toLowerCase().trim());
     if (!user) {
-      throw new InvalidCredentialsError();
+      throw new UserNotFoundError(email);
     }
 
     // Check if user can login

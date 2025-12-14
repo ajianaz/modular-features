@@ -77,15 +77,20 @@ export class Session {
   }
 
   refreshTokens(newToken: string, newRefreshToken: string, newExpiresAt: Date): Session {
+    const now = new Date();
+    // Ensure updatedAt is different from the original
+    if (now.getTime() === this.updatedAt.getTime()) {
+      now.setTime(now.getTime() + 1);
+    }
     return new Session(
       this.id,
       this.userId,
       newToken,
       newRefreshToken,
       newExpiresAt,
-      new Date(), // lastAccessedAt
+      now, // lastAccessedAt
       this.createdAt,
-      new Date(), // updatedAt
+      now, // updatedAt
       this.userAgent,
       this.ipAddress,
       this.isActive
@@ -104,7 +109,7 @@ export class Session {
   isExpiringSoon(minutesThreshold: number = 15): boolean {
     const thresholdTime = new Date();
     thresholdTime.setMinutes(thresholdTime.getMinutes() + minutesThreshold);
-    return this.expiresAt <= thresholdTime;
+    return this.expiresAt <= thresholdTime && !this.isExpired();
   }
 
   // Validation schema

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Test PostgreSQL Database
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: modular-monolith-postgres-test
+    environment:
+      POSTGRES_DB: modular_monolith_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5433
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - modular-monolith-network
+
+  # Test Redis
+  redis-test:
+    image: redis:7-alpine
+    container_name: modular-monolith-redis-test
+    command: redis-server --appendonly yes --requirepass redis123
+    environment:
+      REDIS_PASSWORD: redis123
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    networks:
+      - modular-monolith-network
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  modular-monolith-network:
+    driver: bridge

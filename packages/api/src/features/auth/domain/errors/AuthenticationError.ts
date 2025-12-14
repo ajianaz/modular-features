@@ -1,4 +1,4 @@
-import { DomainError } from '@repo/shared';
+import { DomainError } from '@modular-monolith/shared';
 
 // Authentication related errors
 export class InvalidCredentialsError extends DomainError {

@@ -1,4 +1,4 @@
-import { DomainError } from '@repo/shared';
+import { DomainError } from '@modular-monolith/shared';
 
 // Domain specific error for user not found
 export class UserNotFoundError extends DomainError {
