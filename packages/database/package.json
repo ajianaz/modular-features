@@ -52,7 +52,7 @@
   "license": "MIT",
   "dependencies": {
     "drizzle-orm": "catalog:",
-    "postgres": "catalog:",
+    "pg": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:",
     "nanoid": "catalog:",
