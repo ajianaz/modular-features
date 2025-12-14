@@ -3,7 +3,7 @@ import { config as dotenvConfig } from 'dotenv'
 import { join } from 'path'
 
 // Load environment variables from root directory
-dotenvConfig({ path: join(process.cwd(), '../../.env') })
+dotenvConfig({ path: join(process.cwd(), '../../../.env') })
 
 // Environment schema for validation
 const envSchema = z.object({

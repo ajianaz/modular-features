@@ -1,5 +1,5 @@
 import { defineConfig } from 'drizzle-kit'
-import { config } from '../../packages/api/src/config'
+import { config } from '@modular-monolith/shared'
 
 export default defineConfig({
   schema: './src/schema/*.ts',
