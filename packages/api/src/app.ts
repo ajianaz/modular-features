@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { authRoutes } from "./features/auth/presentation/routes";
+import { userRoutes } from "./features/users/presentation/routes";
 import { auth } from "./features/auth/infrastructure/lib/BetterAuthConfig";
 import { errorHandler } from "./middleware/error";
 import type { Context } from "hono";
@@ -32,6 +33,7 @@ app.get("/", (c) => {
 
 // API routes
 app.route("/api/auth", authRoutes);
+app.route("/api/users", userRoutes);
 
 // BetterAuth integration with Hono-compatible wrapper
 app.use("/api/auth/*", async (c, next) => {
