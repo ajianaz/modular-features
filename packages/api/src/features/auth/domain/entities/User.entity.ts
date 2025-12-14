@@ -93,6 +93,11 @@ export class User {
   }
 
   updatePassword(newPasswordHash: string): User {
+    const now = new Date();
+    // Ensure updatedAt is different from the original
+    if (now.getTime() === this.updatedAt.getTime()) {
+      now.setTime(now.getTime() + 1);
+    }
     return new User(
       this.id,
       this.email,
@@ -105,7 +110,7 @@ export class User {
       this.status,
       this.metadata,
       this.createdAt,
-      new Date()
+      now
     );
   }
 
