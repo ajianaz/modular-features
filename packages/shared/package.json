@@ -61,7 +61,7 @@
   "dependencies": {
     "zod": "catalog:",
     "dotenv": "catalog:",
-    "better-auth": "^1.4.5",
-    "hono": "^4"
+    "better-auth": "catalog:",
+    "hono": "catalog:"
   }
 }
