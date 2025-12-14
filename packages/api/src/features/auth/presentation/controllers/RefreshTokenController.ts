@@ -10,16 +10,8 @@ import { ValidationError } from '@repo/shared';
 export class RefreshTokenController {
   private refreshTokenUseCase: RefreshTokenUseCase;
 
-  constructor(
-    private userRepository: UserRepository,
-    private sessionRepository: SessionRepository,
-    private tokenGenerator: JWTTokenGenerator
-  ) {
-    this.refreshTokenUseCase = new RefreshTokenUseCase(
-      sessionRepository,
-      userRepository,
-      tokenGenerator
-    );
+  constructor(refreshTokenUseCase: RefreshTokenUseCase) {
+    this.refreshTokenUseCase = refreshTokenUseCase;
   }
 
   async handle(c: Context): Promise<Response> {

@@ -122,37 +122,37 @@
     - [x] 3.6.2 Define payment event types (initiated, completed, failed)
     - [x] 3.6.3 Create order and subscription event types
     - [x] 3.6.4 Define notification and audit event types
-- [ ] 4.0 Implement Authentication Feature
-  - [ ] 4.1 Create auth domain layer
-    - [ ] 4.1.1 Create User entity with validation methods
-    - [ ] 4.1.2 Create Session entity with token management
-    - [ ] 4.1.3 Define IUserRepository interface
-    - [ ] 4.1.4 Define IHashProvider and ITokenGenerator interfaces
-    - [ ] 4.1.5 Create auth-specific error classes
-  - [ ] 4.2 Implement auth application layer
-    - [ ] 4.2.1 Create LoginRequest and LoginResponse DTOs
-    - [ ] 4.2.2 Create RegisterRequest and RegisterResponse DTOs
-    - [ ] 4.2.3 Implement LoginUseCase with credential validation
-    - [ ] 4.2.4 Implement RegisterUseCase with user creation
-    - [ ] 4.2.5 Create RefreshTokenUseCase for token renewal
-    - [ ] 4.2.6 Implement LogoutUseCase for session invalidation
-  - [ ] 4.3 Build auth infrastructure
-    - [ ] 4.3.1 Implement UserRepository with Drizzle ORM
-    - [ ] 4.3.2 Create BcryptHashProvider implementation
-    - [ ] 4.3.3 Implement JWT token generator
+- [x] 4.0 Implement Authentication Feature
+  - [x] 4.1 Create auth domain layer
+    - [x] 4.1.1 Create User entity with validation methods
+    - [x] 4.1.2 Create Session entity with token management
+    - [x] 4.1.3 Define IUserRepository interface
+    - [x] 4.1.4 Define IHashProvider and ITokenGenerator interfaces
+    - [x] 4.1.5 Create auth-specific error classes
+  - [x] 4.2 Implement auth application layer
+    - [x] 4.2.1 Create LoginRequest and LoginResponse DTOs
+    - [x] 4.2.2 Create RegisterRequest and RegisterResponse DTOs
+    - [x] 4.2.3 Implement LoginUseCase with credential validation
+    - [x] 4.2.4 Implement RegisterUseCase with user creation
+    - [x] 4.2.5 Create RefreshTokenUseCase for token renewal
+    - [x] 4.2.6 Implement LogoutUseCase for session invalidation
+  - [x] 4.3 Build auth infrastructure
+    - [x] 4.3.1 Implement UserRepository with Drizzle ORM
+    - [x] 4.3.2 Create BcryptHashProvider implementation
+    - [x] 4.3.3 Implement JWT token generator
     - [ ] 4.3.4 Create Keycloak OAuth client integration
-    - [ ] 4.3.5 Setup session storage and management
-  - [ ] 4.4 Create auth presentation layer
-    - [ ] 4.4.1 Create LoginController with HTTP request handling
-    - [ ] 4.4.2 Create RegisterController with validation
-    - [ ] 4.4.3 Create RefreshTokenController
-    - [ ] 4.4.4 Create LogoutController
-    - [ ] 4.4.5 Implement authMiddleware for route protection
-    - [ ] 4.4.6 Create auth routes with proper HTTP methods
-  - [ ] 4.5 Setup dependency injection container
-    - [ ] 4.5.1 Create AuthContainer with dependency registration
-    - [ ] 4.5.2 Register all repositories and providers
-    - [ ] 4.5.3 Wire up use cases with proper dependencies
+    - [x] 4.3.5 Setup session storage and management
+  - [x] 4.4 Create auth presentation layer
+    - [x] 4.4.1 Create LoginController with HTTP request handling
+    - [x] 4.4.2 Create RegisterController with validation
+    - [x] 4.4.3 Create RefreshTokenController
+    - [x] 4.4.4 Create LogoutController
+    - [x] 4.4.5 Implement authMiddleware for route protection
+    - [x] 4.4.6 Create auth routes with proper HTTP methods
+  - [x] 4.5 Setup dependency injection container
+    - [x] 4.5.1 Create AuthContainer with dependency registration
+    - [x] 4.5.2 Register all repositories and providers
+    - [x] 4.5.3 Wire up use cases with proper dependencies
     - [ ] 4.5.4 Create container tests for dependency resolution
   - [ ] 4.6 Integrate BetterAuth with Keycloak
     - [ ] 4.6.1 Setup BetterAuth configuration

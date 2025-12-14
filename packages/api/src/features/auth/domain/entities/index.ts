@@ -1,3 +1,2 @@
-export { User } from './User';
-export { User as UserEntity } from './User.entity';
+export { User } from './User.entity';
 export { Session } from './Session.entity';

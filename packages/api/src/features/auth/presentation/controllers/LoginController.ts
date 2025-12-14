@@ -11,18 +11,8 @@ import { ValidationError } from '@repo/shared';
 export class LoginController {
   private loginUseCase: LoginUseCase;
 
-  constructor(
-    private userRepository: UserRepository,
-    private sessionRepository: SessionRepository,
-    private hashProvider: BcryptHashProvider,
-    private tokenGenerator: JWTTokenGenerator
-  ) {
-    this.loginUseCase = new LoginUseCase(
-      userRepository,
-      sessionRepository,
-      hashProvider,
-      tokenGenerator
-    );
+  constructor(loginUseCase: LoginUseCase) {
+    this.loginUseCase = loginUseCase;
   }
 
   async handle(c: Context): Promise<Response> {

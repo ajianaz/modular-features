@@ -8,8 +8,8 @@ import { ValidationError } from '@repo/shared';
 export class LogoutController {
   private logoutUseCase: LogoutUseCase;
 
-  constructor(private sessionRepository: SessionRepository) {
-    this.logoutUseCase = new LogoutUseCase(sessionRepository);
+  constructor(logoutUseCase: LogoutUseCase) {
+    this.logoutUseCase = logoutUseCase;
   }
 
   async handle(c: Context): Promise<Response> {

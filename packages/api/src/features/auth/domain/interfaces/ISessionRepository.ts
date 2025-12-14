@@ -25,6 +25,7 @@ export interface ISessionRepository {
 
   // Session management
   refreshSession(sessionId: string, newToken: string, newRefreshToken: string, newExpiresAt: Date): Promise<Session | null>;
+  deactivate(session: Session): Session;
   updateLastAccessed(sessionId: string): Promise<Session | null>;
 
   // Security operations

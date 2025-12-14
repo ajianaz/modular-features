@@ -2,43 +2,13 @@ import { ISessionRepository } from '../../domain/interfaces/ISessionRepository';
 import { IUserRepository } from '../../domain/interfaces/IUserRepository';
 import { ITokenGenerator } from '../../domain/interfaces/ITokenGenerator';
 import { Session } from '../../domain/entities/Session.entity';
+import { RefreshTokenRequest } from '../dtos/input/RefreshTokenRequest';
+import { RefreshTokenResponse } from '../dtos/output/RefreshTokenResponse';
 import {
   RefreshTokenRevokedError,
   SessionNotFoundError,
   SessionExpiredError
 } from '../../domain/errors/AuthenticationError';
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-  userAgent?: string;
-  ipAddress?: string;
-}
-
-export interface RefreshTokenResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    emailVerified: boolean;
-    username?: string;
-    avatar?: string;
-    role: 'user' | 'admin' | 'super_admin';
-    status: 'active' | 'inactive' | 'suspended';
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    tokenType: string;
-  };
-  session?: {
-    id: string;
-    expiresAt: Date;
-    lastAccessedAt: Date;
-  };
-}
 
 export class RefreshTokenUseCase {
   constructor(
@@ -83,10 +53,19 @@ export class RefreshTokenUseCase {
     const newExpiresAt = new Date();
     newExpiresAt.setDate(newExpiresAt.getDate() + 7); // 7 days from now
 
-    const updatedSession = session.refreshTokens(
+    // Create a new session with updated tokens
+    const updatedSession = new Session(
+      session.id,
+      session.userId,
       tokenPair.accessToken,
       tokenPair.refreshToken,
-      newExpiresAt
+      newExpiresAt,
+      new Date(), // Update lastAccessedAt
+      session.createdAt,
+      new Date(), // Update updatedAt
+      session.userAgent,
+      session.ipAddress,
+      session.isActive
     );
 
     // Save updated session

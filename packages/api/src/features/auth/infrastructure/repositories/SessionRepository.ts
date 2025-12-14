@@ -272,6 +272,24 @@ export class SessionRepository implements ISessionRepository {
     return result.length > 0;
   }
 
+  // Deactivate session (synchronous operation for domain logic)
+  deactivate(session: SessionEntity): SessionEntity {
+    // Create a new session entity with isActive set to false
+    return new SessionEntity(
+      session.id,
+      session.userId,
+      session.token,
+      session.refreshToken,
+      session.expiresAt,
+      session.lastAccessedAt,
+      session.createdAt,
+      new Date(), // Update updatedAt to current time
+      session.userAgent,
+      session.ipAddress,
+      false // Set isActive to false
+    );
+  }
+
   // Private helper methods
   private mapToDomainEntity(session: any): SessionEntity {
     return new SessionEntity(

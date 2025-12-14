@@ -9,14 +9,8 @@ import { ValidationError } from '@repo/shared';
 export class RegisterController {
   private registerUseCase: RegisterUseCase;
 
-  constructor(
-    private userRepository: UserRepository,
-    private hashProvider: BcryptHashProvider
-  ) {
-    this.registerUseCase = new RegisterUseCase(
-      userRepository,
-      hashProvider
-    );
+  constructor(registerUseCase: RegisterUseCase) {
+    this.registerUseCase = registerUseCase;
   }
 
   async handle(c: Context): Promise<Response> {

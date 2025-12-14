@@ -5,22 +5,10 @@ import { LogoutController } from './controllers/LogoutController';
 import { RefreshTokenController } from './controllers/RefreshTokenController';
 
 // Infrastructure dependencies
-import { UserRepository } from '../infrastructure/repositories/UserRepository';
-import { SessionRepository } from '../infrastructure/repositories/SessionRepository';
-import { BcryptHashProvider } from '../infrastructure/lib/BcryptHashProvider';
-import { JWTTokenGenerator } from '../infrastructure/lib/JWTTokenGenerator';
+import { AuthContainer } from '../infrastructure/container/AuthContainer';
 
 // Initialize dependencies
-const userRepository = new UserRepository();
-const sessionRepository = new SessionRepository();
-const hashProvider = new BcryptHashProvider();
-const tokenGenerator = new JWTTokenGenerator({
-  secretKey: process.env.JWT_SECRET || 'your-secret-key',
-  accessTokenExpiry: 15 * 60, // 15 minutes
-  refreshTokenExpiry: 7 * 24 * 60 * 60, // 7 days
-  issuer: 'modular-monolith',
-  audience: 'modular-monolith-api'
-});
+const authContainer = AuthContainer.getInstance();
 
 // Auth routes
 export const authRoutes = new Hono();
@@ -30,7 +18,7 @@ export const authRoutes = new Hono();
 authRoutes.post(
   '/register',
   async (c: Context) => {
-    const controller = new RegisterController(userRepository, hashProvider);
+    const controller = new RegisterController(authContainer.getRegisterUseCase());
     return await controller.handle(c);
   }
 );
@@ -39,12 +27,7 @@ authRoutes.post(
 authRoutes.post(
   '/login',
   async (c: Context) => {
-    const controller = new LoginController(
-      userRepository,
-      sessionRepository,
-      hashProvider,
-      tokenGenerator
-    );
+    const controller = new LoginController(authContainer.getLoginUseCase());
     return await controller.handle(c);
   }
 );
@@ -53,7 +36,7 @@ authRoutes.post(
 authRoutes.post(
   '/logout',
   async (c: Context) => {
-    const controller = new LogoutController(sessionRepository);
+    const controller = new LogoutController(authContainer.getLogoutUseCase());
     return await controller.handle(c);
   }
 );
@@ -62,11 +45,7 @@ authRoutes.post(
 authRoutes.post(
   '/refresh-token',
   async (c: Context) => {
-    const controller = new RefreshTokenController(
-      userRepository,
-      sessionRepository,
-      tokenGenerator
-    );
+    const controller = new RefreshTokenController(authContainer.getRefreshTokenUseCase());
     return await controller.handle(c);
   }
 );
