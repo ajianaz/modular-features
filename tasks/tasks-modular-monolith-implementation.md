@@ -65,7 +65,7 @@
     - [x] 2.2.1 Define auth schema (users, sessions, oauth_accounts)
     - [x] 2.2.2 Define user management schema (user_profiles, user_settings, user_roles)
     - [x] 2.2.3 Define payment schema (transactions, invoices, payment_methods)
-    - [ ] 2.2.4 Define order schema (orders, order_items, order_status_history)
+    - [x] 2.2.4 Define order schema (orders, order_items, order_status_history)
     - [x] 2.2.5 Define subscription schema (subscription_plans, subscriptions, subscription_usage)
     - [x] 2.2.6 Define notification schema (notifications, notification_templates, notification_preferences)
     - [x] 2.2.7 Define audit schema (audit_logs, audit_events, system_logs)
@@ -86,16 +86,16 @@
     - [x] 2.5.3 Create notification template seeds
     - [x] 2.5.4 Add development quota settings
 - [ ] 3.0 Create Shared Package
-  - [ ] 3.1 Define common types and interfaces
-    - [ ] 3.1.1 Create base entity types and interfaces
-    - [ ] 3.1.2 Define common DTO types and request/response patterns
-    - [ ] 3.1.3 Create pagination and filtering types
-    - [ ] 3.1.4 Define user, payment, and notification types
-  - [ ] 3.2 Create domain error classes hierarchy
-    - [ ] 3.2.1 Create base DomainError class
-    - [ ] 3.2.2 Implement ValidationError class
-    - [ ] 3.2.3 Create NotFoundError and ConflictError classes
-    - [ ] 3.2.4 Implement AuthorizationError and AuthenticationError
+  - [x] 3.1 Define common types and interfaces
+    - [x] 3.1.1 Create base entity types and interfaces
+    - [x] 3.1.2 Define common DTO types and request/response patterns
+    - [x] 3.1.3 Create pagination and filtering types
+    - [x] 3.1.4 Define user, payment, and notification types
+  - [x] 3.2 Create domain error classes hierarchy
+    - [x] 3.2.1 Create base DomainError class
+    - [x] 3.2.2 Implement ValidationError class
+    - [x] 3.2.3 Create NotFoundError and ConflictError classes
+    - [x] 3.2.4 Implement AuthorizationError and AuthenticationError
   - [ ] 3.3 Implement validation utilities and schemas
     - [ ] 3.3.1 Create Zod schemas for common validations
     - [ ] 3.3.2 Implement email and password validators
