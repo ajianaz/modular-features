@@ -1,7 +1,8 @@
 import { db } from '../connection'
-import { 
-  subscriptionPlans, 
-  subscriptionAddons 
+import {
+  subscriptionPlans,
+  subscriptionAddons,
+  eq
 } from '../schema'
 import { nanoid } from 'nanoid'
 
@@ -207,14 +208,15 @@ export async function seedSubscriptionPlans() {
     // Insert subscription plans
     console.log('  📋 Creating subscription plans...')
     const allPlans = [...defaultPlans, ...annualPlans]
-    
+
     await db.transaction(async (tx) => {
       for (const plan of allPlans) {
         await tx
           .insert(subscriptionPlans)
           .values({
-            id: nanoid(),
             ...plan,
+            billingCycle: plan.billingCycle as 'monthly' | 'annual' | 'quarterly' | 'bi_annual' | 'lifetime',
+            price: plan.price.toString(),
           })
           .onConflictDoNothing()
       }
@@ -227,8 +229,9 @@ export async function seedSubscriptionPlans() {
         await tx
           .insert(subscriptionAddons)
           .values({
-            id: nanoid(),
             ...addon,
+            billingCycle: addon.billingCycle as 'monthly' | 'annual' | 'quarterly' | 'bi_annual' | 'lifetime',
+            price: addon.price.toString(),
           })
           .onConflictDoNothing()
       }
@@ -244,13 +247,13 @@ export async function seedSubscriptionPlans() {
 // Helper function to clear subscription plans (for development)
 export async function clearSubscriptionPlans() {
   console.log('🧹 Clearing subscription plans...')
-  
+
   try {
     await db.transaction(async (tx) => {
       await tx.delete(subscriptionAddons)
       await tx.delete(subscriptionPlans)
     })
-    
+
     console.log('✅ Subscription plans cleared!')
   } catch (error) {
     console.error('❌ Error clearing subscription plans:', error)

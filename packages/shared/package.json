@@ -44,6 +44,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "^1.2.6",
+    "@types/node": "^20",
     "typescript": "^5",
     "eslint": "^8",
     "prettier": "^3",
@@ -56,6 +57,7 @@
   "dependencies": {
     "zod": "catalog:",
     "dotenv": "catalog:",
-    "better-auth": "^1.4.5"
+    "better-auth": "^1.4.5",
+    "hono": "^4"
   }
 }

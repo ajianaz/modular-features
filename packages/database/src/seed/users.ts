@@ -1,12 +1,12 @@
 import { db } from '../connection'
-import { 
-  users, 
-  userProfiles, 
-  userSettings, 
-  userRoles, 
-  userRoleAssignments 
+import {
+  users,
+  userProfiles,
+  userSettings,
+  userRoles,
+  userRoleAssignments,
+  eq
 } from '../schema'
-import { bcrypt } from '@modular-monolith/shared'
 import { nanoid } from 'nanoid'
 
 // Test user data
@@ -95,7 +95,7 @@ export async function seedUsers() {
     await db.transaction(async (tx) => {
       for (const userData of testUsers) {
         // Hash password
-        const hashedPassword = await bcrypt.hash(userData.password, 12)
+        const hashedPassword = await Bun.password.hash(userData.password)
 
         // Insert user
         const [user] = await tx
@@ -105,7 +105,8 @@ export async function seedUsers() {
             email: userData.email,
             name: userData.name,
             username: userData.username,
-            role: userData.role,
+            passwordHash: hashedPassword,
+            role: userData.role as 'user' | 'admin' | 'super_admin',
             emailVerified: true,
             status: 'active',
           })
@@ -116,7 +117,7 @@ export async function seedUsers() {
           .insert(userProfiles)
           .values({
             id: nanoid(),
-            userId: user.id,
+            userId: user?.id || '',
             firstName: userData.name.split(' ')[0],
             lastName: userData.name.split(' ')[1] || '',
             displayName: userData.name,
@@ -131,7 +132,7 @@ export async function seedUsers() {
           .insert(userSettings)
           .values({
             id: nanoid(),
-            userId: user.id,
+            userId: user?.id || '',
             theme: 'auto',
             language: 'en',
             timezone: 'UTC',
@@ -151,7 +152,7 @@ export async function seedUsers() {
         const [role] = await tx
           .select()
           .from(userRoles)
-          .where(eq(userRoles.name, userData.role))
+          .where(eq(userRoles.name as any, userData.role as any) as any)
           .limit(1)
 
         // Assign role to user
@@ -160,8 +161,8 @@ export async function seedUsers() {
             .insert(userRoleAssignments)
             .values({
               id: nanoid(),
-              userId: user.id,
-              roleId: role.id,
+              userId: user?.id || '',
+              roleId: role?.id || '',
               isActive: true,
             })
             .onConflictDoNothing()
@@ -179,7 +180,7 @@ export async function seedUsers() {
 // Helper function to clear users (for development)
 export async function clearUsers() {
   console.log('🧹 Clearing users and roles...')
-  
+
   try {
     await db.transaction(async (tx) => {
       // Clear in order of dependencies
@@ -187,11 +188,11 @@ export async function clearUsers() {
       await tx.delete(userProfiles)
       await tx.delete(userSettings)
       await tx.delete(users)
-      
+
       // Keep system roles, clear custom ones
-      await tx.delete(userRoles).where(eq(userRoles.isSystem, false))
+      await tx.delete(userRoles).where(eq(userRoles.isSystem as any, false as any) as any)
     })
-    
+
     console.log('✅ Users and roles cleared!')
   } catch (error) {
     console.error('❌ Error clearing users:', error)

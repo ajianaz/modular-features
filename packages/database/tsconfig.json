@@ -9,17 +9,15 @@
     "sourceMap": true,
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
+    "noEmit": false,
     "paths": {
       "@repo/database": ["./src"],
       "@repo/shared": ["../../packages/shared/src"],
-      "@repo/api": ["../../packages/api/src"],
-      "@repo/config": ["../../packages/config/src"]
+      "@repo/api": ["../../packages/api/src"]
     }
   },
   "include": [
-    "src/**/*",
-    "drizzle.config.ts",
-    "migrations/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "dist",
@@ -30,8 +28,7 @@
     "**/*.spec.tsx"
   ],
   "references": [
-    { "path": "../shared" },
-    { "path": "../config" }
+    { "path": "../shared" }
   ],
   "ts-node": {
     "esm": true

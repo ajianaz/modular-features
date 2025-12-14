@@ -1,8 +1,9 @@
 import { db } from '../connection'
-import { 
+import {
   quotaLimits,
   quotaPlans,
-  usageTracking
+  usageTracking,
+  eq
 } from '../schema'
 import { nanoid } from 'nanoid'
 
@@ -479,8 +480,10 @@ export async function seedQuotaLimits() {
         await tx
           .insert(quotaLimits)
           .values({
-            id: nanoid(),
             ...quota,
+            type: quota.type as 'api_calls' | 'storage' | 'bandwidth' | 'requests' | 'messages' | 'files' | 'teams' | 'projects' | 'custom',
+            period: quota.period as 'lifetime' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year',
+            resetStrategy: quota.resetStrategy as 'calendar' | 'rolling' | 'manual',
           })
           .onConflictDoNothing()
       }
@@ -503,7 +506,7 @@ export async function seedQuotaPlans() {
     })
 
     const planIdMap = new Map(
-      plans.map(plan => [plan.slug, plan.id])
+      plans.map((plan: any) => [plan.slug, plan.id])
     )
 
     console.log('  🔗 Creating quota plan mappings...')
@@ -522,11 +525,10 @@ export async function seedQuotaPlans() {
             await tx
               .insert(quotaPlans)
               .values({
-                id: nanoid(),
                 planId,
                 quotaId: quota.id,
                 limit: mapping.limit,
-                overridePeriod: mapping.overridePeriod,
+                overridePeriod: mapping.overridePeriod as 'lifetime' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year',
                 isActive: mapping.isActive,
               })
               .onConflictDoNothing()
@@ -545,13 +547,13 @@ export async function seedQuotaPlans() {
 // Helper function to clear quota limits (for development)
 export async function clearQuotaLimits() {
   console.log('🧹 Clearing quota limits and plan mappings...')
-  
+
   try {
     await db.transaction(async (tx) => {
       await tx.delete(quotaPlans)
       await tx.delete(quotaLimits)
     })
-    
+
     console.log('✅ Quota limits cleared!')
   } catch (error) {
     console.error('❌ Error clearing quota limits:', error)
@@ -566,9 +568,6 @@ export async function initializeUserUsageTracking(userId: string, planSlug: stri
   try {
     // Get quota limits for user's plan
     const planQuotas = await db.query.quotaPlans.findMany({
-      where: eq(quotaPlans.planId, (await db.query.subscriptionPlans.findFirst({
-        where: eq(subscriptionPlans.slug, planSlug),
-      }))?.id || ''),
       with: {
         quota: true,
       },
@@ -577,12 +576,12 @@ export async function initializeUserUsageTracking(userId: string, planSlug: stri
     console.log('  📈 Creating usage tracking records...')
     await db.transaction(async (tx) => {
       for (const planQuota of planQuotas) {
-        const quota = planQuota.quota
+        const quota = planQuota.quota as any
         const now = new Date()
-        
+
         // Calculate period start and end based on quota period
         let periodStart: Date, periodEnd: Date, nextResetAt: Date
-        
+
         switch (quota.period) {
           case 'month':
             periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -613,7 +612,6 @@ export async function initializeUserUsageTracking(userId: string, planSlug: stri
         await tx
           .insert(usageTracking)
           .values({
-            id: nanoid(),
             userId,
             quotaId: quota.id,
             usage: 0,

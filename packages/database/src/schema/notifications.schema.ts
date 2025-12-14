@@ -7,7 +7,7 @@ import {
   integer,
   jsonb,
   boolean,
-  enum as pgEnum,
+  pgEnum,
   index,
 } from 'drizzle-orm/pg-core'
 import { users } from './auth.schema'
@@ -216,9 +216,9 @@ export const notificationRecipients = pgTable('notification_recipients', {
 export const notificationAnalytics = pgTable('notification_analytics', {
   id: uuid('id').primaryKey().defaultRandom(),
   notificationId: uuid('notification_id').references(() => notifications.id, { onDelete: 'cascade' }),
-  type: varchar('type', { length, enum: ['delivery', 'engagement', 'error'] }).notNull(),
+  type: varchar('type', { length: 50, enum: ['delivery', 'engagement', 'error'] }).notNull(),
   metric: varchar('metric', { length: 100 }).notNull(), // sent_rate, open_rate, click_rate, etc.
-  value: varchar('value', { length, precision: 5, scale: 2 }).notNull(), // Metric value
+  value: varchar('value', { length: 50 }).notNull(), // Metric value
   count: integer('count').default(0).notNull(), // Sample count
   period: varchar('period', { length: 20 }).notNull(), // hour, day, week, month
   periodStart: timestamp('period_start').notNull(),

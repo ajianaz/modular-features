@@ -9,11 +9,11 @@
     "sourceMap": true,
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
+    "noEmit": false,
     "paths": {
       "@repo/database": ["../../packages/database/src"],
       "@repo/shared": ["../../packages/shared/src"],
-      "@repo/api": ["./src"],
-      "@repo/config": ["../../packages/config/src"]
+      "@repo/api": ["./src"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react"
@@ -31,8 +31,7 @@
   ],
   "references": [
     { "path": "../shared" },
-    { "path": "../database" },
-    { "path": "../config" }
+    { "path": "../database" }
   ],
   "ts-node": {
     "esm": true

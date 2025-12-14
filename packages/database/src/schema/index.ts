@@ -8,6 +8,9 @@ export * from './notifications.schema'
 export * from './audit.schema'
 export * from './quota.schema'
 
+// Export drizzle operators
+export { eq } from 'drizzle-orm'
+
 // Combine all tables for schema exports
 import {
   // Auth schema
@@ -18,7 +21,7 @@ import {
   emailVerifications,
   mfaSettings,
   loginAttempts,
-  
+
   // User management schema
   userProfiles,
   userSettings,
@@ -27,7 +30,7 @@ import {
   userActivity,
   userStats,
   userPreferences,
-  
+
   // Payment schema
   transactions,
   paymentMethods,
@@ -35,7 +38,7 @@ import {
   paymentWebhooks,
   paymentRefunds,
   paymentDisputes,
-  
+
   // Order schema
   orders,
   orderItems,
@@ -43,7 +46,7 @@ import {
   orderFulfillment,
   orderReturns,
   orderReviews,
-  
+
   // Subscription schema
   subscriptionPlans,
   subscriptions,
@@ -52,7 +55,7 @@ import {
   subscriptionEvents,
   subscriptionAddons,
   userSubscriptionAddons,
-  
+
   // Notification schema
   notifications,
   notificationTemplates,
@@ -61,7 +64,7 @@ import {
   notificationGroups,
   notificationRecipients,
   notificationAnalytics,
-  
+
   // Audit schema
   auditLogs,
   auditEvents,
@@ -69,7 +72,7 @@ import {
   complianceReports,
   dataAccessLogs,
   securityEvents,
-  
+
   // Quota schema
   quotaLimits,
   userQuotaLimits,
@@ -81,78 +84,6 @@ import {
   quotaHistory,
 } from './'
 
-// Export all tables in a single object
-export const schema = {
-  // Auth schema
-  users,
-  sessions,
-  oauthAccounts,
-  passwordResets,
-  emailVerifications,
-  mfaSettings,
-  loginAttempts,
-  
-  // User management schema
-  userProfiles,
-  userSettings,
-  userRoles,
-  userRoleAssignments,
-  userActivity,
-  userStats,
-  userPreferences,
-  
-  // Payment schema
-  transactions,
-  paymentMethods,
-  invoices,
-  paymentWebhooks,
-  paymentRefunds,
-  paymentDisputes,
-  
-  // Order schema
-  orders,
-  orderItems,
-  orderStatusHistory,
-  orderFulfillment,
-  orderReturns,
-  orderReviews,
-  
-  // Subscription schema
-  subscriptionPlans,
-  subscriptions,
-  subscriptionUsage,
-  subscriptionInvoices,
-  subscriptionEvents,
-  subscriptionAddons,
-  userSubscriptionAddons,
-  
-  // Notification schema
-  notifications,
-  notificationTemplates,
-  notificationPreferences,
-  notificationDeliveries,
-  notificationGroups,
-  notificationRecipients,
-  notificationAnalytics,
-  
-  // Audit schema
-  auditLogs,
-  auditEvents,
-  systemLogs,
-  complianceReports,
-  dataAccessLogs,
-  securityEvents,
-  
-  // Quota schema
-  quotaLimits,
-  userQuotaLimits,
-  usageTracking,
-  usageEvents,
-  quotaPlans,
-  quotaAlerts,
-  quotaRequests,
-  quotaHistory,
-}
 
 // Export all enums
 export * from './auth.schema'

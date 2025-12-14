@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { config } from '@modular-monolith/config'
-import { schema } from '../schema'
+import { config } from '@modular-monolith/shared'
+import * as schema from '../schema'
 
 // Create PostgreSQL connection pool
 const connection = postgres({
@@ -36,9 +36,9 @@ export async function healthCheck() {
     await connection`SELECT 1`
     return { status: 'healthy', timestamp: new Date() }
   } catch (error) {
-    return { 
-      status: 'unhealthy', 
-      timestamp: new Date(), 
+    return {
+      status: 'unhealthy',
+      timestamp: new Date(),
       error: error instanceof Error ? error.message : 'Unknown error'
     }
   }

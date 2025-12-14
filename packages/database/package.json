@@ -55,11 +55,12 @@
     "postgres": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:",
-    "@modular-monolith/shared": "workspace:*",
-    "@modular-monolith/config": "workspace:*"
+    "nanoid": "catalog:",
+    "@modular-monolith/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.2.6",
+    "@types/node": "^20",
     "@types/pg": "^8.11.10",
     "typescript": "^5",
     "eslint": "^8",

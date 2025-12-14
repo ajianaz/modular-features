@@ -1,7 +1,8 @@
 import { db } from '../connection'
-import { 
+import {
   notificationTemplates,
-  notificationPreferences 
+  notificationPreferences,
+  eq
 } from '../schema'
 import { nanoid } from 'nanoid'
 
@@ -413,8 +414,9 @@ export async function seedNotificationTemplates() {
         await tx
           .insert(notificationTemplates)
           .values({
-            id: nanoid(),
             ...template,
+            type: template.type as 'error' | 'info' | 'system' | 'success' | 'warning',
+            channel: template.channel as 'email' | 'sms' | 'push' | 'in_app' | 'webhook',
           })
           .onConflictDoNothing()
       }
@@ -436,9 +438,9 @@ export async function seedNotificationPreferences(userId: string) {
         await tx
           .insert(notificationPreferences)
           .values({
-            id: nanoid(),
             userId,
             ...preference,
+            frequency: preference.frequency as 'immediate' | 'hourly' | 'daily' | 'weekly',
           })
           .onConflictDoNothing()
       }
@@ -454,7 +456,7 @@ export async function seedNotificationPreferences(userId: string) {
 // Helper functions to clear data (for development)
 export async function clearNotificationTemplates() {
   console.log('🧹 Clearing notification templates...')
-  
+
   try {
     await db.delete(notificationTemplates)
     console.log('✅ Notification templates cleared!')
@@ -466,9 +468,9 @@ export async function clearNotificationTemplates() {
 
 export async function clearNotificationPreferences(userId: string) {
   console.log('🧹 Clearing notification preferences for user...')
-  
+
   try {
-    await db.delete(notificationPreferences).where(eq(notificationPreferences.userId, userId))
+    await db.delete(notificationPreferences).where(eq(notificationPreferences.userId, userId as any))
     console.log('✅ Notification preferences cleared!')
   } catch (error) {
     console.error('❌ Error clearing notification preferences:', error)

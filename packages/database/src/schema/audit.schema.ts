@@ -7,7 +7,7 @@ import {
   integer,
   jsonb,
   boolean,
-  enum as pgEnum,
+  pgEnum,
   index,
 } from 'drizzle-orm/pg-core'
 import { users } from './auth.schema'

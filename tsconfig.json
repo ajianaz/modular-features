@@ -3,11 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "composite": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "allowJs": true,
@@ -35,14 +35,9 @@
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
-      "@/*": ["./src/*"],
-      "@/apps/*": ["./apps/*"],
-      "@/packages/*": ["./packages/*"],
-      "@repo/database": ["./packages/database/src"],
-      "@repo/shared": ["./packages/shared/src"],
-      "@repo/api": ["./packages/api/src"],
-      "@repo/config": ["./packages/config/src"],
-      "@repo/db": ["./packages/database/src"]
+      "@modular-monolith/database": ["./packages/database/src"],
+      "@modular-monolith/shared": ["./packages/shared/src"],
+      "@modular-monolith/api": ["./packages/api/src"]
     }
   },
   "include": [
@@ -60,12 +55,6 @@
     "*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx"
-  ],
-  "references": [
-    { "path": "./packages/shared" },
-    { "path": "./packages/database" },
-    { "path": "./packages/config" },
-    { "path": "./packages/api" }
   ],
   "watchOptions": {
     "watchFile": "useFsEvents",

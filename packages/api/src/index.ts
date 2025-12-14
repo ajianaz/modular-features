@@ -2,7 +2,6 @@
 
 // Export the main application
 export { app } from './app'
-export { server } from './server'
 
 // Export feature modules
 export * from './features'
