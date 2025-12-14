@@ -1,4 +1,4 @@
- {
+{
   "name": "@modular-monolith/api",
   "version": "1.0.0",
   "description": "API layer with clean architecture for modular monolith",
@@ -31,14 +31,18 @@
   "author": "Modular Monolith Team",
   "license": "MIT",
   "dependencies": {
-    "hono": "catalog:",
     "@hono/node-server": "catalog:",
+    "@modular-monolith/database": "workspace:*",
+    "@modular-monolith/shared": "workspace:*",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0",
     "better-auth": "catalog:",
-    "zod": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
-    "@modular-monolith/database": "workspace:*",
-    "@modular-monolith/shared": "workspace:*"
+    "hono": "catalog:",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "^1.2.6",
