@@ -1,10 +1,10 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { Pool } from 'pg'
 import { config } from '@modular-monolith/shared'
 import * as schema from '../schema'
 
 // Create PostgreSQL connection pool
-const connection = postgres({
+const pool = new Pool({
   host: config.database.host,
   port: config.database.port,
   database: config.database.database,
@@ -12,28 +12,28 @@ const connection = postgres({
   password: config.database.password,
   ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
   max: 20, // Maximum number of connections
-  idle_timeout: 20, // Idle timeout in seconds
-  connect_timeout: 10, // Connection timeout in seconds
+  idleTimeoutMillis: 20000, // Idle timeout in milliseconds
+  connectionTimeoutMillis: 10000, // Connection timeout in milliseconds
 })
 
 // Create Drizzle instance with schema
-export const db = drizzle(connection, {
+export const db = drizzle(pool, {
   schema,
   logger: config.nodeEnv === 'development',
 })
 
 // Export connection for direct access if needed
-export { connection }
+export { pool }
 
 // Helper function to close connection
 export async function closeConnection() {
-  await connection.end()
+  await pool.end()
 }
 
 // Database health check
 export async function healthCheck() {
   try {
-    await connection`SELECT 1`
+    await pool.query('SELECT 1')
     return { status: 'healthy', timestamp: new Date() }
   } catch (error) {
     return {

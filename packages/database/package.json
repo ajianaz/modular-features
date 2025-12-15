@@ -61,7 +61,7 @@
   "devDependencies": {
     "@types/bun": "^1.2.6",
     "@types/node": "^20",
-    "@types/pg": "^8.11.10",
+    "@types/pg": "^8.16.0",
     "typescript": "^5",
     "eslint": "^8",
     "prettier": "^3",
