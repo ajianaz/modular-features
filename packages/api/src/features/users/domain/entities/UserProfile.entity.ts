@@ -19,8 +19,8 @@ export class UserProfile {
     public isPhoneVerified: boolean = false,
     public socialLinks?: Record<string, string>,
     public preferences?: Record<string, any>,
-    public avatarUrl?: string,
     public isEmailVerified: boolean = false,
+    public avatarUrl?: string,
     public readonly createdAt: Date = new Date(),
     public readonly updatedAt: Date = new Date()
   ) {}
@@ -72,8 +72,8 @@ export class UserProfile {
       data.isPhoneVerified || false,
       data.socialLinks || {},
       data.preferences || {},
-      data.avatarUrl,
       data.isEmailVerified || false,
+      data.avatarUrl,
       now,
       now
     );
@@ -91,9 +91,9 @@ export class UserProfile {
     dateOfBirth?: Date;
   }): UserProfile {
     const now = new Date();
-    // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    // Ensure updatedAt is different from original
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     // Generate displayName from firstName and lastName if not provided
@@ -120,6 +120,8 @@ export class UserProfile {
       this.isPhoneVerified,
       this.socialLinks,
       this.preferences,
+      this.isEmailVerified,
+      this.avatarUrl,
       this.createdAt,
       now
     );
@@ -130,9 +132,9 @@ export class UserProfile {
     isPhoneVerified?: boolean;
   }): UserProfile {
     const now = new Date();
-    // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    // Ensure updatedAt is different from original
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserProfile(
@@ -152,6 +154,8 @@ export class UserProfile {
       data.isPhoneVerified !== undefined ? data.isPhoneVerified : this.isPhoneVerified,
       this.socialLinks,
       this.preferences,
+      this.isEmailVerified,
+      this.avatarUrl,
       this.createdAt,
       now
     );
@@ -164,9 +168,9 @@ export class UserProfile {
     preferences?: Record<string, any>;
   }): UserProfile {
     const now = new Date();
-    // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    // Ensure updatedAt is different from original
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserProfile(
@@ -186,6 +190,8 @@ export class UserProfile {
       this.isPhoneVerified,
       data.socialLinks || this.socialLinks,
       data.preferences || this.preferences,
+      this.isEmailVerified,
+      this.avatarUrl,
       this.createdAt,
       now
     );
@@ -193,9 +199,9 @@ export class UserProfile {
 
   verifyPhoneNumber(): UserProfile {
     const now = new Date();
-    // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    // Ensure updatedAt is different from original
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserProfile(
@@ -215,6 +221,8 @@ export class UserProfile {
       true, // Set phone as verified
       this.socialLinks,
       this.preferences,
+      this.isEmailVerified,
+      this.avatarUrl,
       this.createdAt,
       now
     );
@@ -222,9 +230,9 @@ export class UserProfile {
 
   updateAvatar(avatarUrl: string): UserProfile {
     const now = new Date();
-    // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    // Ensure updatedAt is different from original
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserProfile(
@@ -244,8 +252,8 @@ export class UserProfile {
       this.isPhoneVerified,
       this.socialLinks,
       this.preferences,
-      avatarUrl,
       this.isEmailVerified,
+      avatarUrl,
       this.createdAt,
       now
     );
@@ -373,7 +381,6 @@ export class UserProfile {
       isPhoneVerified: this.isPhoneVerified,
       socialLinks: this.socialLinks,
       preferences: this.preferences,
-      avatarUrl: this.avatarUrl,
       isEmailVerified: this.isEmailVerified,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt

@@ -36,8 +36,11 @@ export class SettingsController {
    * Get user settings by user ID
    */
   async getSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
-      const { userId } = c.req.param();
+      userId = c.req.param().userId;
 
       if (!userId) {
         return c.json({
@@ -105,8 +108,11 @@ export class SettingsController {
    * Update user settings by user ID
    */
   async updateSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
-      const { userId } = c.req.param();
+      userId = c.req.param().userId;
 
       if (!userId) {
         return c.json({
@@ -116,9 +122,12 @@ export class SettingsController {
         }, 400);
       }
 
+      const requestBody = await c.req.json();
+      // Remove userId from request body to prevent clients from overriding it
+      const { userId: _, ...settingsData } = requestBody;
       const request: UpdateUserSettingsRequest = {
         userId,
-        ...await c.req.json()
+        ...settingsData
       };
 
       const result = await this.updateUserSettingsUseCase.execute(request);
@@ -196,9 +205,12 @@ export class SettingsController {
    * Get current user's settings (from authenticated user)
    */
   async getCurrentUserSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
+      userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -266,9 +278,12 @@ export class SettingsController {
    * Update current user's settings (from authenticated user)
    */
   async updateCurrentUserSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
+      userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -278,9 +293,12 @@ export class SettingsController {
         }, 401);
       }
 
+      const requestBody = await c.req.json();
+      // Remove userId from request body to prevent clients from overriding it
+      const { userId: _, ...settingsData } = requestBody;
       const request: UpdateUserSettingsRequest = {
         userId,
-        ...await c.req.json()
+        ...settingsData
       };
 
       const result = await this.updateUserSettingsUseCase.execute(request);

@@ -9,7 +9,22 @@ export * from './audit.schema'
 export * from './quota.schema'
 
 // Export drizzle operators
-export { eq } from 'drizzle-orm'
+export {
+  eq,
+  and,
+  or,
+  ilike,
+  desc,
+  asc,
+  gte,
+  lte,
+  isNull,
+  isNotNull,
+  inArray,
+  getTableColumns,
+  count,
+  lt
+} from 'drizzle-orm'
 
 // Combine all tables for schema exports
 import {

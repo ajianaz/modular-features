@@ -5,18 +5,92 @@ import {
   createTestUserActivity
 } from '../../utils/testFixtures.test';
 
-// Mock the database module
-vi.mock('@modular-monolith/database', () => ({
-  db: {
-    select: vi.fn(),
-    insert: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn()
-  },
-  userActivities: {}
-}));
+// Mock database module with a factory function to avoid hoisting issues
+vi.mock('@modular-monolith/database', () => {
+  // Create mock functions
+  const mockSelect = vi.fn();
+  const mockInsert = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockDelete = vi.fn();
 
-// Mock the drizzle-orm module
+  // Create mock query builder functions
+  const mockFrom = vi.fn();
+  const mockWhere = vi.fn();
+  const mockLimit = vi.fn();
+  const mockOffset = vi.fn();
+  const mockOrderBy = vi.fn();
+  const mockValues = vi.fn();
+  const mockSet = vi.fn();
+  const mockReturning = vi.fn();
+  const mockGroupBy = vi.fn();
+
+  // Set up chain
+  mockSelect.mockReturnValue({
+    from: mockFrom
+  });
+
+  mockFrom.mockReturnValue({
+    where: mockWhere
+  });
+
+  mockWhere.mockReturnValue({
+    limit: mockLimit,
+    orderBy: mockOrderBy,
+    groupBy: mockGroupBy
+  });
+
+  mockLimit.mockReturnValue({
+    offset: mockOffset,
+    orderBy: mockOrderBy
+  });
+
+  mockOffset.mockReturnValue({
+    orderBy: mockOrderBy
+  });
+
+  mockOrderBy.mockReturnValue([]);
+
+  mockInsert.mockReturnValue({
+    values: mockValues
+  });
+
+  mockValues.mockReturnValue({
+    returning: mockReturning
+  });
+
+  mockReturning.mockReturnValue([]);
+
+  mockUpdate.mockReturnValue({
+    set: mockSet
+  });
+
+  mockSet.mockReturnValue({
+    where: mockWhere
+  });
+
+  mockDelete.mockReturnValue({
+    where: mockWhere
+  });
+
+  mockGroupBy.mockReturnValue({
+    orderBy: mockOrderBy
+  });
+
+  const mockUserActivity = {};
+
+  return {
+    db: {
+      select: mockSelect,
+      insert: mockInsert,
+      update: mockUpdate,
+      delete: mockDelete
+    },
+    userActivities: {},
+    userActivity: mockUserActivity
+  };
+});
+
+// Mock drizzle-orm module
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
   and: vi.fn(),
@@ -27,11 +101,14 @@ vi.mock('drizzle-orm', () => ({
   gte: vi.fn(),
   lte: vi.fn(),
   isNull: vi.fn(),
-  isNotNull: vi.fn()
+  isNotNull: vi.fn(),
+  limit: vi.fn(),
+  offset: vi.fn(),
+  orderBy: vi.fn(),
+  innerJoin: vi.fn()
 }));
 
-import { db } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
+import { db, eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from '@modular-monolith/database';
 
 describe('UserActivityRepository', () => {
   let repository: UserActivityRepository;
@@ -64,16 +141,12 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findById(testActivity.id);
 
@@ -88,16 +161,12 @@ describe('UserActivityRepository', () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
       const mockResult: any[] = [];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findById(nonExistentId);
 
@@ -122,14 +191,11 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockInsert = vi.fn().mockReturnThis();
-      const mockValues = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
-      (db.insert as any).mockImplementation(() => ({
-        values: mockValues,
-        returning: mockReturning
-      }));
+      (db.insert as any).mockImplementation(mockInsert);
 
       const result = await repository.create(testActivity);
 
@@ -157,20 +223,19 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockInsert = vi.fn().mockReturnThis();
-      const mockValues = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
-      (db.insert as any).mockImplementation(() => ({
-        values: mockValues,
-        returning: mockReturning
-      }));
+      (db.insert as any).mockImplementation(mockInsert);
 
       const result = await repository.createMany(activities);
 
       expect(db.insert).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(testActivity.id);
+      if (result[0]) {
+        expect(result[0].id).toBe(testActivity.id);
+      }
     });
   });
 
@@ -178,14 +243,11 @@ describe('UserActivityRepository', () => {
     it('should delete an activity by ID', async () => {
       const mockResult = [{ id: testActivity.id }];
 
-      const mockDelete = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
 
-      (db.delete as any).mockImplementation(() => ({
-        where: mockWhere,
-        returning: mockReturning
-      }));
+      (db.delete as any).mockImplementation(mockDelete);
 
       const result = await repository.delete(testActivity.id);
 
@@ -197,14 +259,11 @@ describe('UserActivityRepository', () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
       const mockResult: any[] = [];
 
-      const mockDelete = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
 
-      (db.delete as any).mockImplementation(() => ({
-        where: mockWhere,
-        returning: mockReturning
-      }));
+      (db.delete as any).mockImplementation(mockDelete);
 
       const result = await repository.delete(nonExistentId);
 
@@ -217,14 +276,11 @@ describe('UserActivityRepository', () => {
       const ids = [testActivity.id];
       const mockResult = [{ id: testActivity.id }];
 
-      const mockDelete = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
 
-      (db.delete as any).mockImplementation(() => ({
-        where: mockWhere,
-        returning: mockReturning
-      }));
+      (db.delete as any).mockImplementation(mockDelete);
 
       const result = await repository.deleteMany(ids);
 
@@ -250,34 +306,36 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByUserId(testActivity.userId);
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].userId).toBe(testActivity.userId);
+      if (result[0]) {
+        expect(result[0].userId).toBe(testActivity.userId);
+      }
     });
 
     it('should return empty array when no activities found for user', async () => {
       const nonExistentUserId = '123e4567-e89b-12d3-a456-426614174000';
       const mockResult: any[] = [];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByUserId(nonExistentUserId);
 
@@ -302,20 +360,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByType(testActivity.type);
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].type).toBe(testActivity.type);
+      if (result[0]) {
+        expect(result[0].type).toBe(testActivity.type);
+      }
     });
   });
 
@@ -336,20 +396,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByAction(testActivity.action);
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].action).toBe(testActivity.action);
+      if (result[0]) {
+        expect(result[0].action).toBe(testActivity.action);
+      }
     });
   });
 
@@ -370,20 +432,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
-      const result = await repository.findByResource(testActivity.resource);
+      const result = await repository.findByResource(testActivity.resource || '');
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].resource).toBe(testActivity.resource);
+      if (result[0]) {
+        expect(result[0].resource).toBe(testActivity.resource);
+      }
     });
   });
 
@@ -404,20 +468,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
-      const result = await repository.findByResourceId(testActivity.resourceId);
+      const result = await repository.findByResourceId(testActivity.resourceId || '');
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].resourceId).toBe(testActivity.resourceId);
+      if (result[0]) {
+        expect(result[0].resourceId).toBe(testActivity.resourceId);
+      }
     });
   });
 
@@ -438,20 +504,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
-      const result = await repository.findBySessionId(testActivity.sessionId);
+      const result = await repository.findBySessionId(testActivity.sessionId || '');
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].sessionId).toBe(testActivity.sessionId);
+      if (result[0]) {
+        expect(result[0].sessionId).toBe(testActivity.sessionId);
+      }
     });
   });
 
@@ -472,20 +540,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByIpAddress(testActivity.ipAddress || '');
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].ipAddress).toBe(testActivity.ipAddress);
+      if (result[0]) {
+        expect(result[0].ipAddress).toBe(testActivity.ipAddress);
+      }
     });
   });
 
@@ -508,14 +578,14 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByDateRange(startDate, endDate);
 
@@ -543,20 +613,22 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findByUserIdAndDateRange(testActivity.userId, startDate, endDate);
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].userId).toBe(testActivity.userId);
+      if (result[0]) {
+        expect(result[0].userId).toBe(testActivity.userId);
+      }
     });
   });
 
@@ -578,14 +650,14 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOffset = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = vi.fn().mockReturnValue({ offset: mockOffset, limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, offset: mockOffset, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findRecent(hours);
 
@@ -612,20 +684,21 @@ describe('UserActivityRepository', () => {
         createdAt: testActivity.createdAt
       }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.findRecentByUserId(testActivity.userId, hours);
 
       expect(db.select).toHaveBeenCalled();
       expect(result).toHaveLength(1);
-      expect(result[0].userId).toBe(testActivity.userId);
+      if (result[0]) {
+        expect(result[0].userId).toBe(testActivity.userId);
+      }
     });
   });
 
@@ -633,12 +706,10 @@ describe('UserActivityRepository', () => {
     it('should count all activities', async () => {
       const mockResult = [{ count: 1 }];
 
-      const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockResolvedValue(mockResult);
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.count();
 
@@ -649,12 +720,10 @@ describe('UserActivityRepository', () => {
     it('should return 0 when no activities exist', async () => {
       const mockResult: any[] = [];
 
-      const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockResolvedValue(mockResult);
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.count();
 
@@ -666,12 +735,11 @@ describe('UserActivityRepository', () => {
     it('should count activities by user ID', async () => {
       const mockResult = [{ count: 1 }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockResolvedValue(mockResult);
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.countByUserId(testActivity.userId);
 
@@ -684,14 +752,11 @@ describe('UserActivityRepository', () => {
     it('should delete activities by user ID', async () => {
       const mockResult = [{ id: testActivity.id }];
 
-      const mockDelete = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+      const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
 
-      (db.delete as any).mockImplementation(() => ({
-        where: mockWhere,
-        returning: mockReturning
-      }));
+      (db.delete as any).mockImplementation(mockDelete);
 
       const result = await repository.deleteByUserId(testActivity.userId);
 
@@ -704,16 +769,12 @@ describe('UserActivityRepository', () => {
     it('should return true when activity exists by ID', async () => {
       const mockResult = [{ id: testActivity.id }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.existsById(testActivity.id);
 
@@ -725,16 +786,12 @@ describe('UserActivityRepository', () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
       const mockResult: any[] = [];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.existsById(nonExistentId);
 
@@ -746,16 +803,12 @@ describe('UserActivityRepository', () => {
     it('should return true when activity exists by user ID', async () => {
       const mockResult = [{ id: testActivity.id }];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.existsByUserId(testActivity.userId);
 
@@ -767,16 +820,12 @@ describe('UserActivityRepository', () => {
       const nonExistentUserId = '123e4567-e89b-12d3-a456-426614174000';
       const mockResult: any[] = [];
 
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockFrom = vi.fn().mockReturnThis();
-      const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
+      const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-      (db.select as any).mockImplementation(() => ({
-        from: mockFrom,
-        where: mockWhere,
-        limit: mockLimit
-      }));
+      (db.select as any).mockImplementation(mockSelect);
 
       const result = await repository.existsByUserId(nonExistentUserId);
 

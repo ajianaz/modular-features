@@ -246,7 +246,7 @@ export const createTestFile = (overrides: Partial<any> = {}) => {
     slice: () => createTestFile()
   };
 
-  return { ...defaults, ...overrides } as File;
+  return { ...defaults, ...overrides } as unknown as File;
 };
 
 export const createTestImageFile = (size: number = 1024000, type: string = 'image/jpeg') => {
@@ -319,3 +319,9 @@ export const createTestUpdateUserSettingsRequest = (overrides: Partial<any> = {}
     profileVisibility: 'private' as const,
     customSettings: {
       dashboardLayout: 'list',
+      defaultPageSize: 50
+    }
+  };
+
+  return { ...defaults, ...overrides };
+};

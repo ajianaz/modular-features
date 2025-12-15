@@ -6,10 +6,7 @@ import {
 import { db } from '@modular-monolith/database';
 import { userSettings } from '@modular-monolith/database';
 import type { UserSetting as DBUserSetting, NewUserSetting } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
-
-// Import table type properly
-import { userSettings } from '@modular-monolith/database';
+import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull, inArray } from '@modular-monolith/database';
 
 export class UserSettingsRepository implements IUserSettingsRepository {
   async findById(id: string): Promise<UserSettings | null> {
@@ -69,7 +66,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       const [insertedSettings] = await db.insert(userSettings).values(newSettingsData).returning();
 
-      return this.mapToDomainEntity(insertedSettings);
+      return this.mapToDomainEntity(insertedSettings!);
     } catch (error) {
       console.error('UserSettingsRepository.create error:', error);
       if (error instanceof Error) {
@@ -165,7 +162,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
     }
   }
 
-  async findByTheme(theme: string): Promise<UserSettings[]> {
+  async findByTheme(theme: 'light' | 'dark' | 'auto'): Promise<UserSettings[]> {
     try {
       const result = await db
         .select()
@@ -282,7 +279,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
     try {
       const result = await db
         .delete(userSettings)
-        .where(eq(userSettings.id, ids))
+        .where(inArray(userSettings.id, ids))
         .returning({ id: userSettings.id });
 
       return result.length > 0;
@@ -298,21 +295,21 @@ export class UserSettingsRepository implements IUserSettingsRepository {
         .select({ count: userSettings.id })
         .from(userSettings);
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.count error:', error);
       throw error;
     }
   }
 
-  async countByTheme(theme: string): Promise<number> {
+  async countByTheme(theme: 'light' | 'dark' | 'auto'): Promise<number> {
     try {
       const result = await db
         .select({ count: userSettings.id })
         .from(userSettings)
         .where(eq(userSettings.theme, theme));
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.countByTheme error:', error);
       throw error;
@@ -326,7 +323,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
         .from(userSettings)
         .where(eq(userSettings.language, language));
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.countByLanguage error:', error);
       throw error;
@@ -340,7 +337,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
         .from(userSettings)
         .where(eq(userSettings.timezone, timezone));
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.countByTimezone error:', error);
       throw error;
@@ -354,7 +351,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
         .from(userSettings)
         .where(eq(userSettings.twoFactorEnabled, true));
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.countWithTwoFactorEnabled error:', error);
       throw error;
@@ -368,7 +365,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
         .from(userSettings)
         .where(eq(userSettings.marketingEmails, true));
 
-      return result[0]?.count || 0;
+      return result.length;
     } catch (error) {
       console.error('UserSettingsRepository.countWithMarketingEmails error:', error);
       throw error;
@@ -376,7 +373,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
   }
 
   async findWithFilters(filters: {
-    theme?: string;
+    theme?: 'light' | 'dark' | 'auto';
     language?: string;
     timezone?: string;
     emailNotifications?: boolean;
@@ -387,7 +384,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
     minSessionTimeout?: number;
     maxSessionTimeout?: number;
     showOnlineStatus?: boolean;
-    profileVisibility?: string;
+    profileVisibility?: 'public' | 'private' | 'friends';
     limit?: number;
     offset?: number;
   }): Promise<UserSettings[]> {
@@ -444,11 +441,11 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       const result = await db
         .select()
-        .from(userSettingsTable)
-        .where(whereConditions.length > 0 ? and(...whereConditions) as any : undefined)
+        .from(userSettings)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .limit(filters.limit || 50)
         .offset(filters.offset || 0)
-        .orderBy(desc(userSettingsTable.createdAt) as any);
+        .orderBy(desc(userSettings.createdAt));
 
       return result.map(settings => this.mapToDomainEntity(settings));
     } catch (error) {
@@ -525,7 +522,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
   async findByPrivacySettings(filters: {
     showOnlineStatus?: boolean;
-    profileVisibility?: string;
+    profileVisibility?: 'public' | 'private' | 'friends';
   }): Promise<UserSettings[]> {
     try {
       const whereConditions = [];
@@ -586,7 +583,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
       const result = await db
         .select()
         .from(userSettings)
-        .where(eq(userSettings.profileVisibility, 'public'))
+        .where(eq(userSettings.profileVisibility, 'public' as const))
         .limit(50);
 
       return result.map(settings => this.mapToDomainEntity(settings));
@@ -601,7 +598,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
       const result = await db
         .select()
         .from(userSettings)
-        .where(eq(userSettings.profileVisibility, 'private'))
+        .where(eq(userSettings.profileVisibility, 'private' as const))
         .limit(50);
 
       return result.map(settings => this.mapToDomainEntity(settings));
@@ -630,7 +627,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
     try {
       const result = await db
         .select()
-        .from(userSettingsTable)
+        .from(userSettings)
         .where(
           and(
             eq(userSettings.emailNotifications, true),
@@ -651,7 +648,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
     try {
       const result = await db
         .select()
-        .from(userSettingsTable)
+        .from(userSettings)
         .where(
           and(
             eq(userSettings.emailNotifications, false),
@@ -674,10 +671,10 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       const result = await db
         .select()
-        .from(userSettingsTable)
-        .where(gte(userSettingsTable.updatedAt, cutoffDate) as any)
+        .from(userSettings)
+        .where(gte(userSettings.updatedAt, cutoffDate))
         .limit(50)
-        .orderBy(desc(userSettingsTable.updatedAt) as any);
+        .orderBy(desc(userSettings.updatedAt));
 
       return result.map(settings => this.mapToDomainEntity(settings));
     } catch (error) {
@@ -692,10 +689,10 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       const result = await db
         .select()
-        .from(userSettingsTable)
-        .where(gte(userSettingsTable.createdAt, cutoffDate) as any)
+        .from(userSettings)
+        .where(gte(userSettings.createdAt, cutoffDate))
         .limit(50)
-        .orderBy(desc(userSettingsTable.createdAt) as any);
+        .orderBy(desc(userSettings.createdAt));
 
       return result.map(settings => this.mapToDomainEntity(settings));
     } catch (error) {
@@ -716,7 +713,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       return result.map(row => ({
         theme: row.theme as string,
-        count: row.count as number
+        count: Number(row.count)
       }));
     } catch (error) {
       console.error('UserSettingsRepository.getThemeDistribution error:', error);
@@ -736,7 +733,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       return result.map(row => ({
         language: row.language as string,
-        count: row.count as number
+        count: Number(row.count)
       }));
     } catch (error) {
       console.error('UserSettingsRepository.getLanguageDistribution error:', error);
@@ -756,7 +753,7 @@ export class UserSettingsRepository implements IUserSettingsRepository {
 
       return result.map(row => ({
         timezone: row.timezone as string,
-        count: row.count as number
+        count: Number(row.count)
       }));
     } catch (error) {
       console.error('UserSettingsRepository.getTimezoneDistribution error:', error);

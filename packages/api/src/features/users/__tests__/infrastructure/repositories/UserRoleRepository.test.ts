@@ -15,7 +15,9 @@ vi.mock('@modular-monolith/database', () => ({
     delete: vi.fn()
   },
   userRoles: {},
-  userRoleAssignments: {}
+  userRoleAssignments: {},
+  userRolesTable: {},
+  userRoleAssignmentsTable: {}
 }));
 
 // Mock the drizzle-orm module
@@ -32,8 +34,7 @@ vi.mock('drizzle-orm', () => ({
   isNotNull: vi.fn()
 }));
 
-import { db } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
+import { db, eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from '@modular-monolith/database';
 
 describe('UserRoleRepository', () => {
   let repository: UserRoleRepository;

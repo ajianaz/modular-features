@@ -35,8 +35,14 @@ export class GetUserController {
    * Get user profile by ID
    */
   async getProfile(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+    let includeSettings: boolean | undefined;
+    let includeRoles: boolean | undefined;
+    let includeActivity: boolean | undefined;
+
     try {
-      const { userId } = c.req.param();
+      userId = c.req.param().userId;
 
       if (!userId) {
         return c.json({
@@ -46,9 +52,9 @@ export class GetUserController {
         }, 400);
       }
 
-      const includeSettings = c.req.query('includeSettings') === 'true';
-      const includeRoles = c.req.query('includeRoles') === 'true';
-      const includeActivity = c.req.query('includeActivity') === 'true';
+      includeSettings = c.req.query('includeSettings') === 'true';
+      includeRoles = c.req.query('includeRoles') === 'true';
+      includeActivity = c.req.query('includeActivity') === 'true';
       const activityLimit = c.req.query('activityLimit') ? parseInt(c.req.query('activityLimit') as string) : undefined;
 
       const request: GetUserProfileRequest = {
@@ -116,8 +122,11 @@ export class GetUserController {
    * Get user settings by user ID
    */
   async getSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
-      const { userId } = c.req.param();
+      userId = c.req.param().userId;
 
       if (!userId) {
         return c.json({
@@ -185,9 +194,15 @@ export class GetUserController {
    * Get current user's profile (from authenticated user)
    */
   async getCurrentUserProfile(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+    let includeSettings: boolean | undefined;
+    let includeRoles: boolean | undefined;
+    let includeActivity: boolean | undefined;
+
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
+      userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -197,9 +212,9 @@ export class GetUserController {
         }, 401);
       }
 
-      const includeSettings = c.req.query('includeSettings') === 'true';
-      const includeRoles = c.req.query('includeRoles') === 'true';
-      const includeActivity = c.req.query('includeActivity') === 'true';
+      includeSettings = c.req.query('includeSettings') === 'true';
+      includeRoles = c.req.query('includeRoles') === 'true';
+      includeActivity = c.req.query('includeActivity') === 'true';
       const activityLimit = c.req.query('activityLimit') ? parseInt(c.req.query('activityLimit') as string) : undefined;
 
       const request: GetUserProfileRequest = {
@@ -267,9 +282,12 @@ export class GetUserController {
    * Get current user's settings (from authenticated user)
    */
   async getCurrentUserSettings(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
+      userId = c.get('userId');
 
       if (!userId) {
         return c.json({

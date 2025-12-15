@@ -1,5 +1,4 @@
-import { eq, and, or, desc, asc, ilike, getTableColumns, count } from 'drizzle-orm';
-import { db } from '@modular-monolith/database';
+import { eq, and, or, desc, asc, ilike, getTableColumns, count, db } from '@modular-monolith/database';
 import { users } from '@modular-monolith/database';
 import type { User, NewUser } from '@modular-monolith/database';
 

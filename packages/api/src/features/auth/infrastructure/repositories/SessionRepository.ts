@@ -1,5 +1,4 @@
-import { eq, and, or, desc, asc, lt } from 'drizzle-orm';
-import { db } from '@modular-monolith/database';
+import { eq, and, or, desc, asc, lt, db } from '@modular-monolith/database';
 import { sessions } from '@modular-monolith/database';
 import type { Session, NewSession } from '@modular-monolith/database';
 

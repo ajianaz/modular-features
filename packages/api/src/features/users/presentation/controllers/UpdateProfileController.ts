@@ -30,8 +30,11 @@ export class UpdateProfileController {
    * Update user profile by ID
    */
   async updateProfile(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
-      const { userId } = c.req.param();
+      userId = c.req.param().userId;
 
       if (!userId) {
         return c.json({
@@ -41,9 +44,12 @@ export class UpdateProfileController {
         }, 400);
       }
 
+      const requestBody = await c.req.json();
+      const { userId: bodyUserId, ...profileData } = requestBody;
+
       const request: UpdateUserProfileRequest = {
         userId,
-        ...await c.req.json()
+        ...profileData
       };
 
       const result = await this.updateUserProfileUseCase.execute(request);
@@ -121,9 +127,12 @@ export class UpdateProfileController {
    * Update current user's profile (from authenticated user)
    */
   async updateCurrentUserProfile(c: Context): Promise<Response> {
+    // Declare variables outside try block to make them accessible in catch block
+    let userId: string | undefined;
+
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
+      userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -133,9 +142,12 @@ export class UpdateProfileController {
         }, 401);
       }
 
+      const requestBody = await c.req.json();
+      const { userId: bodyUserId, ...profileData } = requestBody;
+
       const request: UpdateUserProfileRequest = {
         userId,
-        ...await c.req.json()
+        ...profileData
       };
 
       const result = await this.updateUserProfileUseCase.execute(request);

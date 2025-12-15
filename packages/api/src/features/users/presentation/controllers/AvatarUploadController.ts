@@ -42,8 +42,9 @@ export class AvatarUploadController {
    * Upload avatar for user by ID
    */
   async uploadAvatar(c: Context): Promise<Response> {
+    const { userId } = c.req.param();
+
     try {
-      const { userId } = c.req.param();
 
       if (!userId) {
         return c.json({
@@ -70,40 +71,40 @@ export class AvatarUploadController {
       const requestRaw: UploadAvatarRequest = {
         userId,
         file,
-        maxWidth: body.maxWidth ? (() => {
+        maxWidth: body.maxWidth && typeof body.maxWidth === 'string' ? (() => {
           const parsed = parseInt(body.maxWidth);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined,
-        maxHeight: body.maxHeight ? (() => {
+        maxHeight: body.maxHeight && typeof body.maxHeight === 'string' ? (() => {
           const parsed = parseInt(body.maxHeight);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined,
-        quality: body.quality ? (() => {
+        quality: body.quality && typeof body.quality === 'string' ? (() => {
           const parsed = parseFloat(body.quality);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined
       };
 
       // Validate request against schema
-      const validationResult = UploadAvatarRequestSchema.safeParse(requestRaw);
-      if (!validationResult.success) {
-        const errorMessages = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+      const requestValidation = UploadAvatarRequestSchema.safeParse(requestRaw);
+      if (!requestValidation.success) {
+        const errorMessages = requestValidation.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
         return c.json({
           success: false,
           message: `Validation failed: ${errorMessages}`,
           error: 'VALIDATION_ERROR',
-          details: validationResult.error.errors
+          details: requestValidation.error.issues
         }, 400);
       }
 
-      const request: UploadAvatarRequest = validationResult.data;
+      const request: UploadAvatarRequest = requestValidation.data;
 
       const result = await this.uploadAvatarUseCase.execute(request);
 
       // Validate response against schema
-      const validationResult = UploadAvatarResponseSchema.safeParse(result);
-      if (!validationResult.success) {
-        console.error('Response validation failed:', validationResult.error);
+      const responseValidation = UploadAvatarResponseSchema.safeParse(result);
+      if (!responseValidation.success) {
+        console.error('Response validation failed:', responseValidation.error);
         return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
@@ -111,7 +112,7 @@ export class AvatarUploadController {
         }, 500);
       }
 
-      return c.json(validationResult.data);
+      return c.json(responseValidation.data);
     } catch (error) {
       console.error('AvatarUploadController.uploadAvatar error:', error);
 
@@ -119,8 +120,7 @@ export class AvatarUploadController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR',
-          details: error.details
+          error: 'VALIDATION_ERROR'
         }, 400);
       }
 
@@ -182,9 +182,10 @@ export class AvatarUploadController {
    * Upload avatar for current user (from authenticated user)
    */
   async uploadCurrentUserAvatar(c: Context): Promise<Response> {
+    // Get user ID from authenticated request (assuming it's attached by auth middleware)
+    const userId = c.get('userId');
+
     try {
-      // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -211,40 +212,40 @@ export class AvatarUploadController {
       const requestRaw: UploadAvatarRequest = {
         userId,
         file,
-        maxWidth: body.maxWidth ? (() => {
+        maxWidth: body.maxWidth && typeof body.maxWidth === 'string' ? (() => {
           const parsed = parseInt(body.maxWidth);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined,
-        maxHeight: body.maxHeight ? (() => {
+        maxHeight: body.maxHeight && typeof body.maxHeight === 'string' ? (() => {
           const parsed = parseInt(body.maxHeight);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined,
-        quality: body.quality ? (() => {
+        quality: body.quality && typeof body.quality === 'string' ? (() => {
           const parsed = parseFloat(body.quality);
           return isNaN(parsed) ? undefined : parsed;
         })() : undefined
       };
 
       // Validate request against schema
-      const validationResult = UploadAvatarRequestSchema.safeParse(requestRaw);
-      if (!validationResult.success) {
-        const errorMessages = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+      const requestValidation = UploadAvatarRequestSchema.safeParse(requestRaw);
+      if (!requestValidation.success) {
+        const errorMessages = requestValidation.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
         return c.json({
           success: false,
           message: `Validation failed: ${errorMessages}`,
           error: 'VALIDATION_ERROR',
-          details: validationResult.error.errors
+          details: requestValidation.error.issues
         }, 400);
       }
 
-      const request: UploadAvatarRequest = validationResult.data;
+      const request: UploadAvatarRequest = requestValidation.data;
 
       const result = await this.uploadAvatarUseCase.execute(request);
 
       // Validate response against schema
-      const validationResult = UploadAvatarResponseSchema.safeParse(result);
-      if (!validationResult.success) {
-        console.error('Response validation failed:', validationResult.error);
+      const responseValidation = UploadAvatarResponseSchema.safeParse(result);
+      if (!responseValidation.success) {
+        console.error('Response validation failed:', responseValidation.error);
         return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
@@ -252,7 +253,7 @@ export class AvatarUploadController {
         }, 500);
       }
 
-      return c.json(validationResult.data);
+      return c.json(responseValidation.data);
     } catch (error) {
       console.error('AvatarUploadController.uploadCurrentUserAvatar error:', error);
 
@@ -260,8 +261,7 @@ export class AvatarUploadController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR',
-          details: error.details
+          error: 'VALIDATION_ERROR'
         }, 400);
       }
 
@@ -323,8 +323,9 @@ export class AvatarUploadController {
    * Delete avatar for user by ID
    */
   async deleteAvatar(c: Context): Promise<Response> {
+    const { userId } = c.req.param();
+
     try {
-      const { userId } = c.req.param();
 
       if (!userId) {
         return c.json({
@@ -338,12 +339,12 @@ export class AvatarUploadController {
       const request: DeleteAvatarRequest = { userId };
       const validationResult = DeleteAvatarRequestSchema.safeParse(request);
       if (!validationResult.success) {
-        const errorMessages = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errorMessages = validationResult.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
         return c.json({
           success: false,
           message: `Validation failed: ${errorMessages}`,
           error: 'VALIDATION_ERROR',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }, 400);
       }
 
@@ -368,8 +369,7 @@ export class AvatarUploadController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR',
-          details: error.details
+          error: 'VALIDATION_ERROR'
         }, 400);
       }
 
@@ -413,9 +413,10 @@ export class AvatarUploadController {
    * Delete avatar for current user (from authenticated user)
    */
   async deleteCurrentUserAvatar(c: Context): Promise<Response> {
+    // Get user ID from authenticated request (assuming it's attached by auth middleware)
+    const userId = c.get('userId');
+
     try {
-      // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = c.get('userId');
 
       if (!userId) {
         return c.json({
@@ -429,12 +430,12 @@ export class AvatarUploadController {
       const request: DeleteAvatarRequest = { userId };
       const validationResult = DeleteAvatarRequestSchema.safeParse(request);
       if (!validationResult.success) {
-        const errorMessages = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errorMessages = validationResult.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
         return c.json({
           success: false,
           message: `Validation failed: ${errorMessages}`,
           error: 'VALIDATION_ERROR',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         }, 400);
       }
 
@@ -459,8 +460,7 @@ export class AvatarUploadController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR',
-          details: error.details
+          error: 'VALIDATION_ERROR'
         }, 400);
       }
 

@@ -30,8 +30,7 @@ vi.mock('drizzle-orm', () => ({
   isNotNull: vi.fn()
 }));
 
-import { db } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
+import { db, eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from '@modular-monolith/database';
 
 describe('UserSettingsRepository', () => {
   let repository: UserSettingsRepository;

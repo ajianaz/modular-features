@@ -12,10 +12,7 @@ import type {
   UserRoleAssignment as DBUserRoleAssignment,
   NewUserRoleAssignment
 } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
-
-// Import table type properly
-import { userRoles, userRoleAssignments } from '@modular-monolith/database';
+import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull, count, inArray } from 'drizzle-orm';
 
 export class UserRoleRepository implements IUserRoleRepository {
   // Role CRUD operations
@@ -120,7 +117,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .limit(limit)
         .offset(offset)
         .orderBy(desc(userRoles.level));
@@ -136,7 +133,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(eq(userRoles.level, level))
         .orderBy(desc(userRoles.name));
 
@@ -151,7 +148,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(eq(userRoles.isActive, true))
         .orderBy(desc(userRoles.level));
 
@@ -166,7 +163,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(eq(userRoles.isSystem, true))
         .orderBy(desc(userRoles.level));
 
@@ -181,7 +178,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(eq(userRoles.isSystem, false))
         .orderBy(desc(userRoles.level));
 
@@ -196,7 +193,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(
           or(
             ilike(userRoles.name, `%${query}%`),
@@ -222,8 +219,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async existsById(id: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ id: userRoles.id })
+        .from(userRoles)
         .where(eq(userRoles.id, id))
         .limit(1);
 
@@ -237,8 +234,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async existsByName(name: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ id: userRoles.id })
+        .from(userRoles)
         .where(eq(userRoles.name, name))
         .limit(1);
 
@@ -285,7 +282,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .delete(userRoles)
-        .where(eq(userRoles.id, ids))
+        .where(inArray(userRoles.id, ids))
         .returning({ id: userRoles.id });
 
       return result.length > 0;
@@ -298,7 +295,7 @@ export class UserRoleRepository implements IUserRoleRepository {
   async count(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoles.id })
+        .select({ count: count() })
         .from(userRoles);
 
       return result[0]?.count || 0;
@@ -311,8 +308,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countActive(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ count: count() })
+        .from(userRoles)
         .where(eq(userRoles.isActive, true));
 
       return result[0]?.count || 0;
@@ -325,8 +322,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countByLevel(level: number): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ count: count() })
+        .from(userRoles)
         .where(eq(userRoles.level, level));
 
       return result[0]?.count || 0;
@@ -356,7 +353,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.userId, userId))
         .orderBy(desc(userRoleAssignments.assignedAt));
 
@@ -371,7 +368,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.roleId, roleId))
         .orderBy(desc(userRoleAssignments.assignedAt));
 
@@ -386,7 +383,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
             eq(userRoleAssignments.userId, userId),
@@ -498,8 +495,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async assignmentExistsById(id: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ id: userRoleAssignments.id })
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.id, id))
         .limit(1);
 
@@ -517,8 +514,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async existsAssignmentByUserIdAndRoleId(userId: string, roleId: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ id: userRoleAssignments.id })
+        .from(userRoleAssignments)
         .where(
           and(
             eq(userRoleAssignments.userId, userId),
@@ -537,7 +534,7 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countAssignments(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignments.id })
+        .select({ count: count() })
         .from(userRoleAssignments);
 
       return result[0]?.count || 0;
@@ -550,8 +547,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countActiveAssignments(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.isActive, true));
 
       return result[0]?.count || 0;
@@ -564,8 +561,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countAssignmentsByUserId(userId: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.userId, userId));
 
       return result[0]?.count || 0;
@@ -578,8 +575,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countAssignmentsByRoleId(roleId: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(eq(userRoleAssignments.roleId, roleId));
 
       return result[0]?.count || 0;
@@ -594,7 +591,7 @@ export class UserRoleRepository implements IUserRoleRepository {
       const now = new Date();
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
             isNotNull(userRoleAssignments.expiresAt),
@@ -615,7 +612,7 @@ export class UserRoleRepository implements IUserRoleRepository {
       const cutoffDate = new Date(Date.now() + withinHours * 60 * 60 * 1000);
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
             isNotNull(userRoleAssignments.expiresAt),
@@ -682,7 +679,7 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(desc(userRoles.level));
 
@@ -697,7 +694,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(
           ilike(userRoles.permissions, `%${permission}%`)
         )
@@ -718,7 +715,7 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(or(...whereConditions))
         .orderBy(desc(userRoles.level));
 
@@ -732,12 +729,12 @@ export class UserRoleRepository implements IUserRoleRepository {
   async findRolesWithAllPermissions(permissions: string[]): Promise<UserRole[]> {
     try {
       const whereConditions = permissions.map(permission =>
-        ilike(userRolesTable.permissions, `%${permission}%`) as any
+        ilike(userRoles.permissions, `%${permission}%`) as any
       );
 
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(and(...whereConditions))
         .orderBy(desc(userRoles.level));
 
@@ -779,8 +776,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countSystemRoles(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ count: count() })
+        .from(userRoles)
         .where(eq(userRoles.isSystem, true));
 
       return result[0]?.count || 0;
@@ -793,8 +790,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countCustomRoles(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRolesTable.id })
-        .from(userRolesTable)
+        .select({ count: count() })
+        .from(userRoles)
         .where(eq(userRoles.isSystem, false));
 
       return result[0]?.count || 0;
@@ -812,14 +809,14 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
-            eq(userRoleAssignmentsTable.roleId, roleId) as any,
-            eq(userRoleAssignmentsTable.isActive, true) as any
+            eq(userRoleAssignments.roleId, roleId) as any,
+            eq(userRoleAssignments.isActive, true) as any
           ) as any
         )
-        .orderBy(desc(userRoleAssignmentsTable.assignedAt) as any);
+        .orderBy(desc(userRoleAssignments.assignedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -832,10 +829,10 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .limit(limit)
         .offset(offset)
-        .orderBy(desc(userRoleAssignmentsTable.assignedAt) as any);
+        .orderBy(desc(userRoleAssignments.assignedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -848,9 +845,9 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
-        .where(eq(userRoleAssignmentsTable.assignedBy, assignedBy) as any)
-        .orderBy(desc(userRoleAssignmentsTable.assignedAt) as any);
+        .from(userRoleAssignments)
+        .where(eq(userRoleAssignments.assignedBy, assignedBy) as any)
+        .orderBy(desc(userRoleAssignments.assignedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -863,9 +860,9 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
-        .where(isNotNull(userRoleAssignmentsTable.expiresAt) as any)
-        .orderBy(desc(userRoleAssignmentsTable.assignedAt) as any);
+        .from(userRoleAssignments)
+        .where(isNotNull(userRoleAssignments.expiresAt) as any)
+        .orderBy(desc(userRoleAssignments.assignedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -878,9 +875,9 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
-        .where(isNull(userRoleAssignmentsTable.expiresAt) as any)
-        .orderBy(desc(userRoleAssignmentsTable.assignedAt) as any);
+        .from(userRoleAssignments)
+        .where(isNull(userRoleAssignments.expiresAt) as any)
+        .orderBy(desc(userRoleAssignments.assignedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -893,14 +890,14 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
-            isNotNull(userRoleAssignmentsTable.expiresAt) as any,
-            lte(userRoleAssignmentsTable.expiresAt, date) as any
+            isNotNull(userRoleAssignments.expiresAt) as any,
+            lte(userRoleAssignments.expiresAt, date) as any
           ) as any
         )
-        .orderBy(asc(userRoleAssignmentsTable.expiresAt) as any);
+        .orderBy(asc(userRoleAssignments.expiresAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -913,14 +910,14 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
-            isNotNull(userRoleAssignmentsTable.expiresAt) as any,
-            gte(userRoleAssignmentsTable.expiresAt, date) as any
+            isNotNull(userRoleAssignments.expiresAt) as any,
+            gte(userRoleAssignments.expiresAt, date) as any
           ) as any
         )
-        .orderBy(asc(userRoleAssignmentsTable.expiresAt) as any);
+        .orderBy(asc(userRoleAssignments.expiresAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -936,13 +933,13 @@ export class UserRoleRepository implements IUserRoleRepository {
   async activeAssignmentExists(userId: string, roleId: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ id: userRoleAssignments.id })
+        .from(userRoleAssignments)
         .where(
           and(
-            eq(userRoleAssignmentsTable.userId, userId) as any,
-            eq(userRoleAssignmentsTable.roleId, roleId) as any,
-            eq(userRoleAssignmentsTable.isActive, true) as any
+            eq(userRoleAssignments.userId, userId) as any,
+            eq(userRoleAssignments.roleId, roleId) as any,
+            eq(userRoleAssignments.isActive, true) as any
           ) as any
         )
         .limit(1);
@@ -966,7 +963,7 @@ export class UserRoleRepository implements IUserRoleRepository {
         metadata: assignment.metadata || {}
       }));
 
-      const insertedAssignments = await db.insert(userRoleAssignmentsTable).values(assignmentsData as any).returning();
+      const insertedAssignments = await db.insert(userRoleAssignments).values(assignmentsData as any).returning();
 
       return insertedAssignments.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -986,7 +983,17 @@ export class UserRoleRepository implements IUserRoleRepository {
   }
 
   async deleteAssignments(ids: string[]): Promise<boolean> {
-    return this.deleteMany(ids);
+    try {
+      const result = await db
+        .delete(userRoleAssignments)
+        .where(inArray(userRoleAssignments.id, ids))
+        .returning({ id: userRoleAssignments.id });
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('UserRoleRepository.deleteAssignments error:', error);
+      throw error;
+    }
   }
 
   async deleteAssignmentsByUserId(userId: string): Promise<boolean> {
@@ -1001,14 +1008,14 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const now = new Date();
       const result = await db
-        .delete(userRoleAssignmentsTable)
+        .delete(userRoleAssignments)
         .where(
           and(
-            isNotNull(userRoleAssignmentsTable.expiresAt) as any,
-            lte(userRoleAssignmentsTable.expiresAt, now) as any
+            isNotNull(userRoleAssignments.expiresAt) as any,
+            lte(userRoleAssignments.expiresAt, now) as any
           ) as any
         )
-        .returning({ id: userRoleAssignmentsTable.id });
+        .returning({ id: userRoleAssignments.id });
 
       return result.length;
     } catch (error) {
@@ -1021,8 +1028,8 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const now = new Date();
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(
           and(
             isNotNull(userRoleAssignments.expiresAt),
@@ -1040,8 +1047,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countTemporaryAssignments(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(isNotNull(userRoleAssignments.expiresAt));
 
       return result[0]?.count || 0;
@@ -1054,8 +1061,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async countPermanentAssignments(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userRoleAssignmentsTable.id })
-        .from(userRoleAssignmentsTable)
+        .select({ count: count() })
+        .from(userRoleAssignments)
         .where(isNull(userRoleAssignments.expiresAt));
 
       return result[0]?.count || 0;
@@ -1069,20 +1076,20 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select({
-          id: userRolesTable.id,
-          name: userRolesTable.name,
-          displayName: userRolesTable.displayName,
-          description: userRolesTable.description,
-          level: userRolesTable.level,
-          isSystem: userRolesTable.isSystem,
-          permissions: userRolesTable.permissions,
-          metadata: userRolesTable.metadata,
-          isActive: userRolesTable.isActive,
-          createdAt: userRolesTable.createdAt,
-          updatedAt: userRolesTable.updatedAt
+          id: userRoles.id,
+          name: userRoles.name,
+          displayName: userRoles.displayName,
+          description: userRoles.description,
+          level: userRoles.level,
+          isSystem: userRoles.isSystem,
+          permissions: userRoles.permissions,
+          metadata: userRoles.metadata,
+          isActive: userRoles.isActive,
+          createdAt: userRoles.createdAt,
+          updatedAt: userRoles.updatedAt
         })
-        .from(userRolesTable)
-        .innerJoin(userRoleAssignmentsTable, eq(userRolesTable.id, userRoleAssignmentsTable.roleId) as any)
+        .from(userRoles)
+        .innerJoin(userRoleAssignments, eq(userRoles.id, userRoleAssignments.roleId) as any)
         .where(
           and(
             eq(userRoleAssignments.userId, userId),
@@ -1138,9 +1145,9 @@ export class UserRoleRepository implements IUserRoleRepository {
   async hasUserRole(userId: string, roleName: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userRolesTable.id })
-        .from(userRolesTable)
-        .innerJoin(userRoleAssignmentsTable, eq(userRolesTable.id, userRoleAssignmentsTable.roleId) as any)
+        .select({ id: userRoles.id })
+        .from(userRoles)
+        .innerJoin(userRoleAssignments, eq(userRoles.id, userRoleAssignments.roleId) as any)
         .where(
           and(
             eq(userRoleAssignments.userId, userId),
@@ -1190,8 +1197,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async getAllPermissions(): Promise<string[]> {
     try {
       const result = await db
-        .select({ permissions: userRolesTable.permissions })
-        .from(userRolesTable)
+        .select({ permissions: userRoles.permissions })
+        .from(userRoles)
         .where(eq(userRoles.isActive, true));
 
       const allPermissions = new Set<string>();
@@ -1243,8 +1250,8 @@ export class UserRoleRepository implements IUserRoleRepository {
   async getPermissionsByCategory(category: string): Promise<string[]> {
     try {
       const result = await db
-        .select({ permissions: userRolesTable.permissions })
-        .from(userRolesTable)
+        .select({ permissions: userRoles.permissions })
+        .from(userRoles)
         .where(eq(userRoles.isActive, true));
 
       const categoryPermissions = new Set<string>();
@@ -1307,7 +1314,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(gte(userRoles.level, level))
         .orderBy(desc(userRoles.level));
 
@@ -1322,7 +1329,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRolesTable)
+        .from(userRoles)
         .where(lte(userRoles.level, level))
         .orderBy(desc(userRoles.level));
 
@@ -1338,7 +1345,7 @@ export class UserRoleRepository implements IUserRoleRepository {
       const result = await db
         .select({
           roleId: userRoleAssignments.roleId,
-          userCount: userRoleAssignments.userId
+          userCount: count(userRoleAssignments.userId)
         })
         .from(userRoleAssignments)
         .where(eq(userRoleAssignments.isActive, true))
@@ -1400,16 +1407,16 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const assignmentsResult = await db
         .select({
-          assignedAt: userRoleAssignmentsTable.assignedAt
+          assignedAt: userRoleAssignments.assignedAt
         })
-        .from(userRoleAssignmentsTable)
-        .where(gte(userRoleAssignmentsTable.assignedAt, cutoffDate) as any);
+        .from(userRoleAssignments)
+        .where(gte(userRoleAssignments.assignedAt, cutoffDate) as any);
 
       const expirationsResult = await db
         .select({
-          expiresAt: userRoleAssignmentsTable.expiresAt
+          expiresAt: userRoleAssignments.expiresAt
         })
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           and(
             isNotNull(userRoleAssignments.expiresAt),
@@ -1450,7 +1457,7 @@ export class UserRoleRepository implements IUserRoleRepository {
     try {
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
+        .from(userRoleAssignments)
         .where(
           or(
             ilike(userRoleAssignments.userId, `%${query}%`),
@@ -1474,9 +1481,9 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRolesTable)
-        .where(gte(userRolesTable.createdAt, cutoffDate) as any)
-        .orderBy(desc(userRolesTable.createdAt) as any);
+        .from(userRoles)
+        .where(gte(userRoles.createdAt, cutoffDate) as any)
+        .orderBy(desc(userRoles.createdAt) as any);
 
       return result.map(role => this.mapToDomainEntity(role));
     } catch (error) {
@@ -1491,9 +1498,9 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRolesTable)
-        .where(gte(userRolesTable.updatedAt, cutoffDate) as any)
-        .orderBy(desc(userRolesTable.updatedAt) as any);
+        .from(userRoles)
+        .where(gte(userRoles.updatedAt, cutoffDate) as any)
+        .orderBy(desc(userRoles.updatedAt) as any);
 
       return result.map(role => this.mapToDomainEntity(role));
     } catch (error) {
@@ -1508,9 +1515,9 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
-        .where(gte(userRoleAssignmentsTable.createdAt, cutoffDate) as any)
-        .orderBy(desc(userRoleAssignmentsTable.createdAt) as any);
+        .from(userRoleAssignments)
+        .where(gte(userRoleAssignments.createdAt, cutoffDate) as any)
+        .orderBy(desc(userRoleAssignments.createdAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {
@@ -1525,9 +1532,9 @@ export class UserRoleRepository implements IUserRoleRepository {
 
       const result = await db
         .select()
-        .from(userRoleAssignmentsTable)
-        .where(gte(userRoleAssignmentsTable.updatedAt, cutoffDate) as any)
-        .orderBy(desc(userRoleAssignmentsTable.updatedAt) as any);
+        .from(userRoleAssignments)
+        .where(gte(userRoleAssignments.updatedAt, cutoffDate) as any)
+        .orderBy(desc(userRoleAssignments.updatedAt) as any);
 
       return result.map(assignment => this.mapAssignmentToDomainEntity(assignment));
     } catch (error) {

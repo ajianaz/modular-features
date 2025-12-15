@@ -4,13 +4,9 @@ import {
   UserProfileNotFoundError,
   DuplicateProfileError
 } from '../../domain/errors';
-import { db } from '@modular-monolith/database';
-import { userProfiles } from '@modular-monolith/database';
+import { db, userProfiles, users } from '@modular-monolith/database';
 import type { UserProfile as DBUserProfile, NewUserProfile } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
-
-// Import the table type properly
-import { userProfiles } from '@modular-monolith/database';
+import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull, db } from '@modular-monolith/database';
 
 export class UserProfileRepository implements IUserProfileRepository {
   async findById(id: string): Promise<UserProfile | null> {
@@ -151,15 +147,54 @@ export class UserProfileRepository implements IUserProfileRepository {
   }
 
   async findByEmail(email: string): Promise<UserProfile | null> {
-    // Email is stored in users table, not profiles
-    return null;
+    try {
+      // Email is stored in users table, not profiles
+      // Need to join with users table to find profile by email
+      const result = await db
+        .select({
+          id: userProfiles.id,
+          userId: userProfiles.userId,
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+          displayName: userProfiles.displayName,
+          bio: userProfiles.bio,
+          website: userProfiles.website,
+          location: userProfiles.location,
+          timezone: userProfiles.timezone,
+          language: userProfiles.language,
+          gender: userProfiles.gender,
+          dateOfBirth: userProfiles.dateOfBirth,
+          phoneNumber: userProfiles.phoneNumber,
+          isPhoneVerified: userProfiles.isPhoneVerified,
+          socialLinks: userProfiles.socialLinks,
+          preferences: userProfiles.preferences,
+          createdAt: userProfiles.createdAt,
+          updatedAt: userProfiles.updatedAt
+        })
+        .from(userProfiles)
+        .innerJoin(users, eq(userProfiles.userId, users.id))
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      return this.mapToDomainEntity(result[0]!);
+    } catch (error) {
+      console.error('UserProfileRepository.findByEmail error:', error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to find user profile by email: ${error.message}`);
+      }
+      throw new Error('Failed to find user profile by email: Unknown database error');
+    }
   }
 
   async findByPhone(phoneNumber: string): Promise<UserProfile | null> {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(eq(userProfiles.phoneNumber, phoneNumber))
         .limit(1);
 
@@ -214,19 +249,19 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(
           or(
-            ilike(userProfilesTable.firstName, `%${query}%`) as any,
-            ilike(userProfilesTable.lastName, `%${query}%`) as any,
-            ilike(userProfilesTable.displayName, `%${query}%`) as any,
-            ilike(userProfilesTable.bio, `%${query}%`) as any,
-            ilike(userProfilesTable.location, `%${query}%`) as any
+            ilike(userProfiles.firstName, `%${query}%`) as any,
+            ilike(userProfiles.lastName, `%${query}%`) as any,
+            ilike(userProfiles.displayName, `%${query}%`) as any,
+            ilike(userProfiles.bio, `%${query}%`) as any,
+            ilike(userProfiles.location, `%${query}%`) as any
           )
         )
         .limit(limit)
         .offset(offset)
-        .orderBy(desc(userProfilesTable.createdAt) as any);
+        .orderBy(desc(userProfiles.createdAt) as any);
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -239,11 +274,11 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
-        .where(ilike(userProfilesTable.displayName, `%${displayName}%`) as any)
+        .from(userProfiles)
+        .where(ilike(userProfiles.displayName, `%${displayName}%`) as any)
         .limit(limit)
         .offset(offset)
-        .orderBy(desc(userProfilesTable.createdAt) as any);
+        .orderBy(desc(userProfiles.createdAt) as any);
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -458,11 +493,11 @@ export class UserProfileRepository implements IUserProfileRepository {
 
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(whereConditions.length > 0 ? and(...whereConditions) as any : undefined)
         .limit(filters.limit || 50)
         .offset(filters.offset || 0)
-        .orderBy(desc(userProfilesTable.createdAt) as any);
+        .orderBy(desc(userProfiles.createdAt) as any);
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -493,8 +528,43 @@ export class UserProfileRepository implements IUserProfileRepository {
   }
 
   async findProfilesWithoutAvatar(): Promise<UserProfile[]> {
-    // Avatar is stored in users table, not profiles
-    return [];
+    try {
+      // Avatar is stored in users table, not profiles
+      // Need to join with users table to find profiles without avatars
+      const result = await db
+        .select({
+          id: userProfiles.id,
+          userId: userProfiles.userId,
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+          displayName: userProfiles.displayName,
+          bio: userProfiles.bio,
+          website: userProfiles.website,
+          location: userProfiles.location,
+          gender: userProfiles.gender,
+          dateOfBirth: userProfiles.dateOfBirth,
+          phoneNumber: userProfiles.phoneNumber,
+          isPhoneVerified: userProfiles.isPhoneVerified,
+          socialLinks: userProfiles.socialLinks,
+          preferences: userProfiles.preferences,
+          timezone: userProfiles.timezone,
+          language: userProfiles.language,
+          createdAt: userProfiles.createdAt,
+          updatedAt: userProfiles.updatedAt
+        })
+        .from(userProfiles)
+        .innerJoin(users, eq(userProfiles.userId, users.id))
+        .where(isNull(users.avatar))
+        .limit(50);
+
+      return result.map(profile => this.mapToDomainEntity(profile));
+    } catch (error) {
+      console.error('UserProfileRepository.findProfilesWithoutAvatar error:', error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to find profiles without avatar: ${error.message}`);
+      }
+      throw new Error('Failed to find profiles without avatar: Unknown database error');
+    }
   }
 
   async findProfilesWithoutPhone(): Promise<UserProfile[]> {
@@ -538,10 +608,10 @@ export class UserProfileRepository implements IUserProfileRepository {
 
       const result = await db
         .select()
-        .from(userProfilesTable)
-        .where(gte(userProfilesTable.updatedAt, cutoffDate) as any)
+        .from(userProfiles)
+        .where(gte(userProfiles.updatedAt, cutoffDate) as any)
         .limit(50)
-        .orderBy(desc(userProfilesTable.updatedAt) as any);
+        .orderBy(desc(userProfiles.updatedAt) as any);
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -556,10 +626,10 @@ export class UserProfileRepository implements IUserProfileRepository {
 
       const result = await db
         .select()
-        .from(userProfilesTable)
-        .where(gte(userProfilesTable.createdAt, cutoffDate) as any)
+        .from(userProfiles)
+        .where(gte(userProfiles.createdAt, cutoffDate) as any)
         .limit(50)
-        .orderBy(desc(userProfilesTable.createdAt) as any);
+        .orderBy(desc(userProfiles.createdAt) as any);
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -569,7 +639,7 @@ export class UserProfileRepository implements IUserProfileRepository {
   }
 
   // Private helper methods
-  private mapToDomainEntity(profile: DBUserProfile): UserProfile {
+  private mapToDomainEntity(profile: any): UserProfile {
     return new UserProfile(
       profile.id,
       profile.userId,

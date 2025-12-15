@@ -115,25 +115,29 @@ export class UserActivity {
 
   isToday(): boolean {
     const today = new Date();
+    const activityDate = this.createdAt;
     return (
-      this.createdAt.getDate() === today.getDate() &&
-      this.createdAt.getMonth() === today.getMonth() &&
-      this.createdAt.getFullYear() === today.getFullYear()
+      activityDate.getDate() === today.getDate() &&
+      activityDate.getMonth() === today.getMonth() &&
+      activityDate.getFullYear() === today.getFullYear()
     );
   }
 
   isThisWeek(): boolean {
     const now = new Date();
-    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
     weekStart.setHours(0, 0, 0, 0);
-    return this.createdAt >= weekStart;
+    const activityDate = this.createdAt;
+    return activityDate >= weekStart;
   }
 
   isThisMonth(): boolean {
     const now = new Date();
+    const activityDate = this.createdAt;
     return (
-      this.createdAt.getMonth() === now.getMonth() &&
-      this.createdAt.getFullYear() === now.getFullYear()
+      activityDate.getMonth() === now.getMonth() &&
+      activityDate.getFullYear() === now.getFullYear()
     );
   }
 

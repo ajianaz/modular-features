@@ -53,8 +53,8 @@ export class UserRole {
   }): UserRole {
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRole(
@@ -75,8 +75,8 @@ export class UserRole {
   updatePermissions(permissions: string[]): UserRole {
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRole(
@@ -113,8 +113,8 @@ export class UserRole {
   updateMetadata(metadata: Record<string, any>): UserRole {
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRole(
@@ -137,8 +137,8 @@ export class UserRole {
 
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRole(
@@ -164,8 +164,8 @@ export class UserRole {
 
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRole(
@@ -373,8 +373,8 @@ export class UserRoleAssignment {
 
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRoleAssignment(
@@ -396,8 +396,8 @@ export class UserRoleAssignment {
 
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRoleAssignment(
@@ -417,8 +417,8 @@ export class UserRoleAssignment {
   updateExpiration(expiresAt?: Date): UserRoleAssignment {
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRoleAssignment(
@@ -438,8 +438,8 @@ export class UserRoleAssignment {
   updateMetadata(metadata: Record<string, any>): UserRoleAssignment {
     const now = new Date();
     // Ensure updatedAt is different from the original
-    if (now.getTime() === this.updatedAt.getTime()) {
-      now.setTime(now.getTime() + 1);
+    if (now.getTime() <= this.updatedAt.getTime()) {
+      now.setTime(this.updatedAt.getTime() + 1);
     }
 
     return new UserRoleAssignment(

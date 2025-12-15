@@ -13,7 +13,8 @@ vi.mock('@modular-monolith/database', () => ({
     update: vi.fn(),
     delete: vi.fn()
   },
-  userProfiles: {}
+  userProfiles: {},
+  userProfilesTable: {}
 }));
 
 // Mock the drizzle-orm module
@@ -30,8 +31,7 @@ vi.mock('drizzle-orm', () => ({
   isNotNull: vi.fn()
 }));
 
-import { db } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
+import { db, eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from '@modular-monolith/database';
 
 describe('UserProfileRepository', () => {
   let repository: UserProfileRepository;
@@ -75,11 +75,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.findById(testProfile.id);
 
@@ -94,18 +94,18 @@ describe('UserProfileRepository', () => {
 
     it('should return null when profile is not found', async () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockReturnThis();
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.findById(nonExistentId);
 
@@ -121,11 +121,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockRejectedValue(new Error(errorMessage));
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       await expect(repository.findById(profileId)).rejects.toThrow(errorMessage);
     });
@@ -159,11 +159,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.findByUserId(testProfile.userId);
 
@@ -174,18 +174,18 @@ describe('UserProfileRepository', () => {
 
     it('should return null when profile is not found by user ID', async () => {
       const nonExistentUserId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockReturnThis();
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.findByUserId(nonExistentUserId);
 
@@ -220,10 +220,10 @@ describe('UserProfileRepository', () => {
       const mockValues = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
 
-      (db.insert as any).mockImplementation(() => ({
+      (db.insert as any).mockReturnValue({
         values: mockValues,
         returning: mockReturning
-      }));
+      });
 
       const result = await repository.create(testProfile);
 
@@ -239,10 +239,10 @@ describe('UserProfileRepository', () => {
       const mockValues = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockRejectedValue(new Error(errorMessage));
 
-      (db.insert as any).mockImplementation(() => ({
+      (db.insert as any).mockReturnValue({
         values: mockValues,
         returning: mockReturning
-      }));
+      });
 
       await expect(repository.create(testProfile)).rejects.toThrow(errorMessage);
     });
@@ -282,11 +282,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
 
-      (db.update as any).mockImplementation(() => ({
+      (db.update as any).mockReturnValue({
         set: mockSet,
         where: mockWhere,
         returning: mockReturning
-      }));
+      });
 
       const result = await repository.update(updatedProfile);
 
@@ -304,11 +304,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockRejectedValue(new Error(errorMessage));
 
-      (db.update as any).mockImplementation(() => ({
+      (db.update as any).mockReturnValue({
         set: mockSet,
         where: mockWhere,
         returning: mockReturning
-      }));
+      });
 
       await expect(repository.update(testProfile)).rejects.toThrow(errorMessage);
     });
@@ -322,10 +322,10 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
 
-      (db.delete as any).mockImplementation(() => ({
+      (db.delete as any).mockReturnValue({
         where: mockWhere,
         returning: mockReturning
-      }));
+      });
 
       const result = await repository.delete(testProfile.id);
 
@@ -335,16 +335,16 @@ describe('UserProfileRepository', () => {
 
     it('should return false when profile is not found for deletion', async () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockDelete = vi.fn().mockReturnThis();
       const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockResolvedValue(mockResult);
 
-      (db.delete as any).mockImplementation(() => ({
+      (db.delete as any).mockReturnValue({
         where: mockWhere,
         returning: mockReturning
-      }));
+      });
 
       const result = await repository.delete(nonExistentId);
 
@@ -359,10 +359,10 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockReturning = vi.fn().mockRejectedValue(new Error(errorMessage));
 
-      (db.delete as any).mockImplementation(() => ({
+      (db.delete as any).mockReturnValue({
         where: mockWhere,
         returning: mockReturning
-      }));
+      });
 
       await expect(repository.delete(profileId)).rejects.toThrow(errorMessage);
     });
@@ -397,12 +397,12 @@ describe('UserProfileRepository', () => {
       const mockOffset = vi.fn().mockReturnThis();
       const mockOrderBy = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         limit: mockLimit,
         offset: mockOffset,
         orderBy: mockOrderBy
-      }));
+      });
 
       const result = await repository.findAll();
 
@@ -412,7 +412,7 @@ describe('UserProfileRepository', () => {
     });
 
     it('should return empty array when no profiles exist', async () => {
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockReturnThis();
@@ -420,12 +420,12 @@ describe('UserProfileRepository', () => {
       const mockOffset = vi.fn().mockReturnThis();
       const mockOrderBy = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         limit: mockLimit,
         offset: mockOffset,
         orderBy: mockOrderBy
-      }));
+      });
 
       const result = await repository.findAll();
 
@@ -452,11 +452,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.existsById(testProfile.id);
 
@@ -466,18 +466,18 @@ describe('UserProfileRepository', () => {
 
     it('should return false when profile does not exist by ID', async () => {
       const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockReturnThis();
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.existsById(nonExistentId);
 
@@ -494,11 +494,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.existsByUserId(testProfile.userId);
 
@@ -508,18 +508,18 @@ describe('UserProfileRepository', () => {
 
     it('should return false when profile does not exist by user ID', async () => {
       const nonExistentUserId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockReturnThis();
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.existsByUserId(nonExistentUserId);
 
@@ -564,13 +564,13 @@ describe('UserProfileRepository', () => {
       const mockOffset = vi.fn().mockReturnThis();
       const mockOrderBy = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit,
         offset: mockOffset,
         orderBy: mockOrderBy
-      }));
+      });
 
       const result = await repository.findWithFilters(filters);
 
@@ -609,13 +609,13 @@ describe('UserProfileRepository', () => {
       const mockOffset = vi.fn().mockReturnThis();
       const mockOrderBy = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit,
         offset: mockOffset,
         orderBy: mockOrderBy
-      }));
+      });
 
       const result = await repository.findWithFilters(filters);
 
@@ -652,11 +652,11 @@ describe('UserProfileRepository', () => {
       const mockWhere = vi.fn().mockReturnThis();
       const mockLimit = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom,
         where: mockWhere,
         limit: mockLimit
-      }));
+      });
 
       const result = await repository.findIncompleteProfiles();
 
@@ -672,9 +672,9 @@ describe('UserProfileRepository', () => {
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom
-      }));
+      });
 
       const result = await repository.count();
 
@@ -683,14 +683,14 @@ describe('UserProfileRepository', () => {
     });
 
     it('should return 0 when no profiles exist', async () => {
-      const mockResult = [];
+      const mockResult: any[] = [];
 
       const mockSelect = vi.fn().mockReturnThis();
       const mockFrom = vi.fn().mockResolvedValue(mockResult);
 
-      (db.select as any).mockImplementation(() => ({
+      (db.select as any).mockReturnValue({
         from: mockFrom
-      }));
+      });
 
       const result = await repository.count();
 

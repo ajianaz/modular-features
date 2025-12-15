@@ -9,10 +9,7 @@ import type {
   UserActivity as DBUserActivity,
   NewUserActivity
 } from '@modular-monolith/database';
-import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
-
-// Import table type properly
-import { userActivity } from '@modular-monolith/database';
+import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull, inArray, db } from '@modular-monolith/database';
 
 export class UserActivityRepository implements IUserActivityRepository {
   async findById(id: string): Promise<UserActivity | null> {
@@ -37,7 +34,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.userId, userId))
         .limit(limit)
         .offset(offset)
@@ -166,7 +163,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.type, type))
         .limit(limit)
         .offset(offset)
@@ -183,7 +180,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.action, action))
         .limit(limit)
         .offset(offset)
@@ -200,7 +197,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.resource, resource))
         .limit(limit)
         .offset(offset)
@@ -217,7 +214,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.resourceId, resourceId))
         .limit(limit)
         .offset(offset)
@@ -234,7 +231,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.sessionId, sessionId))
         .limit(limit)
         .offset(offset)
@@ -251,7 +248,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.ipAddress, ipAddress))
         .limit(limit)
         .offset(offset)
@@ -268,7 +265,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             gte(userActivity.createdAt, startDate),
@@ -290,13 +287,13 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           or(
-            ilike(userActivityTable.type, `%${query}%`),
-            ilike(userActivityTable.action, `%${query}%`),
-            ilike(userActivityTable.description, `%${query}%`),
-            ilike(userActivityTable.resource, `%${query}%`)
+            ilike(userActivity.type, `%${query}%`),
+            ilike(userActivity.action, `%${query}%`),
+            ilike(userActivity.description, `%${query}%`),
+            ilike(userActivity.resource, `%${query}%`)
           ) as any
         )
         .limit(limit)
@@ -313,8 +310,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async existsById(id: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ id: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.id, id))
         .limit(1);
 
@@ -363,7 +360,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .delete(userActivity)
-        .where(eq(userActivity.id, ids))
+        .where(inArray(userActivity.id, ids))
         .returning({ id: userActivity.id });
 
       return result.length > 0;
@@ -376,9 +373,9 @@ export class UserActivityRepository implements IUserActivityRepository {
   async deleteOlderThan(date: Date): Promise<number> {
     try {
       const result = await db
-        .delete(userActivityTable)
+        .delete(userActivity)
         .where(lte(userActivity.createdAt, date))
-        .returning({ id: userActivityTable.id });
+        .returning({ id: userActivity.id });
 
       return result.length;
     } catch (error) {
@@ -403,8 +400,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByUserId(userId: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.userId, userId))
 
       return result[0]?.count || 0;
@@ -417,8 +414,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByType(type: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.type, type))
 
       return result[0]?.count || 0;
@@ -431,8 +428,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByAction(action: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.action, action))
 
       return result[0]?.count || 0;
@@ -445,8 +442,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByResource(resource: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.resource, resource))
 
       return result[0]?.count || 0;
@@ -459,8 +456,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByDateRange(startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             gte(userActivity.createdAt, startDate),
@@ -481,7 +478,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -504,7 +501,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -529,7 +526,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -553,7 +550,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -577,7 +574,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -671,7 +668,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -696,7 +693,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(gte(userActivity.createdAt, cutoffDate))
         .limit(limit)
         .offset(offset)
@@ -718,7 +715,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             gte(userActivity.createdAt, today),
@@ -745,7 +742,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -773,7 +770,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(gte(userActivity.createdAt, startOfWeek))
         .limit(limit)
         .offset(offset)
@@ -795,7 +792,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -820,7 +817,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(gte(userActivity.createdAt, startOfMonth))
         .limit(limit)
         .offset(offset)
@@ -840,7 +837,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -912,11 +909,11 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(whereConditions.length > 0 ? and(...whereConditions) as any : undefined)
         .limit(filters.limit || 50)
         .offset(filters.offset || 0)
-        .orderBy(desc(userActivityTable.createdAt) as any);
+        .orderBy(desc(userActivity.createdAt) as any);
 
       return result.map(activity => this.mapToDomainEntity(activity));
     } catch (error) {
@@ -929,7 +926,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           or(
             ilike(userActivity.type, '%auth%'),
@@ -952,7 +949,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -978,7 +975,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.type, '%profile%'))
         .limit(limit)
         .offset(offset)
@@ -995,7 +992,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1017,7 +1014,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.type, '%settings%'))
         .limit(limit)
         .offset(offset)
@@ -1034,7 +1031,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1056,7 +1053,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.type, '%role%'))
         .limit(limit)
         .offset(offset)
@@ -1073,7 +1070,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1095,7 +1092,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.type, '%system%'))
         .limit(limit)
         .offset(offset)
@@ -1112,7 +1109,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.type, '%security%'))
         .limit(limit)
         .offset(offset)
@@ -1129,7 +1126,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1151,7 +1148,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(ilike(userActivity.description, `%${description}%`))
         .limit(limit)
         .offset(offset)
@@ -1168,7 +1165,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1193,8 +1190,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async countByUserIdAndDateRange(userId: string, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1214,8 +1211,8 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000);
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(gte(userActivity.createdAt, cutoffDate));
 
       return result[0]?.count || 0;
@@ -1229,8 +1226,8 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000);
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1253,8 +1250,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             gte(userActivity.createdAt, today),
@@ -1277,8 +1274,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1302,8 +1299,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       startOfWeek.setHours(0, 0, 0, 0);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(gte(userActivity.createdAt, startOfWeek));
 
       return result[0]?.count || 0;
@@ -1321,8 +1318,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       startOfWeek.setHours(0, 0, 0, 0);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1343,8 +1340,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(gte(userActivity.createdAt, startOfMonth));
 
       return result[0]?.count || 0;
@@ -1360,8 +1357,8 @@ export class UserActivityRepository implements IUserActivityRepository {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       const result = await db
-        .select({ count: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ count: userActivity.id })
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1390,10 +1387,10 @@ export class UserActivityRepository implements IUserActivityRepository {
       const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const result = await db
         .select({
-          type: userActivityTable.type,
-          createdAt: userActivityTable.createdAt
+          type: userActivity.type,
+          createdAt: userActivity.createdAt
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(gte(userActivity.createdAt, cutoffDate))
         .orderBy(desc(userActivity.createdAt));
 
@@ -1454,11 +1451,11 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select({
-          action: userActivityTable.action,
-          count: userActivityTable.id
+          action: userActivity.action,
+          count: userActivity.id
         })
-        .from(userActivityTable)
-        .groupBy(userActivityTable.action)
+        .from(userActivity)
+        .groupBy(userActivity.action)
         .orderBy(desc(userActivity.id))
         .limit(limit);
 
@@ -1476,10 +1473,10 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select({
-          action: userActivityTable.action,
-          count: userActivityTable.id
+          action: userActivity.action,
+          count: userActivity.id
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(eq(userActivity.userId, userId))
         .groupBy(userActivity.action)
         .orderBy(desc(userActivity.id))
@@ -1499,10 +1496,10 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select({
-          resource: userActivityTable.resource,
-          count: userActivityTable.id
+          resource: userActivity.resource,
+          count: userActivity.id
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(isNotNull(userActivity.resource))
         .groupBy(userActivity.resource)
         .orderBy(desc(userActivity.id))
@@ -1522,10 +1519,10 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select({
-          resource: userActivityTable.resource,
-          count: userActivityTable.id
+          resource: userActivity.resource,
+          count: userActivity.id
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1557,9 +1554,9 @@ export class UserActivityRepository implements IUserActivityRepository {
       const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const result = await db
         .select({
-          createdAt: userActivityTable.createdAt
+          createdAt: userActivity.createdAt
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1609,7 +1606,7 @@ export class UserActivityRepository implements IUserActivityRepository {
       // Look for activities with suspicious patterns
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           or(
             ilike(userActivity.description, '%failed%'),
@@ -1633,7 +1630,7 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1664,7 +1661,7 @@ export class UserActivityRepository implements IUserActivityRepository {
       if (userId) {
         result = await db
           .select()
-          .from(userActivityTable)
+          .from(userActivity)
           .where(
             and(
               eq(userActivity.userId, userId),
@@ -1675,7 +1672,7 @@ export class UserActivityRepository implements IUserActivityRepository {
       } else {
         result = await db
           .select()
-          .from(userActivityTable)
+          .from(userActivity)
           .where(
             and(
               eq(userActivity.action, 'login_failed'),
@@ -1697,10 +1694,10 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select({
-          ipAddress: userActivityTable.ipAddress,
-          count: userActivityTable.id
+          ipAddress: userActivity.ipAddress,
+          count: userActivity.id
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1728,7 +1725,7 @@ export class UserActivityRepository implements IUserActivityRepository {
       // Find login activities outside normal hours (e.g., before 6 AM or after 10 PM)
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
@@ -1753,14 +1750,14 @@ export class UserActivityRepository implements IUserActivityRepository {
   async deleteByUserIdOlderThan(userId: string, date: Date): Promise<number> {
     try {
       const result = await db
-        .delete(userActivityTable)
+        .delete(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
             lte(userActivity.createdAt, date)
           )
         )
-        .returning({ id: userActivityTable.id });
+        .returning({ id: userActivity.id });
 
       return result.length;
     } catch (error) {
@@ -1775,17 +1772,17 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select({
-          userId: userActivityTable.userId,
-          count: userActivityTable.id
+          userId: userActivity.userId,
+          count: userActivity.id
         })
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
-            eq(userActivity.userId, userIds),
+            inArray(userActivity.userId, userIds),
             gte(userActivity.createdAt, cutoffDate)
           )
         )
-        .groupBy(userActivityTable.userId);
+        .groupBy(userActivity.userId);
 
       return result.map(row => ({
         userId: row.userId as string,
@@ -1801,11 +1798,11 @@ export class UserActivityRepository implements IUserActivityRepository {
     try {
       const result = await db
         .select({
-          userId: userActivityTable.userId,
-          lastActivity: userActivityTable.createdAt
+          userId: userActivity.userId,
+          lastActivity: userActivity.createdAt
         })
-        .from(userActivityTable)
-        .where(eq(userActivity.userId, userIds))
+        .from(userActivity)
+        .where(inArray(userActivity.userId, userIds))
         .groupBy(userActivity.userId)
         .orderBy(desc(userActivity.createdAt));
 
@@ -1852,7 +1849,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(desc(userActivity.createdAt));
 
@@ -1888,8 +1885,8 @@ export class UserActivityRepository implements IUserActivityRepository {
   async existsByUserId(userId: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userActivityTable.id })
-        .from(userActivityTable)
+        .select({ id: userActivity.id })
+        .from(userActivity)
         .where(eq(userActivity.userId, userId))
         .limit(1);
 
@@ -1906,7 +1903,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.resourceId, resourceId),
@@ -1929,7 +1926,7 @@ export class UserActivityRepository implements IUserActivityRepository {
 
       const result = await db
         .select()
-        .from(userActivityTable)
+        .from(userActivity)
         .where(
           and(
             eq(userActivity.userId, userId),
