@@ -1,33 +1,35 @@
 import { Context } from 'hono';
-import { GetNotificationsUseCase } from '../../application/usecases/GetNotificationsUseCase';
-import { GetNotificationsResponse } from '../../application/dtos/output/GetNotificationsResponse';
-import { GetNotificationsRequest } from '../../application/dtos/input/GetNotificationsRequest';
+import { CreateNotificationUseCase } from '../../application/usecases/CreateNotificationUseCase';
+import { CreateNotificationResponse } from '../../application/dtos/output/CreateNotificationResponse';
+import { CreateNotificationRequest } from '../../application/dtos/input/CreateNotificationRequest';
 import { NotificationsContainer } from '../../infrastructure/container/NotificationsContainer';
 import { ValidationError } from '@modular-monolith/shared';
 import {
   NotificationError,
   NotificationNotFoundError,
-  InvalidNotificationDataError
+  InvalidNotificationDataError,
+  NotificationSendError
 } from '../../domain/errors';
 
 /**
- * Controller for getting notifications
+ * Controller for creating notifications
  */
-export class GetNotificationsController {
-  private getNotificationsUseCase: GetNotificationsUseCase;
+export class CreateNotificationController {
+  private createNotificationUseCase: CreateNotificationUseCase;
 
   constructor() {
     const notificationsContainer = NotificationsContainer.getInstance();
-    this.getNotificationsUseCase = notificationsContainer.getGetNotificationsUseCase();
+    this.createNotificationUseCase = notificationsContainer.getCreateNotificationUseCase();
   }
 
   /**
-   * Get user notifications
+   * Create a notification
    */
-  async getNotifications(c: Context): Promise<Response> {
+  async create(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (set by notification middleware)
       const userId = c.get('authenticatedUserId');
+      const notificationContext = c.get('notificationContext');
 
       if (!userId) {
         return c.json({
@@ -37,26 +39,23 @@ export class GetNotificationsController {
         }, 401);
       }
 
-      const limit = c.req.query('limit') ? parseInt(c.req.query('limit') as string) : 20;
-      const offset = c.req.query('offset') ? parseInt(c.req.query('offset') as string) : 0;
-      const status = c.req.query('status') as any;
-      const type = c.req.query('type') as any;
-      const unreadOnly = c.req.query('unreadOnly') === 'true';
+      const body = await c.req.json() as CreateNotificationRequest;
 
-      const request: GetNotificationsRequest = {
-        recipientId: userId,
-        limit,
-        offset,
-        status,
-        type,
-        read: !unreadOnly
+      // Set the recipientId from the authenticated user
+      body.recipientId = userId;
+
+      // Add context metadata
+      body.metadata = {
+        ...body.metadata,
+        requestId: notificationContext?.requestId,
+        timestamp: notificationContext?.timestamp
       };
 
-      const result = await this.getNotificationsUseCase.execute(request);
+      const result = await this.createNotificationUseCase.execute(body);
 
       return c.json(result);
     } catch (error) {
-      console.error('GetNotificationsController.getNotifications error:', error);
+      console.error('CreateNotificationController.create error:', error);
 
       if (error instanceof ValidationError) {
         return c.json({
@@ -80,6 +79,14 @@ export class GetNotificationsController {
           message: error.message,
           error: 'NOTIFICATION_NOT_FOUND'
         }, 404);
+      }
+
+      if (error instanceof NotificationSendError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: 'NOTIFICATION_SEND_ERROR'
+        }, 400);
       }
 
       if (error instanceof NotificationError) {

@@ -1,80 +1,69 @@
-// Export middleware implementations
-
-// Define generic request/response types to avoid Express dependency
-interface NotificationRequest {
-  user?: { id: string };
-  ip?: string;
-  body: any;
-}
-
-interface NotificationResponse {
-  status: (code: number) => NotificationResponse;
-  json: (data: any) => void;
-}
-
-type NotificationNextFunction = () => void;
+import type { Context, Next } from 'hono';
 
 /**
  * Notification Rate Limiting Middleware
  * Limits the number of notifications a user can send within a time window
+ * This is a specialized rate limiter for notification endpoints
  */
-export const notificationRateLimitMiddleware = (
-  req: NotificationRequest,
-  res: NotificationResponse,
-  next: NotificationNextFunction
-) => {
+export const notificationRateLimitMiddleware = async (c: Context, next: Next): Promise<void> => {
   // Basic implementation - in production, this would use a proper rate limiting store
-  const userId = req.user?.id || req.ip;
+  const user = c.get('user');
+  const userId = user?.id || c.req.header('x-forwarded-for') || c.req.header('x-real-ip');
 
   // For now, just pass through
   // TODO: Implement actual rate limiting with Redis or similar
-  next();
+  // This could check against a user's notification preferences or system limits
+  await next();
 };
 
 /**
- * Notification Validation Middleware
- * Validates notification requests before they reach the controller
+ * Notification Permission Middleware
+ * Ensures that the authenticated user has permission to perform notification actions
+ * This is different from general authentication - it checks notification-specific permissions
  */
-export const notificationValidationMiddleware = (
-  req: NotificationRequest,
-  res: NotificationResponse,
-  next: NotificationNextFunction
-) => {
-  const { title, message, channels, userId } = req.body;
+export const notificationPermissionMiddleware = async (c: Context, next: Next): Promise<void | Response> => {
+  // Get authenticated user
+  const user = c.get('user');
 
-  // Basic validation
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return res.status(400).json({ error: 'Title is required' });
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401);
   }
 
-  if (!message || typeof message !== 'string' || message.trim().length === 0) {
-    return res.status(400).json({ error: 'Message is required' });
+  // Get the target user ID from the request if it exists
+  const body = await c.req.json().catch(() => ({}));
+  const targetUserId = body.userId || body.recipientId;
+
+  // If trying to send notifications to another user, check permissions
+  if (targetUserId && targetUserId !== user.id) {
+    // TODO: Implement permission check logic
+    // For now, allow admin users or users with notification management permissions
+    // This could check user roles, notification preferences, etc.
   }
 
-  if (!channels || !Array.isArray(channels) || channels.length === 0) {
-    return res.status(400).json({ error: 'At least one channel is required' });
-  }
+  // Store the authenticated user's ID for use in controllers
+  c.set('authenticatedUserId', user.id);
 
-  if (!userId || typeof userId !== 'string') {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
-  next();
+  await next();
 };
 
 /**
- * Notification Authentication Middleware
- * Ensures that user is authenticated before accessing notification endpoints
+ * Notification Context Middleware
+ * Sets up notification-specific context for the request
  */
-export const notificationAuthMiddleware = (
-  req: NotificationRequest,
-  res: NotificationResponse,
-  next: NotificationNextFunction
-) => {
-  // Check if user is authenticated
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+export const notificationContextMiddleware = async (c: Context, next: Next): Promise<void | Response> => {
+  // Get authenticated user
+  const user = c.get('user');
+
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401);
   }
 
-  next();
+  // Set notification-specific context
+  c.set('notificationContext', {
+    userId: user.id,
+    timestamp: new Date().toISOString(),
+    requestId: crypto.randomUUID()
+  });
+
+  await next();
 };

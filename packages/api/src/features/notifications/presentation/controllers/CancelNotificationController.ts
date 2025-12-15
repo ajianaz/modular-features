@@ -1,7 +1,7 @@
 import { Context } from 'hono';
-import { GetNotificationsUseCase } from '../../application/usecases/GetNotificationsUseCase';
-import { GetNotificationsResponse } from '../../application/dtos/output/GetNotificationsResponse';
-import { GetNotificationsRequest } from '../../application/dtos/input/GetNotificationsRequest';
+import { CancelNotificationUseCase } from '../../application/usecases/CancelNotificationUseCase';
+import { CancelNotificationResponse } from '../../application/dtos/output/CancelNotificationResponse';
+import { CancelNotificationRequest } from '../../application/dtos/input/CancelNotificationRequest';
 import { NotificationsContainer } from '../../infrastructure/container/NotificationsContainer';
 import { ValidationError } from '@modular-monolith/shared';
 import {
@@ -11,20 +11,20 @@ import {
 } from '../../domain/errors';
 
 /**
- * Controller for getting notifications
+ * Controller for canceling notifications
  */
-export class GetNotificationsController {
-  private getNotificationsUseCase: GetNotificationsUseCase;
+export class CancelNotificationController {
+  private cancelNotificationUseCase: CancelNotificationUseCase;
 
   constructor() {
     const notificationsContainer = NotificationsContainer.getInstance();
-    this.getNotificationsUseCase = notificationsContainer.getGetNotificationsUseCase();
+    this.cancelNotificationUseCase = notificationsContainer.getCancelNotificationUseCase();
   }
 
   /**
-   * Get user notifications
+   * Cancel a notification
    */
-  async getNotifications(c: Context): Promise<Response> {
+  async cancel(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (set by notification middleware)
       const userId = c.get('authenticatedUserId');
@@ -37,26 +37,30 @@ export class GetNotificationsController {
         }, 401);
       }
 
-      const limit = c.req.query('limit') ? parseInt(c.req.query('limit') as string) : 20;
-      const offset = c.req.query('offset') ? parseInt(c.req.query('offset') as string) : 0;
-      const status = c.req.query('status') as any;
-      const type = c.req.query('type') as any;
-      const unreadOnly = c.req.query('unreadOnly') === 'true';
+      // Get notification ID from route parameters
+      const notificationId = c.req.param('notificationId');
 
-      const request: GetNotificationsRequest = {
+      if (!notificationId) {
+        return c.json({
+          success: false,
+          message: 'Notification ID is required',
+          error: 'MISSING_NOTIFICATION_ID'
+        }, 400);
+      }
+
+      const body = await c.req.json().catch(() => ({})) || {};
+
+      const request: CancelNotificationRequest = {
+        notificationId,
         recipientId: userId,
-        limit,
-        offset,
-        status,
-        type,
-        read: !unreadOnly
+        ...body
       };
 
-      const result = await this.getNotificationsUseCase.execute(request);
+      const result = await this.cancelNotificationUseCase.execute(request);
 
       return c.json(result);
     } catch (error) {
-      console.error('GetNotificationsController.getNotifications error:', error);
+      console.error('CancelNotificationController.cancel error:', error);
 
       if (error instanceof ValidationError) {
         return c.json({

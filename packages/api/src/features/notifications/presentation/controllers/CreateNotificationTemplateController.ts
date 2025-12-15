@@ -1,30 +1,30 @@
 import { Context } from 'hono';
-import { GetNotificationsUseCase } from '../../application/usecases/GetNotificationsUseCase';
-import { GetNotificationsResponse } from '../../application/dtos/output/GetNotificationsResponse';
-import { GetNotificationsRequest } from '../../application/dtos/input/GetNotificationsRequest';
+import { CreateNotificationTemplateUseCase } from '../../application/usecases/CreateNotificationTemplateUseCase';
+import { CreateNotificationTemplateResponse } from '../../application/dtos/output/CreateNotificationTemplateResponse';
+import { CreateNotificationTemplateRequest } from '../../application/dtos/input/CreateNotificationTemplateRequest';
 import { NotificationsContainer } from '../../infrastructure/container/NotificationsContainer';
 import { ValidationError } from '@modular-monolith/shared';
 import {
   NotificationError,
-  NotificationNotFoundError,
-  InvalidNotificationDataError
+  TemplateNotFoundError,
+  TemplateValidationError
 } from '../../domain/errors';
 
 /**
- * Controller for getting notifications
+ * Controller for creating notification templates
  */
-export class GetNotificationsController {
-  private getNotificationsUseCase: GetNotificationsUseCase;
+export class CreateNotificationTemplateController {
+  private createNotificationTemplateUseCase: CreateNotificationTemplateUseCase;
 
   constructor() {
     const notificationsContainer = NotificationsContainer.getInstance();
-    this.getNotificationsUseCase = notificationsContainer.getGetNotificationsUseCase();
+    this.createNotificationTemplateUseCase = notificationsContainer.getCreateNotificationTemplateUseCase();
   }
 
   /**
-   * Get user notifications
+   * Create a notification template
    */
-  async getNotifications(c: Context): Promise<Response> {
+  async create(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (set by notification middleware)
       const userId = c.get('authenticatedUserId');
@@ -37,26 +37,13 @@ export class GetNotificationsController {
         }, 401);
       }
 
-      const limit = c.req.query('limit') ? parseInt(c.req.query('limit') as string) : 20;
-      const offset = c.req.query('offset') ? parseInt(c.req.query('offset') as string) : 0;
-      const status = c.req.query('status') as any;
-      const type = c.req.query('type') as any;
-      const unreadOnly = c.req.query('unreadOnly') === 'true';
+      const body = await c.req.json() as CreateNotificationTemplateRequest;
 
-      const request: GetNotificationsRequest = {
-        recipientId: userId,
-        limit,
-        offset,
-        status,
-        type,
-        read: !unreadOnly
-      };
-
-      const result = await this.getNotificationsUseCase.execute(request);
+      const result = await this.createNotificationTemplateUseCase.execute(body);
 
       return c.json(result);
     } catch (error) {
-      console.error('GetNotificationsController.getNotifications error:', error);
+      console.error('CreateNotificationTemplateController.create error:', error);
 
       if (error instanceof ValidationError) {
         return c.json({
@@ -66,19 +53,19 @@ export class GetNotificationsController {
         }, (error.statusCode || 400) as any);
       }
 
-      if (error instanceof InvalidNotificationDataError) {
+      if (error instanceof TemplateValidationError) {
         return c.json({
           success: false,
           message: error.message,
-          error: 'INVALID_NOTIFICATION_DATA'
+          error: 'TEMPLATE_VALIDATION_ERROR'
         }, 400);
       }
 
-      if (error instanceof NotificationNotFoundError) {
+      if (error instanceof TemplateNotFoundError) {
         return c.json({
           success: false,
           message: error.message,
-          error: 'NOTIFICATION_NOT_FOUND'
+          error: 'TEMPLATE_NOT_FOUND'
         }, 404);
       }
 

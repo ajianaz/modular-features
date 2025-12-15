@@ -1,7 +1,7 @@
 import { Context } from 'hono';
-import { GetNotificationsUseCase } from '../../application/usecases/GetNotificationsUseCase';
-import { GetNotificationsResponse } from '../../application/dtos/output/GetNotificationsResponse';
-import { GetNotificationsRequest } from '../../application/dtos/input/GetNotificationsRequest';
+import { GetNotificationAnalyticsUseCase } from '../../application/usecases/GetNotificationAnalyticsUseCase';
+import { GetNotificationAnalyticsResponse } from '../../application/dtos/output/GetNotificationAnalyticsResponse';
+import { GetNotificationAnalyticsRequest } from '../../application/dtos/input/GetNotificationAnalyticsRequest';
 import { NotificationsContainer } from '../../infrastructure/container/NotificationsContainer';
 import { ValidationError } from '@modular-monolith/shared';
 import {
@@ -11,20 +11,20 @@ import {
 } from '../../domain/errors';
 
 /**
- * Controller for getting notifications
+ * Controller for getting notification analytics
  */
-export class GetNotificationsController {
-  private getNotificationsUseCase: GetNotificationsUseCase;
+export class GetNotificationAnalyticsController {
+  private getNotificationAnalyticsUseCase: GetNotificationAnalyticsUseCase;
 
   constructor() {
     const notificationsContainer = NotificationsContainer.getInstance();
-    this.getNotificationsUseCase = notificationsContainer.getGetNotificationsUseCase();
+    this.getNotificationAnalyticsUseCase = notificationsContainer.getGetNotificationAnalyticsUseCase();
   }
 
   /**
-   * Get user notifications
+   * Get notification analytics
    */
-  async getNotifications(c: Context): Promise<Response> {
+  async getAnalytics(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (set by notification middleware)
       const userId = c.get('authenticatedUserId');
@@ -37,26 +37,24 @@ export class GetNotificationsController {
         }, 401);
       }
 
-      const limit = c.req.query('limit') ? parseInt(c.req.query('limit') as string) : 20;
-      const offset = c.req.query('offset') ? parseInt(c.req.query('offset') as string) : 0;
-      const status = c.req.query('status') as any;
-      const type = c.req.query('type') as any;
-      const unreadOnly = c.req.query('unreadOnly') === 'true';
+      const query = c.req.query();
 
-      const request: GetNotificationsRequest = {
-        recipientId: userId,
-        limit,
-        offset,
-        status,
-        type,
-        read: !unreadOnly
+      const request: GetNotificationAnalyticsRequest = {
+        startDate: new Date(query.startDate || ''),
+        endDate: new Date(query.endDate || ''),
+        type: query.type as any,
+        channel: query.channel as any,
+        status: query.status as any,
+        recipientId: query.recipientId || userId,
+        groupId: query.groupId,
+        groupBy: query.groupBy as any
       };
 
-      const result = await this.getNotificationsUseCase.execute(request);
+      const result = await this.getNotificationAnalyticsUseCase.execute(request);
 
       return c.json(result);
     } catch (error) {
-      console.error('GetNotificationsController.getNotifications error:', error);
+      console.error('GetNotificationAnalyticsController.getAnalytics error:', error);
 
       if (error instanceof ValidationError) {
         return c.json({
