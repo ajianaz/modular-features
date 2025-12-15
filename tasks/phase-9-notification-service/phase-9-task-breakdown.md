@@ -119,17 +119,44 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 - [ ] Add validation for scheduled time
 - [ ] Create unit tests
 
-#### 9.3 Build integrations for email, SMS, push notifications (4 days)
+#### 9.3 Build integrations for email, SMS, push notifications (5 days)
 
-##### 9.3.1 Implement SendGrid email provider (1 day)
-- [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/SendGridEmailProvider.ts`
+##### 9.3.1 Implement Tencent SES email provider (1.5 days)
+- [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/TencentSESProvider.ts`
 - [ ] Implement `IEmailProvider` interface
+- [ ] Add Tencent Cloud SDK integration
+- [ ] Add email sending logic with template support
+- [ ] Add error handling specific to Tencent SES
+- [ ] Add provider health check
+- [ ] Create unit tests in `__tests__/infrastructure/lib/providers/TencentSESProvider.test.ts`
+
+##### 9.3.2 Implement SMTP email provider (1 day)
+- [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/SMTPProvider.ts`
+- [ ] Implement `IEmailProvider` interface
+- [ ] Add SMTP connection and authentication
+- [ ] Add email sending logic
+- [ ] Add error handling for SMTP failures
+- [ ] Add provider health check
+- [ ] Create unit tests in `__tests__/infrastructure/lib/providers/SMTPProvider.test.ts`
+
+##### 9.3.3 Implement SendGrid email provider (1 day)
+- [ ] Update `packages/api/src/features/notifications/infrastructure/lib/providers/SendGridProvider.ts`
+- [ ] Ensure complete `IEmailProvider` interface implementation
 - [ ] Add email sending logic
 - [ ] Add error handling
 - [ ] Add provider health check
-- [ ] Create unit tests in `__tests__/infrastructure/lib/providers/SendGridEmailProvider.test.ts`
+- [ ] Create unit tests in `__tests__/infrastructure/lib/providers/SendGridProvider.test.ts`
 
-##### 9.3.2 Create Twilio SMS provider (1 day)
+##### 9.3.4 Create email provider hierarchy system (1 day)
+- [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/EmailProviderHierarchy.ts`
+- [ ] Implement provider selection logic (Tencent SES → SMTP → SendGrid)
+- [ ] Add automatic failover mechanism
+- [ ] Add provider health monitoring
+- [ ] Add comprehensive logging for all provider attempts
+- [ ] Create unit tests for hierarchy system
+- [ ] Add integration tests for complete failover scenarios
+
+##### 9.3.5 Create Twilio SMS provider (1 day)
 - [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/TwilioSmsProvider.ts`
 - [ ] Implement `ISmsProvider` interface
 - [ ] Add SMS sending logic
@@ -137,7 +164,7 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 - [ ] Add provider health check
 - [ ] Create unit tests
 
-##### 9.3.3 Implement Firebase push notification provider (1 day)
+##### 9.3.6 Implement Firebase push notification provider (1 day)
 - [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/FirebasePushProvider.ts`
 - [ ] Implement `IPushProvider` interface
 - [ ] Add push notification logic
@@ -145,16 +172,17 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 - [ ] Add provider health check
 - [ ] Create unit tests
 
-##### 9.3.4 Add in-app notification provider (0.5 day)
+##### 9.3.7 Add in-app notification provider (0.5 day)
 - [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/InAppProvider.ts`
 - [ ] Implement `IInAppProvider` interface
 - [ ] Add in-app notification logic
 - [ ] Create unit tests
 
-##### 9.3.5 Create provider factory and abstraction (0.5 day)
-- [ ] Create `packages/api/src/features/notifications/infrastructure/lib/providers/BaseNotificationProvider.ts`
-- [ ] Create provider factory
-- [ ] Add provider registry
+##### 9.3.8 Create enhanced provider factory and abstraction (0.5 day)
+- [ ] Update `packages/api/src/features/notifications/infrastructure/lib/providers/BaseNotificationProvider.ts`
+- [ ] Create enhanced provider factory with hierarchy support
+- [ ] Add provider registry with priority system
+- [ ] Add provider health monitoring integration
 - [ ] Create unit tests
 
 #### 9.4 Create notification templates and preferences (2 days)
@@ -353,7 +381,7 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 |-------|--------|----------|
 | Week 1 | 9.1 Domain Layer | 4 days |
 | Week 2 | 9.2 Use Cases + 9.9 DTOs | 7 days |
-| Week 3 | 9.3 Providers + 9.8 Repositories | 6 days |
+| Week 3 | 9.3 Providers (Tencent SES, SMTP, SendGrid) + 9.8 Repositories | 7 days |
 | Week 4 | 9.4 Templates + 9.5 API + 9.10 DI Container | 6 days |
 | Week 5 | 9.6 Analytics + 9.7 Tests + 9.11 Integration | 8 days |
 
@@ -366,10 +394,14 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 - Shared package (for utilities and error classes)
 
 ### External Dependencies
-- SendGrid API (for email delivery)
+- Tencent Cloud SES API (primary email delivery)
+- SMTP servers (secondary email delivery)
+- SendGrid API (fallback email delivery)
 - Twilio API (for SMS delivery)
 - Firebase Cloud Messaging (for push notifications)
 - Redis (for caching and queue management)
+- Node.js Tencent Cloud SDK
+- Nodemailer (for SMTP implementation)
 
 ## Success Criteria
 
@@ -381,6 +413,10 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 - [ ] Track delivery status and analytics
 - [ ] Handle bulk notifications
 - [ ] Implement retry mechanism for failed notifications
+- [ ] Implement three-tier email provider hierarchy (Tencent SES → SMTP → SendGrid)
+- [ ] Provide automatic failover between email providers
+- [ ] Track provider-specific delivery metrics
+- [ ] Support provider-specific template handling
 
 ### Non-Functional Requirements
 - [ ] 99.9% uptime for notification delivery
@@ -403,6 +439,10 @@ This document provides a detailed task breakdown for implementing Phase 9.0 (Not
 4. **Security**: Validate all input data and implement proper authorization
 5. **Monitoring**: Add logging and metrics throughout the implementation
 6. **Documentation**: Update API documentation as features are implemented
+7. **Email Provider Hierarchy**: Implement comprehensive testing for all three email providers and their failover mechanisms
+8. **Provider Health Monitoring**: Implement robust health checks for all email providers
+9. **Geographic Considerations**: Optimize provider selection based on recipient geographic location
+10. **Cost Optimization**: Prioritize Tencent SES for cost efficiency while maintaining reliability through fallback providers
 
 ## Checklist for Each Task
 

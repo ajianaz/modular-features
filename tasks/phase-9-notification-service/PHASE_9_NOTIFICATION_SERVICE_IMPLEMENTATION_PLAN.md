@@ -1008,10 +1008,9 @@ export class SendNotificationUseCase {
 
       switch (channel) {
         case NotificationChannel.EMAIL:
-          result = await this.emailProvider.sendEmail(
-            recipient.email,
-            notification.title,
-            notification.message
+          result = await this.emailProvider.send(
+            notification,
+            recipient.email
           );
           break;
         case NotificationChannel.SMS:
@@ -1620,9 +1619,206 @@ export class NotificationRepository implements INotificationRepository {
 
 ### 5.2 Provider Implementations
 
-#### SendGridEmailProvider
+#### TencentSESProvider
 ```typescript
-export class SendGridEmailProvider implements IEmailProvider {
+export class TencentSESProvider implements IEmailProvider {
+  constructor(
+    private secretId: string,
+    private secretKey: string,
+    private region: string,
+    private fromEmail: string,
+    private fromName: string
+  ) {}
+
+  async send(notification: Notification, recipient: string): Promise<NotificationDeliveryResult> {
+    try {
+      const tencentcloud = require('tencentcloud-sdk-nodejs');
+      const SesClient = tencentcloud.ses.v20201002.Client;
+
+      const clientConfig = {
+        credential: {
+          secretId: this.secretId,
+          secretKey: this.secretKey,
+        },
+        region: this.region,
+        profile: {
+          httpProfile: {
+            endpoint: "ses.tencentcloudapi.com",
+          },
+        },
+      };
+
+      const client = new SesClient(clientConfig);
+
+      const params = {
+        "FromEmailAddress": `${this.fromName} <${this.fromEmail}>`,
+        "Destination": [recipient],
+        "Subject": notification.title,
+        "ReplyToAddresses": [],
+        "Html": notification.message,
+        "Text": notification.message
+      };
+
+      const response = await client.SendEmail(params);
+
+      return {
+        success: true,
+        messageId: response.RequestId,
+        metadata: {
+          provider: 'tencent-ses',
+          response: response,
+          region: this.region
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        metadata: {
+          provider: 'tencent-ses'
+        }
+      };
+    }
+  }
+
+  async sendEmail(to: string, subject: string, content: string, options?: EmailOptions): Promise<NotificationDeliveryResult> {
+    const notification = {
+      title: subject,
+      message: content
+    } as Notification;
+
+    return this.send(notification, to);
+  }
+
+  async isAvailable(): Promise<boolean> {
+    try {
+      const tencentcloud = require('tencentcloud-sdk-nodejs');
+      const SesClient = tencentcloud.ses.v20201002.Client;
+
+      const clientConfig = {
+        credential: {
+          secretId: this.secretId,
+          secretKey: this.secretKey,
+        },
+        region: this.region,
+      };
+
+      const client = new SesClient(clientConfig);
+
+      // Test API access with a simple request
+      await client.ListEmailTemplates({});
+
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  getName(): string {
+    return 'Tencent SES';
+  }
+
+  getType(): NotificationChannel {
+    return NotificationChannel.EMAIL;
+  }
+}
+```
+
+#### SMTPProvider
+```typescript
+import nodemailer from 'nodemailer';
+
+export class SMTPProvider implements IEmailProvider {
+  private transporter: nodemailer.Transporter;
+
+  constructor(
+    private host: string,
+    private port: number,
+    private secure: boolean,
+    private auth: {
+      user: string;
+      pass: string;
+    },
+    private fromEmail: string,
+    private fromName: string
+  ) {
+    this.transporter = nodemailer.createTransporter({
+      host: this.host,
+      port: this.port,
+      secure: this.secure,
+      auth: this.auth,
+    });
+  }
+
+  async send(notification: Notification, recipient: string): Promise<NotificationDeliveryResult> {
+    try {
+      const response = await this.sendEmail(recipient, notification.title, notification.message);
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  async sendEmail(to: string, subject: string, content: string, options?: EmailOptions): Promise<NotificationDeliveryResult> {
+    try {
+      const mailOptions = {
+        from: `${this.fromName} <${this.fromEmail}>`,
+        to,
+        subject,
+        text: content,
+        html: options?.html ? content : undefined,
+        replyTo: options?.replyTo,
+        attachments: options?.attachments
+      };
+
+      const response = await this.transporter.sendMail(mailOptions);
+
+      return {
+        success: true,
+        messageId: response.messageId,
+        metadata: {
+          provider: 'smtp',
+          response: response,
+          host: this.host
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        metadata: {
+          provider: 'smtp'
+        }
+      };
+    }
+  }
+
+  async isAvailable(): Promise<boolean> {
+    try {
+      // Test SMTP connection
+      await this.transporter.verify();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  getName(): string {
+    return 'SMTP';
+  }
+
+  getType(): NotificationChannel {
+    return NotificationChannel.EMAIL;
+  }
+}
+```
+
+#### SendGridProvider
+```typescript
+export class SendGridProvider implements IEmailProvider {
   constructor(
     private apiKey: string,
     private fromEmail: string,
@@ -1687,11 +1883,9 @@ export class SendGridEmailProvider implements IEmailProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      // Simple health check - could be more sophisticated
       const sgMail = require('@sendgrid/mail');
       sgMail.setApiKey(this.apiKey);
 
-      // Test API access
       await sgMail.getRequest({
         url: '/v3/user/account',
         method: 'GET'
@@ -1709,6 +1903,132 @@ export class SendGridEmailProvider implements IEmailProvider {
 
   getType(): NotificationChannel {
     return NotificationChannel.EMAIL;
+  }
+}
+```
+
+#### EmailProviderHierarchy
+```typescript
+export class EmailProviderHierarchy implements IEmailProvider {
+  private providers: IEmailProvider[] = [];
+  private healthStatus: Map<string, boolean> = new Map();
+
+  constructor(
+    private tencentProvider: TencentSESProvider,
+    private smtpProvider: SMTPProvider,
+    private sendGridProvider: SendGridProvider
+  ) {
+    this.providers = [tencentProvider, smtpProvider, sendGridProvider];
+  }
+
+  async send(notification: Notification, recipient: string): Promise<NotificationDeliveryResult> {
+    const attempts: NotificationDeliveryResult[] = [];
+
+    for (const provider of this.providers) {
+      try {
+        // Check if provider is healthy
+        const isHealthy = await this.checkProviderHealth(provider);
+        if (!isHealthy) {
+          attempts.push({
+            success: false,
+            error: `Provider ${provider.getName()} is not healthy`,
+            metadata: { provider: provider.getName() }
+          });
+          continue;
+        }
+
+        // Try to send with provider
+        const result = await provider.send(notification, recipient);
+        attempts.push(result);
+
+        if (result.success) {
+          return {
+            success: true,
+            messageId: result.messageId,
+            metadata: {
+              provider: provider.getName(),
+              attempts: attempts,
+              successfulProvider: provider.getName()
+            }
+          };
+        }
+      } catch (error) {
+        attempts.push({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          metadata: { provider: provider.getName() }
+        });
+      }
+    }
+
+    // All providers failed
+    return {
+      success: false,
+      error: 'All email providers failed',
+      metadata: {
+        attempts: attempts,
+        totalAttempts: attempts.length
+      }
+    };
+  }
+
+  async sendEmail(to: string, subject: string, content: string, options?: EmailOptions): Promise<NotificationDeliveryResult> {
+    const notification = {
+      title: subject,
+      message: content
+    } as Notification;
+
+    return this.send(notification, to);
+  }
+
+  private async checkProviderHealth(provider: IEmailProvider): Promise<boolean> {
+    const providerName = provider.getName();
+
+    // Check cached health status
+    if (this.healthStatus.has(providerName)) {
+      return this.healthStatus.get(providerName)!;
+    }
+
+    // Check actual health
+    const isHealthy = await provider.isAvailable();
+    this.healthStatus.set(providerName, isHealthy);
+
+    return isHealthy;
+  }
+
+  async isAvailable(): Promise<boolean> {
+    // Check if at least one provider is available
+    for (const provider of this.providers) {
+      if (await provider.isAvailable()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  getName(): string {
+    return 'Email Provider Hierarchy';
+  }
+
+  getType(): NotificationChannel {
+    return NotificationChannel.EMAIL;
+  }
+
+  // Method to refresh health status
+  async refreshHealthStatus(): Promise<void> {
+    this.healthStatus.clear();
+    for (const provider of this.providers) {
+      const isHealthy = await provider.isAvailable();
+      this.healthStatus.set(provider.getName(), isHealthy);
+    }
+  }
+
+  // Method to get provider statistics
+  getProviderStats(): { name: string; healthy: boolean }[] {
+    return this.providers.map(provider => ({
+      name: provider.getName(),
+      healthy: this.healthStatus.get(provider.getName()) || false
+    }));
   }
 }
 ```
@@ -1932,10 +2252,35 @@ export class NotificationContainer {
   private initializeProviders(): void {
     const config = getNotificationConfig();
 
-    this.emailProvider = new SendGridEmailProvider(
+    // Initialize individual email providers
+    const tencentProvider = new TencentSESProvider(
+      config.tencent.secretId,
+      config.tencent.secretKey,
+      config.tencent.region,
+      config.tencent.fromEmail,
+      config.tencent.fromName
+    );
+
+    const smtpProvider = new SMTPProvider(
+      config.smtp.host,
+      config.smtp.port,
+      config.smtp.secure,
+      config.smtp.auth,
+      config.smtp.fromEmail,
+      config.smtp.fromName
+    );
+
+    const sendGridProvider = new SendGridProvider(
       config.sendgrid.apiKey,
       config.sendgrid.fromEmail,
       config.sendgrid.fromName
+    );
+
+    // Initialize email provider hierarchy (Tencent SES → SMTP → SendGrid)
+    this.emailProvider = new EmailProviderHierarchy(
+      tencentProvider,
+      smtpProvider,
+      sendGridProvider
     );
 
     this.smsProvider = new TwilioSmsProvider(
@@ -3050,7 +3395,9 @@ The notification service integrates with the authentication middleware:
 
 The notification service integrates with external services:
 
-- **SendGrid** for email delivery
+- **Tencent Cloud SES** (primary email delivery)
+- **SMTP servers** (secondary email delivery)
+- **SendGrid** (fallback email delivery)
 - **Twilio** for SMS delivery
 - **Firebase** for push notifications
 - **Webhooks** for provider callbacks
@@ -3079,6 +3426,24 @@ The notification service tracks delivery and engagement metrics:
 ```typescript
 // NotificationConfig.ts
 export interface NotificationConfig {
+  tencent: {
+    secretId: string;
+    secretKey: string;
+    region: string;
+    fromEmail: string;
+    fromName: string;
+  };
+  smtp: {
+    host: string;
+    port: number;
+    secure: boolean;
+    auth: {
+      user: string;
+      pass: string;
+    };
+    fromEmail: string;
+    fromName: string;
+  };
   sendgrid: {
     apiKey: string;
     fromEmail: string;
@@ -3107,10 +3472,33 @@ export interface NotificationConfig {
     enabled: boolean;
     interval: number;
   };
+  emailHierarchy: {
+    enabled: boolean;
+    healthCheckInterval: number;
+    fallbackTimeout: number;
+  };
 }
 
 export function getNotificationConfig(): NotificationConfig {
   return {
+    tencent: {
+      secretId: process.env.TENCENT_SECRET_ID || '',
+      secretKey: process.env.TENCENT_SECRET_KEY || '',
+      region: process.env.TENCENT_REGION || 'ap-singapore',
+      fromEmail: process.env.TENCENT_FROM_EMAIL || '',
+      fromName: process.env.TENCENT_FROM_NAME || ''
+    },
+    smtp: {
+      host: process.env.SMTP_HOST || 'localhost',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || ''
+      },
+      fromEmail: process.env.SMTP_FROM_EMAIL || '',
+      fromName: process.env.SMTP_FROM_NAME || ''
+    },
     sendgrid: {
       apiKey: process.env.SENDGRID_API_KEY || '',
       fromEmail: process.env.SENDGRID_FROM_EMAIL || '',
@@ -3138,6 +3526,11 @@ export function getNotificationConfig(): NotificationConfig {
     scheduler: {
       enabled: process.env.NOTIFICATION_SCHEDULER_ENABLED === 'true',
       interval: parseInt(process.env.NOTIFICATION_SCHEDULER_INTERVAL || '60000')
+    },
+    emailHierarchy: {
+      enabled: process.env.EMAIL_HIERARCHY_ENABLED !== 'false',
+      healthCheckInterval: parseInt(process.env.EMAIL_HIERARCHY_HEALTH_CHECK_INTERVAL || '300000'),
+      fallbackTimeout: parseInt(process.env.EMAIL_HIERARCHY_FALLBACK_TIMEOUT || '10000')
     }
   };
 }
@@ -3299,8 +3692,11 @@ Set up monitoring for:
    - NotificationDeliveryRepository (1 day)
    - NotificationAnalyticsRepository (1 day)
 
-2. **Create Provider Implementations** (4 days)
-   - SendGridEmailProvider (1 day)
+2. **Create Provider Implementations** (5 days)
+   - TencentSESProvider (1.5 days)
+   - SMTPProvider (1 day)
+   - SendGridProvider (1 day)
+   - EmailProviderHierarchy (1 day)
    - TwilioSmsProvider (1 day)
    - FirebasePushProvider (1 day)
    - InAppProvider (1 day)
@@ -3360,7 +3756,7 @@ Set up monitoring for:
 |-------|-------|
 | Week 1 | Domain Layer (Entities, Interfaces, Errors) |
 | Week 2 | Application Layer (Use Cases, DTOs, Mappers) |
-| Week 3 | Infrastructure Layer (Repositories, Providers) |
+| Week 3 | Email Providers (Tencent SES, SMTP, SendGrid) + Repositories |
 | Week 4 | Presentation Layer (Controllers, Routes) + Testing |
 | Week 5 | Integration Testing, Documentation, Deployment |
 

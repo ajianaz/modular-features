@@ -61,21 +61,32 @@ packages/api/src/features/notifications/
 - Delivery tracking and analytics
 - Bulk notification support
 - Retry mechanism for failed notifications
+- Three-tier email provider hierarchy (Tencent SES → SMTP → SendGrid)
+- Automatic failover between email providers
+- Geographic-based provider optimization
+- Provider-specific delivery metrics and analytics
 
 ### Integration Points
 - Authentication system for user identification
 - User management system for user data
 - Database layer for data persistence
-- External providers (SendGrid, Twilio, Firebase)
+- External providers:
+  - **Email**: Tencent Cloud SES (primary), SMTP (secondary), SendGrid (fallback)
+  - **SMS**: Twilio
+  - **Push**: Firebase Cloud Messaging
 - Shared utilities and error classes
+- Tencent Cloud SDK integration
+- SMTP server configuration
 
 ## Getting Started
 
 1. Review the [implementation plan](./PHASE_9_NOTIFICATION_SERVICE_IMPLEMENTATION_PLAN.md) for understanding the overall architecture
 2. Study the [auth feature analysis](./AUTH_FEATURE_ANALYSIS_FOR_PHASE_9.md) to understand the patterns to follow
-3. Use the [task breakdown](./phase-9-task-breakdown.md) to guide implementation
-4. Follow the established patterns from the authentication feature
-5. Ensure comprehensive testing throughout implementation
+3. Review the [Tencent SES analysis](../../docs/tencent-ses-analysis.md) for email provider hierarchy strategy
+4. Use the [task breakdown](./phase-9-task-breakdown.md) to guide implementation
+5. Follow the established patterns from the authentication feature
+6. Ensure comprehensive testing throughout implementation
+7. Pay special attention to email provider hierarchy implementation and failover mechanisms
 
 ## Success Criteria
 
@@ -87,6 +98,10 @@ packages/api/src/features/notifications/
 - [x] Track delivery status and analytics
 - [x] Handle bulk notifications
 - [x] Implement retry mechanism for failed notifications
+- [x] Implement three-tier email provider hierarchy (Tencent SES → SMTP → SendGrid)
+- [x] Provide automatic failover between email providers
+- [x] Track provider-specific delivery metrics
+- [x] Support provider-specific template handling
 
 ### Non-Functional Requirements
 - [x] 99.9% uptime for notification delivery
@@ -107,7 +122,7 @@ packages/api/src/features/notifications/
 |-------|--------|----------|
 | Week 1 | Domain Layer | 4 days |
 | Week 2 | Use Cases + DTOs | 7 days |
-| Week 3 | Providers + Repositories | 6 days |
+| Week 3 | Email Providers (Tencent SES, SMTP, SendGrid) + Repositories | 7 days |
 | Week 4 | Templates + API + DI Container | 6 days |
 | Week 5 | Analytics + Tests + Integration | 8 days |
 
@@ -119,9 +134,14 @@ packages/api/src/features/notifications/
 4. **Security**: Validate all input data and implement proper authorization
 5. **Monitoring**: Add logging and metrics throughout the implementation
 6. **Documentation**: Update API documentation as features are implemented
+7. **Email Provider Hierarchy**: Implement comprehensive testing for all three email providers and their failover mechanisms
+8. **Provider Health Monitoring**: Implement robust health checks for all email providers
+9. **Geographic Considerations**: Optimize provider selection based on recipient geographic location
+10. **Cost Optimization**: Prioritize Tencent SES for cost efficiency while maintaining reliability through fallback providers
 
 ## Related Documentation
 
 - [Main Task List](../tasks-modular-monolith-implementation.md) - Overall project tasks
 - [Architecture Guide](../../docs/ARCHITECTURE_GUIDE.md) - General architecture principles
 - [Development Guide](../../docs/DEVELOPMENT_GUIDE.md) - Development setup and guidelines
+- [Tencent SES Analysis](../../docs/tencent-ses-analysis.md) - Comprehensive email provider analysis and hierarchy strategy
