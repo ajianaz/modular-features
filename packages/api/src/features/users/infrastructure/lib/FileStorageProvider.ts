@@ -117,4 +117,51 @@ export class FileStorageProvider {
     const fullFileName = fileName.replace(`${this.config.uploadPath}/`, '');
     return `${this.config.baseUrl}/${fullFileName}`;
   }
+
+  // Method to get file info from URL
+  async getFileInfo(fileUrl: string): Promise<{ exists: boolean; size?: number; type?: string }> {
+    try {
+      // In a real implementation, you would check if the file exists in storage
+      // For now, return mock info
+      return {
+        exists: true,
+        size: 1024, // Mock size
+        type: 'image/jpeg' // Mock type
+      };
+    } catch (error) {
+      console.error('FileStorageProvider.getFileInfo error:', error);
+      return { exists: false };
+    }
+  }
+
+  // Method to validate image dimensions
+  async validateImageDimensions(file: File, maxWidth: number = 2000, maxHeight: number = 2000): Promise<boolean> {
+    try {
+      // In a real implementation, you would use a library like sharp to get dimensions
+      // For now, return true as a placeholder
+      return true;
+    } catch (error) {
+      console.error('FileStorageProvider.validateImageDimensions error:', error);
+      return false;
+    }
+  }
+
+  // Method to generate a unique filename
+  generateUniqueFileName(originalName: string, userId: string): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const extension = originalName.split('.').pop() || 'jpg';
+    return `${this.config.uploadPath}/${userId}/${timestamp}_${random}.${extension}`;
+  }
+
+  // Method to extract file path from URL
+  extractPathFromUrl(fileUrl: string): string {
+    try {
+      const url = new URL(fileUrl);
+      return url.pathname;
+    } catch (error) {
+      console.error('FileStorageProvider.extractPathFromUrl error:', error);
+      return fileUrl;
+    }
+  }
 }

@@ -8,6 +8,7 @@ import {
   UserSettingsNotFoundError,
   InvalidUserSettingsError
 } from '../../domain/errors';
+import { UpdateUserSettingsRequestSchema } from '../dtos/input/UpdateUserSettingsRequest';
 
 export class UpdateUserSettingsUseCase {
   constructor(
@@ -173,19 +174,19 @@ export class UpdateUserSettingsUseCase {
               customSettings: settings.customSettings
             },
             newValues: {
-              theme: request.theme,
-              language: request.language,
-              timezone: request.timezone,
-              emailNotifications: request.emailNotifications,
-              pushNotifications: request.pushNotifications,
-              smsNotifications: request.smsNotifications,
-              marketingEmails: request.marketingEmails,
-              twoFactorEnabled: request.twoFactorEnabled,
-              sessionTimeout: request.sessionTimeout,
-              autoSaveDrafts: request.autoSaveDrafts,
-              showOnlineStatus: request.showOnlineStatus,
-              profileVisibility: request.profileVisibility,
-              customSettings: request.customSettings
+              theme: updatedSettingsEntity.theme,
+              language: updatedSettingsEntity.language,
+              timezone: updatedSettingsEntity.timezone,
+              emailNotifications: updatedSettingsEntity.emailNotifications,
+              pushNotifications: updatedSettingsEntity.pushNotifications,
+              smsNotifications: updatedSettingsEntity.smsNotifications,
+              marketingEmails: updatedSettingsEntity.marketingEmails,
+              twoFactorEnabled: updatedSettingsEntity.twoFactorEnabled,
+              sessionTimeout: updatedSettingsEntity.sessionTimeout,
+              autoSaveDrafts: updatedSettingsEntity.autoSaveDrafts,
+              showOnlineStatus: updatedSettingsEntity.showOnlineStatus,
+              profileVisibility: updatedSettingsEntity.profileVisibility,
+              customSettings: updatedSettingsEntity.customSettings
             }
           }
         })
@@ -222,6 +223,3 @@ export class UpdateUserSettingsUseCase {
     }
   }
 }
-
-// Import the schema at the top level
-import { UpdateUserSettingsRequestSchema } from '../dtos/input/UpdateUserSettingsRequest';

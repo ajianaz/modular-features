@@ -424,12 +424,14 @@ export const createDate = (year: number, month: number, day: number, hour: numbe
 export const createPastDate = (daysAgo: number) => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
+  date.setHours(0, 0, 0, 0); // Normalize to start of day
   return date;
 };
 
 export const createFutureDate = (daysFromNow: number) => {
   const date = new Date();
   date.setDate(date.getDate() + daysFromNow);
+  date.setHours(23, 59, 59, 999); // Normalize to end of day
   return date;
 };
 

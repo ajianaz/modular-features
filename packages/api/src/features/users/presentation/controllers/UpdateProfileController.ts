@@ -1,9 +1,15 @@
-import { Request, Response } from 'express';
+import { Context } from 'hono';
 import { UpdateUserProfileUseCase } from '../../application/usecases/UpdateUserProfileUseCase';
 import { UsersContainer } from '../../infrastructure/container/UsersContainer';
 import { ValidationError } from '@modular-monolith/shared';
 import { UpdateUserProfileResponse, UpdateUserProfileResponseSchema } from '../../application/dtos/output/UpdateUserProfileResponse';
 import { UpdateUserProfileRequest } from '../../application/dtos/input/UpdateUserProfileRequest';
+import {
+  UserProfileNotFoundError,
+  InvalidUserProfileError,
+  DuplicateProfileError,
+  PermissionDeniedError
+} from '../../domain/errors/UserManagementError';
 
 /**
  * Controller for updating user profile
@@ -11,30 +17,33 @@ import { UpdateUserProfileRequest } from '../../application/dtos/input/UpdateUse
 export class UpdateProfileController {
   private updateUserProfileUseCase: UpdateUserProfileUseCase;
 
-  constructor() {
-    const usersContainer = UsersContainer.getInstance();
-    this.updateUserProfileUseCase = usersContainer.getUpdateUserProfileUseCase();
+  constructor(updateUserProfileUseCase?: UpdateUserProfileUseCase) {
+    if (updateUserProfileUseCase) {
+      this.updateUserProfileUseCase = updateUserProfileUseCase;
+    } else {
+      const usersContainer = UsersContainer.getInstance();
+      this.updateUserProfileUseCase = usersContainer.getUpdateUserProfileUseCase();
+    }
   }
 
   /**
    * Update user profile by ID
    */
-  async updateProfile(req: Request, res: Response): Promise<void> {
+  async updateProfile(c: Context): Promise<Response> {
     try {
-      const { userId } = req.params;
+      const { userId } = c.req.param();
 
       if (!userId) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: 'User ID is required',
           error: 'MISSING_USER_ID'
-        });
-        return;
+        }, 400);
       }
 
       const request: UpdateUserProfileRequest = {
         userId,
-        ...req.body
+        ...await c.req.json()
       };
 
       const result = await this.updateUserProfileUseCase.execute(request);
@@ -43,55 +52,90 @@ export class UpdateProfileController {
       const validationResult = UpdateUserProfileResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('UpdateProfileController.updateProfile error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserProfileNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof InvalidUserProfileError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, reason: 'Invalid profile data provided' }
+        }, 400);
+      }
+
+      if (error instanceof DuplicateProfileError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 409);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to update user profile',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 
   /**
    * Update current user's profile (from authenticated user)
    */
-  async updateCurrentUserProfile(req: Request, res: Response): Promise<void> {
+  async updateCurrentUserProfile(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = (req as any).user?.id;
+      const userId = c.get('userId');
 
       if (!userId) {
-        res.status(401).json({
+        return c.json({
           success: false,
           message: 'Authentication required',
           error: 'AUTHENTICATION_REQUIRED'
-        });
-        return;
+        }, 401);
       }
 
       const request: UpdateUserProfileRequest = {
         userId,
-        ...req.body
+        ...await c.req.json()
       };
 
       const result = await this.updateUserProfileUseCase.execute(request);
@@ -100,32 +144,68 @@ export class UpdateProfileController {
       const validationResult = UpdateUserProfileResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('UpdateProfileController.updateCurrentUserProfile error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserProfileNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof InvalidUserProfileError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, reason: 'Invalid profile data provided' }
+        }, 400);
+      }
+
+      if (error instanceof DuplicateProfileError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 409);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to update current user profile',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 }

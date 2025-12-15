@@ -220,6 +220,37 @@ export class UserProfile {
     );
   }
 
+  updateAvatar(avatarUrl: string): UserProfile {
+    const now = new Date();
+    // Ensure updatedAt is different from the original
+    if (now.getTime() === this.updatedAt.getTime()) {
+      now.setTime(now.getTime() + 1);
+    }
+
+    return new UserProfile(
+      this.id,
+      this.userId,
+      this.firstName,
+      this.lastName,
+      this.displayName,
+      this.bio,
+      this.website,
+      this.location,
+      this.timezone,
+      this.language,
+      this.gender,
+      this.dateOfBirth,
+      this.phoneNumber,
+      this.isPhoneVerified,
+      this.socialLinks,
+      this.preferences,
+      avatarUrl,
+      this.isEmailVerified,
+      this.createdAt,
+      now
+    );
+  }
+
   // Business validation methods
   getFullName(): string {
     const parts = [this.firstName, this.lastName].filter(Boolean);
@@ -342,6 +373,8 @@ export class UserProfile {
       isPhoneVerified: this.isPhoneVerified,
       socialLinks: this.socialLinks,
       preferences: this.preferences,
+      avatarUrl: this.avatarUrl,
+      isEmailVerified: this.isEmailVerified,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     };

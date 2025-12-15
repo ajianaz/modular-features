@@ -9,13 +9,13 @@ import { userProfiles } from '@modular-monolith/database';
 import type { UserProfile as DBUserProfile, NewUserProfile } from '@modular-monolith/database';
 import { eq, and, or, ilike, desc, asc, gte, lte, isNull, isNotNull } from 'drizzle-orm';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-const userProfilesTable = userProfiles as any;
+// Import the table type properly
+import { userProfiles } from '@modular-monolith/database';
 
 export class UserProfileRepository implements IUserProfileRepository {
   async findById(id: string): Promise<UserProfile | null> {
     try {
-      const result = await db.select().from(userProfilesTable).where(eq(userProfilesTable.id, id) as any).limit(1);
+      const result = await db.select().from(userProfiles).where(eq(userProfiles.id, id)).limit(1);
 
       if (result.length === 0) {
         return null;
@@ -24,13 +24,16 @@ export class UserProfileRepository implements IUserProfileRepository {
       return this.mapToDomainEntity(result[0]);
     } catch (error) {
       console.error('UserProfileRepository.findById error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to find user profile by ID: ${error.message}`);
+      }
+      throw new Error('Failed to find user profile by ID: Unknown database error');
     }
   }
 
   async findByUserId(userId: string): Promise<UserProfile | null> {
     try {
-      const result = await db.select().from(userProfilesTable).where(eq(userProfilesTable.userId, userId) as any).limit(1);
+      const result = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
 
       if (result.length === 0) {
         return null;
@@ -39,7 +42,10 @@ export class UserProfileRepository implements IUserProfileRepository {
       return this.mapToDomainEntity(result[0]);
     } catch (error) {
       console.error('UserProfileRepository.findByUserId error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to find user profile by user ID: ${error.message}`);
+      }
+      throw new Error('Failed to find user profile by user ID: Unknown database error');
     }
   }
 
@@ -61,12 +67,15 @@ export class UserProfileRepository implements IUserProfileRepository {
         preferences: profile.preferences || {}
       };
 
-      const [insertedProfile] = await db.insert(userProfilesTable).values(newProfileData as any).returning();
+      const [insertedProfile] = await db.insert(userProfiles).values(newProfileData).returning();
 
       return this.mapToDomainEntity(insertedProfile);
     } catch (error) {
       console.error('UserProfileRepository.create error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to create user profile: ${error.message}`);
+      }
+      throw new Error('Failed to create user profile: Unknown database error');
     }
   }
 
@@ -89,9 +98,9 @@ export class UserProfileRepository implements IUserProfileRepository {
       };
 
       const [updatedProfile] = await db
-        .update(userProfilesTable)
-        .set(updateData as any)
-        .where(eq(userProfilesTable.userId, profile.userId) as any)
+        .update(userProfiles)
+        .set(updateData)
+        .where(eq(userProfiles.userId, profile.userId))
         .returning();
 
       if (!updatedProfile) {
@@ -101,21 +110,27 @@ export class UserProfileRepository implements IUserProfileRepository {
       return this.mapToDomainEntity(updatedProfile);
     } catch (error) {
       console.error('UserProfileRepository.update error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to update user profile: ${error.message}`);
+      }
+      throw new Error('Failed to update user profile: Unknown database error');
     }
   }
 
   async delete(id: string): Promise<boolean> {
     try {
       const result = await db
-        .delete(userProfilesTable)
-        .where(eq(userProfilesTable.id, id) as any)
-        .returning({ id: userProfilesTable.id });
+        .delete(userProfiles)
+        .where(eq(userProfiles.id, id))
+        .returning({ id: userProfiles.id });
 
       return result.length > 0;
     } catch (error) {
       console.error('UserProfileRepository.delete error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete user profile: ${error.message}`);
+      }
+      throw new Error('Failed to delete user profile: Unknown database error');
     }
   }
 
@@ -123,10 +138,10 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .limit(limit)
         .offset(offset)
-        .orderBy(desc(userProfilesTable.createdAt) as any);
+        .orderBy(desc(userProfiles.createdAt));
 
       return result.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -145,7 +160,7 @@ export class UserProfileRepository implements IUserProfileRepository {
       const result = await db
         .select()
         .from(userProfilesTable)
-        .where(eq(userProfilesTable.phoneNumber, phoneNumber) as any)
+        .where(eq(userProfiles.phoneNumber, phoneNumber))
         .limit(1);
 
       if (result.length === 0) {
@@ -163,12 +178,12 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(
           or(
-            ilike(userProfilesTable.firstName, `%${name}%`) as any,
-            ilike(userProfilesTable.lastName, `%${name}%`) as any,
-            ilike(userProfilesTable.displayName, `%${name}%`) as any
+            ilike(userProfiles.firstName, `%${name}%`),
+            ilike(userProfiles.lastName, `%${name}%`),
+            ilike(userProfiles.displayName, `%${name}%`)
           )
         )
         .limit(50);
@@ -184,8 +199,8 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
-        .where(ilike(userProfilesTable.location, `%${location}%`) as any)
+        .from(userProfiles)
+        .where(ilike(userProfiles.location, `%${location}%`))
         .limit(50);
 
       return result.map(profile => this.mapToDomainEntity(profile));
@@ -240,9 +255,9 @@ export class UserProfileRepository implements IUserProfileRepository {
   async existsById(id: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(eq(userProfilesTable.id, id) as any)
+        .select({ id: userProfiles.id })
+        .from(userProfiles)
+        .where(eq(userProfiles.id, id))
         .limit(1);
 
       return result.length > 0;
@@ -255,9 +270,9 @@ export class UserProfileRepository implements IUserProfileRepository {
   async existsByUserId(userId: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(eq(userProfilesTable.userId, userId) as any)
+        .select({ id: userProfiles.id })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, userId))
         .limit(1);
 
       return result.length > 0;
@@ -275,9 +290,9 @@ export class UserProfileRepository implements IUserProfileRepository {
   async existsByPhone(phoneNumber: string): Promise<boolean> {
     try {
       const result = await db
-        .select({ id: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(eq(userProfilesTable.phoneNumber, phoneNumber) as any)
+        .select({ id: userProfiles.id })
+        .from(userProfiles)
+        .where(eq(userProfiles.phoneNumber, phoneNumber))
         .limit(1);
 
       return result.length > 0;
@@ -305,7 +320,7 @@ export class UserProfileRepository implements IUserProfileRepository {
         preferences: profile.preferences || {}
       }));
 
-      const insertedProfiles = await db.insert(userProfilesTable).values(profilesData as any).returning();
+      const insertedProfiles = await db.insert(userProfiles).values(profilesData).returning();
 
       return insertedProfiles.map(profile => this.mapToDomainEntity(profile));
     } catch (error) {
@@ -327,9 +342,9 @@ export class UserProfileRepository implements IUserProfileRepository {
   async deleteMany(ids: string[]): Promise<boolean> {
     try {
       const result = await db
-        .delete(userProfilesTable)
-        .where(eq(userProfilesTable.id, ids) as any)
-        .returning({ id: userProfilesTable.id });
+        .delete(userProfiles)
+        .where(eq(userProfiles.id, ids))
+        .returning({ id: userProfiles.id });
 
       return result.length > 0;
     } catch (error) {
@@ -341,8 +356,8 @@ export class UserProfileRepository implements IUserProfileRepository {
   async count(): Promise<number> {
     try {
       const result = await db
-        .select({ count: userProfilesTable.id })
-        .from(userProfilesTable);
+        .select({ count: userProfiles.id })
+        .from(userProfiles);
 
       return result[0]?.count || 0;
     } catch (error) {
@@ -354,9 +369,9 @@ export class UserProfileRepository implements IUserProfileRepository {
   async countByLocation(location: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(ilike(userProfilesTable.location, `%${location}%`) as any);
+        .select({ count: userProfiles.id })
+        .from(userProfiles)
+        .where(ilike(userProfiles.location, `%${location}%`));
 
       return result[0]?.count || 0;
     } catch (error) {
@@ -368,12 +383,12 @@ export class UserProfileRepository implements IUserProfileRepository {
   async countByDateRange(startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await db
-        .select({ count: userProfilesTable.id })
-        .from(userProfilesTable)
+        .select({ count: userProfiles.id })
+        .from(userProfiles)
         .where(
           and(
-            gte(userProfilesTable.createdAt, startDate) as any,
-            lte(userProfilesTable.createdAt, endDate) as any
+            gte(userProfiles.createdAt, startDate),
+            lte(userProfiles.createdAt, endDate)
           )
         );
 
@@ -402,42 +417,42 @@ export class UserProfileRepository implements IUserProfileRepository {
       const whereConditions = [];
 
       if (filters.firstName) {
-        whereConditions.push(ilike(userProfilesTable.firstName, `%${filters.firstName}%`) as any);
+        whereConditions.push(ilike(userProfiles.firstName, `%${filters.firstName}%`));
       }
 
       if (filters.lastName) {
-        whereConditions.push(ilike(userProfilesTable.lastName, `%${filters.lastName}%`) as any);
+        whereConditions.push(ilike(userProfiles.lastName, `%${filters.lastName}%`));
       }
 
       if (filters.displayName) {
-        whereConditions.push(ilike(userProfilesTable.displayName, `%${filters.displayName}%`) as any);
+        whereConditions.push(ilike(userProfiles.displayName, `%${filters.displayName}%`));
       }
 
       if (filters.location) {
-        whereConditions.push(ilike(userProfilesTable.location, `%${filters.location}%`) as any);
+        whereConditions.push(ilike(userProfiles.location, `%${filters.location}%`));
       }
 
       if (filters.gender) {
-        whereConditions.push(eq(userProfilesTable.gender, filters.gender) as any);
+        whereConditions.push(eq(userProfiles.gender, filters.gender));
       }
 
       if (filters.hasPhone !== undefined) {
         if (filters.hasPhone) {
-          whereConditions.push(isNotNull(userProfilesTable.phoneNumber) as any);
+          whereConditions.push(isNotNull(userProfiles.phoneNumber));
         } else {
-          whereConditions.push(isNull(userProfilesTable.phoneNumber) as any);
+          whereConditions.push(isNull(userProfiles.phoneNumber));
         }
       }
 
       if (filters.isPhoneVerified !== undefined) {
-        whereConditions.push(eq(userProfilesTable.isPhoneVerified, filters.isPhoneVerified) as any);
+        whereConditions.push(eq(userProfiles.isPhoneVerified, filters.isPhoneVerified));
       }
 
       if (filters.hasWebsite !== undefined) {
         if (filters.hasWebsite) {
-          whereConditions.push(isNotNull(userProfilesTable.website) as any);
+          whereConditions.push(isNotNull(userProfiles.website));
         } else {
-          whereConditions.push(isNull(userProfilesTable.website) as any);
+          whereConditions.push(isNull(userProfiles.website));
         }
       }
 
@@ -460,12 +475,12 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(
           or(
-            isNull(userProfilesTable.firstName) as any,
-            isNull(userProfilesTable.lastName) as any,
-            isNull(userProfilesTable.displayName) as any
+            isNull(userProfiles.firstName),
+            isNull(userProfiles.lastName),
+            isNull(userProfiles.displayName)
           )
         )
         .limit(50);
@@ -486,8 +501,8 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
-        .where(isNull(userProfilesTable.phoneNumber) as any)
+        .from(userProfiles)
+        .where(isNull(userProfiles.phoneNumber))
         .limit(50);
 
       return result.map(profile => this.mapToDomainEntity(profile));
@@ -501,11 +516,11 @@ export class UserProfileRepository implements IUserProfileRepository {
     try {
       const result = await db
         .select()
-        .from(userProfilesTable)
+        .from(userProfiles)
         .where(
           and(
-            isNotNull(userProfilesTable.phoneNumber) as any,
-            eq(userProfilesTable.isPhoneVerified, false) as any
+            isNotNull(userProfiles.phoneNumber),
+            eq(userProfiles.isPhoneVerified, false)
           )
         )
         .limit(50);
@@ -554,7 +569,7 @@ export class UserProfileRepository implements IUserProfileRepository {
   }
 
   // Private helper methods
-  private mapToDomainEntity(profile: any): UserProfile {
+  private mapToDomainEntity(profile: DBUserProfile): UserProfile {
     return new UserProfile(
       profile.id,
       profile.userId,
@@ -566,16 +581,16 @@ export class UserProfileRepository implements IUserProfileRepository {
       profile.location || undefined,
       profile.timezone || 'UTC',
       profile.language || 'en',
-      profile.gender as any || undefined,
+      profile.gender || undefined,
       profile.dateOfBirth ? new Date(profile.dateOfBirth) : undefined, // Convert string to Date
       profile.phoneNumber || undefined,
       profile.isPhoneVerified,
-      profile.socialLinks as any || {},
-      profile.preferences as any || {},
+      profile.socialLinks || {},
+      profile.preferences || {},
       undefined, // Avatar is stored in users table
       undefined, // Email verification is stored in users table
-      profile.createdAt,
-      profile.updatedAt
+      new Date(profile.createdAt), // Ensure createdAt is a Date object
+      new Date(profile.updatedAt)  // Ensure updatedAt is a Date object
     );
   }
 }

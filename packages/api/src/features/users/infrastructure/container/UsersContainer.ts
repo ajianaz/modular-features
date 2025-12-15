@@ -9,6 +9,7 @@ import { UpdateUserProfileUseCase } from '../../application/usecases/UpdateUserP
 import { GetUserSettingsUseCase } from '../../application/usecases/GetUserSettingsUseCase';
 import { UpdateUserSettingsUseCase } from '../../application/usecases/UpdateUserSettingsUseCase';
 import { UploadAvatarUseCase } from '../../application/usecases/UploadAvatarUseCase';
+import { DeleteAvatarUseCase } from '../../application/usecases/DeleteAvatarUseCase';
 
 /**
  * Dependency Injection Container for Users Feature
@@ -33,6 +34,7 @@ export class UsersContainer {
   private getUserSettingsUseCase: GetUserSettingsUseCase;
   private updateUserSettingsUseCase: UpdateUserSettingsUseCase;
   private uploadAvatarUseCase: UploadAvatarUseCase;
+  private deleteAvatarUseCase: DeleteAvatarUseCase;
 
   private constructor() {
     // Initialize all infrastructure dependencies
@@ -67,6 +69,11 @@ export class UsersContainer {
     this.uploadAvatarUseCase = new UploadAvatarUseCase(
       this.userProfileRepository,
       this.userActivityRepository
+    );
+
+    this.deleteAvatarUseCase = new DeleteAvatarUseCase(
+      this.userProfileRepository,
+      this.fileStorageProvider
     );
   }
 
@@ -127,5 +134,9 @@ export class UsersContainer {
 
   public getUploadAvatarUseCase(): UploadAvatarUseCase {
     return this.uploadAvatarUseCase;
+  }
+
+  public getDeleteAvatarUseCase(): DeleteAvatarUseCase {
+    return this.deleteAvatarUseCase;
   }
 }

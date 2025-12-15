@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Context } from 'hono';
 import { GetUserSettingsUseCase } from '../../application/usecases/GetUserSettingsUseCase';
 import { UpdateUserSettingsUseCase } from '../../application/usecases/UpdateUserSettingsUseCase';
 import { UsersContainer } from '../../infrastructure/container/UsersContainer';
@@ -7,6 +7,12 @@ import { GetUserSettingsResponse, GetUserSettingsResponseSchema } from '../../ap
 import { UpdateUserSettingsResponse, UpdateUserSettingsResponseSchema } from '../../application/dtos/output/UpdateUserSettingsResponse';
 import { GetUserSettingsRequest } from '../../application/dtos/input/GetUserSettingsRequest';
 import { UpdateUserSettingsRequest } from '../../application/dtos/input/UpdateUserSettingsRequest';
+import {
+  UserSettingsNotFoundError,
+  InvalidUserSettingsError,
+  DuplicateSettingsError,
+  PermissionDeniedError
+} from '../../domain/errors/UserManagementError';
 
 /**
  * Controller for user settings CRUD operations
@@ -15,26 +21,30 @@ export class SettingsController {
   private getUserSettingsUseCase: GetUserSettingsUseCase;
   private updateUserSettingsUseCase: UpdateUserSettingsUseCase;
 
-  constructor() {
-    const usersContainer = UsersContainer.getInstance();
-    this.getUserSettingsUseCase = usersContainer.getGetUserSettingsUseCase();
-    this.updateUserSettingsUseCase = usersContainer.getUpdateUserSettingsUseCase();
+  constructor(getUserSettingsUseCase?: GetUserSettingsUseCase, updateUserSettingsUseCase?: UpdateUserSettingsUseCase) {
+    if (getUserSettingsUseCase && updateUserSettingsUseCase) {
+      this.getUserSettingsUseCase = getUserSettingsUseCase;
+      this.updateUserSettingsUseCase = updateUserSettingsUseCase;
+    } else {
+      const usersContainer = UsersContainer.getInstance();
+      this.getUserSettingsUseCase = usersContainer.getGetUserSettingsUseCase();
+      this.updateUserSettingsUseCase = usersContainer.getUpdateUserSettingsUseCase();
+    }
   }
 
   /**
    * Get user settings by user ID
    */
-  async getSettings(req: Request, res: Response): Promise<void> {
+  async getSettings(c: Context): Promise<Response> {
     try {
-      const { userId } = req.params;
+      const { userId } = c.req.param();
 
       if (!userId) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: 'User ID is required',
           error: 'MISSING_USER_ID'
-        });
-        return;
+        }, 400);
       }
 
       const request: GetUserSettingsRequest = { userId };
@@ -44,54 +54,71 @@ export class SettingsController {
       const validationResult = GetUserSettingsResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('SettingsController.getSettings error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to retrieve user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 
   /**
    * Update user settings by user ID
    */
-  async updateSettings(req: Request, res: Response): Promise<void> {
+  async updateSettings(c: Context): Promise<Response> {
     try {
-      const { userId } = req.params;
+      const { userId } = c.req.param();
 
       if (!userId) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: 'User ID is required',
           error: 'MISSING_USER_ID'
-        });
-        return;
+        }, 400);
       }
 
       const request: UpdateUserSettingsRequest = {
         userId,
-        ...req.body
+        ...await c.req.json()
       };
 
       const result = await this.updateUserSettingsUseCase.execute(request);
@@ -100,50 +127,85 @@ export class SettingsController {
       const validationResult = UpdateUserSettingsResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('SettingsController.updateSettings error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof InvalidUserSettingsError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, reason: 'Invalid settings data provided' }
+        }, 400);
+      }
+
+      if (error instanceof DuplicateSettingsError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 409);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to update user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 
   /**
    * Get current user's settings (from authenticated user)
    */
-  async getCurrentUserSettings(req: Request, res: Response): Promise<void> {
+  async getCurrentUserSettings(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = (req as any).user?.id;
+      const userId = c.get('userId');
 
       if (!userId) {
-        res.status(401).json({
+        return c.json({
           success: false,
           message: 'Authentication required',
           error: 'AUTHENTICATION_REQUIRED'
-        });
-        return;
+        }, 401);
       }
 
       const request: GetUserSettingsRequest = { userId };
@@ -153,55 +215,72 @@ export class SettingsController {
       const validationResult = GetUserSettingsResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('SettingsController.getCurrentUserSettings error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to retrieve current user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 
   /**
    * Update current user's settings (from authenticated user)
    */
-  async updateCurrentUserSettings(req: Request, res: Response): Promise<void> {
+  async updateCurrentUserSettings(c: Context): Promise<Response> {
     try {
       // Get user ID from authenticated request (assuming it's attached by auth middleware)
-      const userId = (req as any).user?.id;
+      const userId = c.get('userId');
 
       if (!userId) {
-        res.status(401).json({
+        return c.json({
           success: false,
           message: 'Authentication required',
           error: 'AUTHENTICATION_REQUIRED'
-        });
-        return;
+        }, 401);
       }
 
       const request: UpdateUserSettingsRequest = {
         userId,
-        ...req.body
+        ...await c.req.json()
       };
 
       const result = await this.updateUserSettingsUseCase.execute(request);
@@ -210,32 +289,68 @@ export class SettingsController {
       const validationResult = UpdateUserSettingsResponseSchema.safeParse(result);
       if (!validationResult.success) {
         console.error('Response validation failed:', validationResult.error);
-        res.status(500).json({
+        return c.json({
           success: false,
           message: 'Internal server error - response validation failed',
           error: 'RESPONSE_VALIDATION_ERROR'
-        });
-        return;
+        }, 500);
       }
 
-      res.status(200).json(validationResult.data);
+      return c.json(validationResult.data);
     } catch (error) {
       console.error('SettingsController.updateCurrentUserSettings error:', error);
 
       if (error instanceof ValidationError) {
-        res.status(400).json({
+        return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
-        });
-        return;
+          error: 'VALIDATION_ERROR',
+          details: error.details
+        }, 400);
       }
 
-      res.status(500).json({
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof InvalidUserSettingsError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, reason: 'Invalid settings data provided' }
+        }, 400);
+      }
+
+      if (error instanceof DuplicateSettingsError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 409);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
+      }
+
+      return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
-      });
+        message: 'Failed to update current user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
+      }, 500);
     }
   }
 }

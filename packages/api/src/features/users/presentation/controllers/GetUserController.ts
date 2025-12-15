@@ -7,6 +7,11 @@ import { GetUserProfileResponse, GetUserProfileResponseSchema } from '../../appl
 import { GetUserSettingsResponse, GetUserSettingsResponseSchema } from '../../application/dtos/output/GetUserSettingsResponse';
 import { GetUserProfileRequest } from '../../application/dtos/input/GetUserProfileRequest';
 import { GetUserSettingsRequest } from '../../application/dtos/input/GetUserSettingsRequest';
+import {
+  UserProfileNotFoundError,
+  UserSettingsNotFoundError,
+  PermissionDeniedError
+} from '../../domain/errors/UserManagementError';
 
 /**
  * Controller for getting user profile and settings
@@ -15,10 +20,15 @@ export class GetUserController {
   private getUserProfileUseCase: GetUserProfileUseCase;
   private getUserSettingsUseCase: GetUserSettingsUseCase;
 
-  constructor() {
-    const usersContainer = UsersContainer.getInstance();
-    this.getUserProfileUseCase = usersContainer.getGetUserProfileUseCase();
-    this.getUserSettingsUseCase = usersContainer.getGetUserSettingsUseCase();
+  constructor(getUserProfileUseCase?: GetUserProfileUseCase, getUserSettingsUseCase?: GetUserSettingsUseCase) {
+    if (getUserProfileUseCase && getUserSettingsUseCase) {
+      this.getUserProfileUseCase = getUserProfileUseCase;
+      this.getUserSettingsUseCase = getUserSettingsUseCase;
+    } else {
+      const usersContainer = UsersContainer.getInstance();
+      this.getUserProfileUseCase = usersContainer.getGetUserProfileUseCase();
+      this.getUserSettingsUseCase = usersContainer.getGetUserSettingsUseCase();
+    }
   }
 
   /**
@@ -70,14 +80,34 @@ export class GetUserController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
+          error: 'VALIDATION_ERROR',
+          details: error.details
         }, 400);
+      }
+
+      if (error instanceof UserProfileNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, includeSettings, includeRoles, includeActivity }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
       }
 
       return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
+        message: 'Failed to retrieve user profile',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
       }, 500);
     }
   }
@@ -119,14 +149,34 @@ export class GetUserController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
+          error: 'VALIDATION_ERROR',
+          details: error.details
         }, 400);
+      }
+
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
       }
 
       return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
+        message: 'Failed to retrieve user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
       }, 500);
     }
   }
@@ -181,14 +231,34 @@ export class GetUserController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
+          error: 'VALIDATION_ERROR',
+          details: error.details
         }, 400);
+      }
+
+      if (error instanceof UserProfileNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, includeSettings, includeRoles, includeActivity }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
       }
 
       return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
+        message: 'Failed to retrieve current user profile',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
       }, 500);
     }
   }
@@ -231,14 +301,34 @@ export class GetUserController {
         return c.json({
           success: false,
           message: error.message,
-          error: 'VALIDATION_ERROR'
+          error: 'VALIDATION_ERROR',
+          details: error.details
         }, 400);
+      }
+
+      if (error instanceof UserSettingsNotFoundError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId }
+        }, 404);
+      }
+
+      if (error instanceof PermissionDeniedError) {
+        return c.json({
+          success: false,
+          message: error.message,
+          error: error.code,
+          details: { userId, permission: error.message }
+        }, 403);
       }
 
       return c.json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_SERVER_ERROR'
+        message: 'Failed to retrieve current user settings',
+        error: 'INTERNAL_SERVER_ERROR',
+        details: { userId, timestamp: new Date().toISOString() }
       }, 500);
     }
   }

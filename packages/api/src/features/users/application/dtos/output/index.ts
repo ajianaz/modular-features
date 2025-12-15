@@ -3,3 +3,4 @@ export type { UpdateUserProfileResponse, UpdateUserProfileResponseSchema } from 
 export type { GetUserSettingsResponse, GetUserSettingsResponseSchema } from './GetUserSettingsResponse';
 export type { UpdateUserSettingsResponse, UpdateUserSettingsResponseSchema } from './UpdateUserSettingsResponse';
 export type { UploadAvatarResponse, UploadAvatarResponseSchema } from './UploadAvatarResponse';
+export type { DeleteAvatarResponse, DeleteAvatarResponseSchema } from './DeleteAvatarResponse';

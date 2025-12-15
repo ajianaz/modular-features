@@ -10,6 +10,7 @@ import {
   InvalidAvatarFormatError,
   AvatarTooLargeError
 } from '../../domain/errors';
+import { UploadAvatarRequestSchema } from '../dtos/input/UploadAvatarRequest';
 
 export class UploadAvatarUseCase {
   constructor(
@@ -187,6 +188,3 @@ export class UploadAvatarUseCase {
     return `${baseUrl}/${fileName}`;
   }
 }
-
-// Import the schema at the top level
-import { UploadAvatarRequestSchema } from '../dtos/input/UploadAvatarRequest';

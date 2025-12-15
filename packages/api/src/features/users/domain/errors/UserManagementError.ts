@@ -1,4 +1,4 @@
-import { DomainError } from '@repo/shared';
+import { DomainError } from '@modular-monolith/shared';
 
 // User Management related errors
 export class UserProfileNotFoundError extends DomainError {

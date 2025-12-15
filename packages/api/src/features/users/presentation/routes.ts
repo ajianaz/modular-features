@@ -4,7 +4,7 @@ import { UpdateProfileController } from './controllers/UpdateProfileController';
 import { SettingsController } from './controllers/SettingsController';
 import { AvatarUploadController } from './controllers/AvatarUploadController';
 import { authMiddleware } from '../../../middleware/auth';
-import { validateJson, validateParam, validateQuery } from '../../../middleware/validation';
+import { validateJson, validateParam, validateQuery, avatarUpload } from '../../../middleware';
 import {
   GetUserProfileRequestSchema,
   GetUserSettingsRequestSchema,
@@ -98,7 +98,41 @@ userRoutes.put(
   }
 );
 
-// Note: Avatar upload routes would need file upload middleware for Hono
-// For now, we'll create basic routes that can be enhanced later
+// Avatar upload routes (protected by auth middleware)
+// POST /api/users/:userId/avatar - Upload avatar for user by ID
+userRoutes.post(
+  '/:userId/avatar',
+  validateParam(GetUserProfileRequestSchema.pick({ userId: true })),
+  avatarUpload(),
+  async (c: Context) => {
+    return await avatarUploadController.uploadAvatar(c);
+  }
+);
+
+// POST /api/users/me/avatar - Upload avatar for current user
+userRoutes.post(
+  '/me/avatar',
+  avatarUpload(),
+  async (c: Context) => {
+    return await avatarUploadController.uploadCurrentUserAvatar(c);
+  }
+);
+
+// DELETE /api/users/:userId/avatar - Delete avatar for user by ID
+userRoutes.delete(
+  '/:userId/avatar',
+  validateParam(GetUserProfileRequestSchema.pick({ userId: true })),
+  async (c: Context) => {
+    return await avatarUploadController.deleteAvatar(c);
+  }
+);
+
+// DELETE /api/users/me/avatar - Delete avatar for current user
+userRoutes.delete(
+  '/me/avatar',
+  async (c: Context) => {
+    return await avatarUploadController.deleteCurrentUserAvatar(c);
+  }
+);
 
 export default userRoutes;

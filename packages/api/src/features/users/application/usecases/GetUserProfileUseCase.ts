@@ -8,6 +8,7 @@ import {
   UserProfileNotFoundError,
   UserSettingsNotFoundError
 } from '../../domain/errors';
+import { GetUserProfileRequestSchema } from '../dtos/input/GetUserProfileRequest';
 
 export class GetUserProfileUseCase {
   constructor(
@@ -60,7 +61,15 @@ export class GetUserProfileUseCase {
         roles = await Promise.all(
           assignments.map(async (assignment) => {
             const role = await this.userRoleRepository.findRoleById(assignment.roleId);
-            return role || null;
+            if (!role) return null;
+
+            // Include assignment data with the role
+            return {
+              ...role.toJSON(),
+              assignedAt: assignment.assignedAt,
+              expiresAt: assignment.expiresAt,
+              assignmentId: assignment.id
+            };
           })
         ).then(roles => roles.filter((role): role is UserRole => role !== null));
       }
@@ -89,11 +98,7 @@ export class GetUserProfileUseCase {
         data: {
           profile: profile.toJSON(),
           settings: settings?.toJSON(),
-          roles: roles?.map(role => ({
-            ...role.toJSON(),
-            assignedAt: new Date(), // This would come from assignment
-            expiresAt: undefined // This would come from assignment
-          })),
+          roles: roles?.map(role => role),
           activity: activity?.map(activity => activity.toJSON())
         }
       };
@@ -127,6 +132,3 @@ export class GetUserProfileUseCase {
     }
   }
 }
-
-// Import the schema at the top level
-import { GetUserProfileRequestSchema } from '../dtos/input/GetUserProfileRequest';

@@ -8,6 +8,7 @@ import {
   UserProfileNotFoundError,
   InvalidUserProfileError
 } from '../../domain/errors';
+import { UpdateUserProfileRequestSchema } from '../dtos/input/UpdateUserProfileRequest';
 
 export class UpdateUserProfileUseCase {
   constructor(
@@ -196,6 +197,3 @@ export class UpdateUserProfileUseCase {
     }
   }
 }
-
-// Import the schema at the top level
-import { UpdateUserProfileRequestSchema } from '../dtos/input/UpdateUserProfileRequest';

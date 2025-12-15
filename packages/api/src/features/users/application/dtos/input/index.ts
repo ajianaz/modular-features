@@ -8,3 +8,5 @@ export type { UpdateUserSettingsRequest } from './UpdateUserSettingsRequest';
 export { UpdateUserSettingsRequestSchema } from './UpdateUserSettingsRequest';
 export type { UploadAvatarRequest } from './UploadAvatarRequest';
 export { UploadAvatarRequestSchema } from './UploadAvatarRequest';
+export type { DeleteAvatarRequest } from './DeleteAvatarRequest';
+export { DeleteAvatarRequestSchema } from './DeleteAvatarRequest';

@@ -222,4 +222,102 @@ export class PermissionUtils {
 
     return this.hasPermission(userRoles, requiredPermission);
   }
+
+  /**
+   * Check if a user has a specific permission level or higher
+   */
+  static hasPermissionLevel(userRoles: UserRole[], requiredLevel: PermissionLevel): boolean {
+    const userLevel = this.getHighestPermissionLevel(userRoles);
+    return userLevel >= requiredLevel;
+  }
+
+  /**
+   * Get all role names for a user
+   */
+  static getUserRoleNames(userRoles: UserRole[]): string[] {
+    return userRoles
+      .filter(role => role.isActive)
+      .map(role => role.name);
+  }
+
+  /**
+   * Check if a user has elevated permissions (admin or system)
+   */
+  static hasElevatedPermissions(userRoles: UserRole[]): boolean {
+    const level = this.getHighestPermissionLevel(userRoles);
+    return level >= PermissionLevel.ADMIN;
+  }
+
+  /**
+   * Check if a user can moderate content
+   */
+  static canModerateContent(userRoles: UserRole[]): boolean {
+    return this.hasPermission(userRoles, SystemPermission.CONTENT_MODERATE);
+  }
+
+  /**
+   * Check if a user can assign roles to others
+   */
+  static canAssignRoles(userRoles: UserRole[]): boolean {
+    return this.hasPermission(userRoles, SystemPermission.ROLE_ASSIGN);
+  }
+
+  /**
+   * Check if a user can perform system administration tasks
+   */
+  static canAdministerSystem(userRoles: UserRole[]): boolean {
+    return this.hasPermission(userRoles, SystemPermission.SYSTEM_ADMIN);
+  }
+
+  /**
+   * Check if a user can monitor system (view logs, metrics, etc.)
+   */
+  static canMonitorSystem(userRoles: UserRole[]): boolean {
+    return this.hasPermission(userRoles, SystemPermission.SYSTEM_MONITOR);
+  }
+
+  /**
+   * Get permission summary for a user
+   */
+  static getPermissionSummary(userRoles: UserRole[]): {
+    level: PermissionLevel;
+    permissions: SystemPermission[];
+    roleNames: string[];
+    canModerate: boolean;
+    canAdminister: boolean;
+    canMonitor: boolean;
+  } {
+    const activeRoles = userRoles.filter(role => role.isActive);
+    const permissions = this.getAllPermissions(userRoles);
+    const level = this.getHighestPermissionLevel(userRoles);
+    const roleNames = this.getUserRoleNames(userRoles);
+
+    return {
+      level,
+      permissions: Array.from(permissions),
+      roleNames,
+      canModerate: this.canModerateContent(userRoles),
+      canAdminister: this.canAdministerSystem(userRoles),
+      canMonitor: this.canMonitorSystem(userRoles)
+    };
+  }
+
+  /**
+   * Filter users by permission level
+   */
+  static filterUsersByPermissionLevel(
+    users: Array<{ id: string; roles: UserRole[] }>,
+    requiredLevel: PermissionLevel
+  ): Array<{ id: string; roles: UserRole[] }> {
+    return users.filter(user =>
+      this.hasPermissionLevel(user.roles, requiredLevel)
+    );
+  }
+
+  /**
+   * Check if permission is valid
+   */
+  static isValidPermission(permission: string): permission is SystemPermission {
+    return Object.values(SystemPermission).includes(permission as SystemPermission);
+  }
 }
