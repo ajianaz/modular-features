@@ -14,7 +14,7 @@ export class SendNotificationUseCase {
     private notificationRepository: INotificationRepository,
     private templateRepository: INotificationTemplateRepository,
     private preferenceRepository: INotificationPreferenceRepository,
-    private providers: Map<string, INotificationProvider>
+    private providers: Map<NotificationChannel, INotificationProvider>
   ) {}
 
   async execute(request: SendNotificationRequest): Promise<SendNotificationResponse> {
@@ -140,7 +140,7 @@ export class SendNotificationUseCase {
 
   private async sendThroughProviders(
     notification: Notification,
-    channels: string[],
+    channels: NotificationChannel[],
     data?: Record<string, any>
   ): Promise<Array<{ success: boolean; error?: string }>> {
     const results: Array<{ success: boolean; error?: string }> = [];

@@ -69,7 +69,7 @@ export class NotificationPreference {
       return false;
     }
 
-    const now = new Date();
+    const now = new Date(Date.now());
     const currentTime = this.formatTime(now.getHours(), now.getMinutes());
 
     if (!this.quietHoursStart || !this.quietHoursEnd) {
@@ -296,7 +296,7 @@ export class NotificationPreference {
       this.quietHoursStart,
       this.quietHoursEnd,
       this.timezone,
-      { ...this.metadata, ...metadata },
+      { ...this.metadata, ...metadata }, // Merge metadata
       this.createdAt,
       now
     );
