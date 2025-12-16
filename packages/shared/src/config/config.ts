@@ -3,7 +3,17 @@ import { config as dotenvConfig } from 'dotenv'
 import { join } from 'path'
 
 // Load environment variables from root directory
-dotenvConfig({ path: join(process.cwd(), '../../../.env') })
+// Load environment variables from root directory
+const envPath = join(process.cwd(), '../../.env')
+console.log(`[CONFIG] Loading .env from: ${envPath}`)
+console.log(`[CONFIG] Current working directory: ${process.cwd()}`)
+const dotenvResult = dotenvConfig({ path: envPath })
+
+if (dotenvResult.error) {
+  console.error(`[CONFIG] Error loading .env: ${dotenvResult.error.message}`)
+} else {
+  console.log(`[CONFIG] Successfully loaded .env file`)
+}
 
 // Environment schema for validation
 const envSchema = z.object({
@@ -77,7 +87,7 @@ const envSchema = z.object({
   LOG_FORMAT: z.enum(['json', 'pretty']).default('json'),
 
   // Monitoring
-  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN: z.preprocess((val) => val === "" ? undefined : val, z.string().url().optional()),
   SENTRY_ENVIRONMENT: z.string().default('development'),
 
   // Rate Limiting

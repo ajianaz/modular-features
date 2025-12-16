@@ -76,7 +76,7 @@ const envSchema = z.object({
   LOG_FORMAT: z.enum(['json', 'pretty']).default('json'),
 
   // Monitoring
-  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN: z.preprocess((val) => val === "" ? undefined : val, z.string().url().optional()),
   SENTRY_ENVIRONMENT: z.string().default('development'),
 
   // Rate Limiting

@@ -1,9 +1,10 @@
-import { drizzle } from 'drizzle-orm/postgres-js'
+import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { config } from '@modular-monolith/shared'
 import * as schema from '../schema'
 
 // Create PostgreSQL connection pool
+console.log(`[DATABASE] Connecting to PostgreSQL at ${config.database.host}:${config.database.port}/${config.database.database}`)
 const pool = new Pool({
   host: config.database.host,
   port: config.database.port,
@@ -33,9 +34,12 @@ export async function closeConnection() {
 // Database health check
 export async function healthCheck() {
   try {
+    console.log(`[DATABASE] Performing health check...`)
     await pool.query('SELECT 1')
+    console.log(`[DATABASE] Health check passed`)
     return { status: 'healthy', timestamp: new Date() }
   } catch (error) {
+    console.error(`[DATABASE] Health check failed:`, error)
     return {
       status: 'unhealthy',
       timestamp: new Date(),
