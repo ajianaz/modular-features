@@ -1,13 +1,32 @@
-// Token payload interface
+// Unified Token payload interface for RS256 implementation
 export interface TokenPayload {
-  sub: string; // Subject (user ID)
+  // Standard JWT Claims
+  sub: string;           // User ID (UUID)
+  iss?: string;          // Issuer (modular-monolith)
+  aud?: string;          // Audience (api/web)
+  exp?: number;          // Expiration time
+  iat?: number;          // Issued at
+  jti?: string;          // JWT ID (unique identifier)
+  nbf?: number;          // Not before
+
+  // User Information
   email: string;
   name: string;
   role: 'user' | 'admin' | 'super_admin';
-  iat?: number; // Issued at
-  exp?: number; // Expires at
-  jti?: string; // JWT ID
-  type?: 'access' | 'refresh'; // Token type
+  username?: string;
+
+  // Authentication Context
+  auth_provider?: 'custom' | 'keycloak' | 'oauth';
+  auth_method?: 'password' | 'oauth' | 'sso';
+  session_id?: string;    // For session tracking
+
+  // Token Specific
+  type?: 'access' | 'refresh';
+  scope?: string;         // OAuth scopes if applicable
+
+  // Application Specific
+  tenant_id?: string;     // Multi-tenancy support
+  permissions?: string[];  // Fine-grained permissions
 }
 
 // Token generation options

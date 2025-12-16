@@ -37,7 +37,8 @@
     "db:start": "turbo -F @modular-monolith/database db:start",
     "db:watch": "turbo -F @modular-monolith/database db:watch",
     "db:stop": "turbo -F @modular-monolith/database db:stop",
-    "db:down": "turbo -F @modular-monolith/database db:down"
+    "db:down": "turbo -F @modular-monolith/database db:down",
+    "auth:generate-keys": "node scripts/generate-rsa-keys.js"
   },
   "dependencies": {
     "@polar-sh/sdk": "^0.41.5",

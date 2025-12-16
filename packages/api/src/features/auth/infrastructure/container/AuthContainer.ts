@@ -1,7 +1,7 @@
 import { UserRepository } from '../repositories/UserRepository';
 import { SessionRepository } from '../repositories/SessionRepository';
 import { BcryptHashProvider } from '../lib/BcryptHashProvider';
-import { JWTTokenGenerator } from '../lib/JWTTokenGenerator';
+import { UnifiedRS256TokenGenerator } from '../lib/JWTTokenGenerator';
 
 import { LoginUseCase } from '../../application/usecases/LoginUseCase';
 import { RegisterUseCase } from '../../application/usecases/RegisterUseCase';
@@ -21,7 +21,7 @@ export class AuthContainer {
   private userRepository: UserRepository;
   private sessionRepository: SessionRepository;
   private hashProvider: BcryptHashProvider;
-  private tokenGenerator: JWTTokenGenerator;
+  private tokenGenerator: UnifiedRS256TokenGenerator;
 
   // Use cases
   private loginUseCase: LoginUseCase;
@@ -34,9 +34,8 @@ export class AuthContainer {
     this.userRepository = new UserRepository();
     this.sessionRepository = new SessionRepository();
     this.hashProvider = new BcryptHashProvider();
-    this.tokenGenerator = new JWTTokenGenerator({
-      secretKey: process.env.JWT_SECRET || 'your-secret-key',
-      accessTokenExpiry: 15 * 60, // 15 minutes
+    this.tokenGenerator = new UnifiedRS256TokenGenerator({
+      accessTokenExpiry: 3 * 60 * 60, // 3 hours (as per unified schema)
       refreshTokenExpiry: 7 * 24 * 60 * 60, // 7 days
       issuer: 'modular-monolith',
       audience: 'modular-monolith-api'
@@ -96,7 +95,7 @@ export class AuthContainer {
     return this.hashProvider;
   }
 
-  public getTokenGenerator(): JWTTokenGenerator {
+  public getTokenGenerator(): UnifiedRS256TokenGenerator {
     return this.tokenGenerator;
   }
 

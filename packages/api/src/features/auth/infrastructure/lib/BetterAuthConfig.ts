@@ -1,15 +1,21 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { genericOAuth, keycloak } from 'better-auth/plugins';
+import { genericOAuth, keycloak, jwt } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
 import { config } from '@modular-monolith/shared';
 import { users, sessions, oauthAccounts, emailVerifications } from '@modular-monolith/database';
+import { RS256KeyManager } from './RS256KeyManager';
+import * as crypto from 'crypto';
 
 console.log('[BETTERAUTH] Initializing BetterAuth configuration...')
 console.log('[BETTERAUTH] Database URL:', config.database.url)
 console.log('[BETTERAUTH] BetterAuth URL:', config.auth.betterAuth.url)
 console.log('[BETTERAUTH] Keycloak URL:', config.auth.keycloak.url)
 console.log('[BETTERAUTH] Database instance available:', !!db)
+console.log('[BETTERAUTH] RS256 tokens enabled:', process.env.ENABLE_RS256_TOKENS === 'true')
+
+// RS256 Key Manager for Better Auth
+const rs256KeyManager = new RS256KeyManager();
 
 // BetterAuth configuration with Keycloak integration
 export const auth = betterAuth({
@@ -30,6 +36,53 @@ export const auth = betterAuth({
     maxPasswordLength: 128
   },
   plugins: [
+    // JWT plugin with RS256 support
+    ...(process.env.ENABLE_RS256_TOKENS === 'true' ? [{
+      ...jwt(),
+      jwks: {
+        keyPairConfig: {
+          alg: 'RS256',
+          modulusLength: 2048
+        },
+        // Use our custom key manager
+        adapter: {
+          getJwks: async () => {
+            // Convert PEM to JWK format
+            const publicKeyPem = rs256KeyManager.getPublicKey();
+            const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
+
+            return {
+              keys: [jwk]
+            };
+          },
+          getLatestKey: async () => {
+            const publicKeyPem = rs256KeyManager.getPublicKey();
+            const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
+
+            return {
+              keys: [jwk]
+            };
+          }
+        }
+      },
+      jwt: {
+        definePayload: ({ user, session }: any) => {
+          return {
+            sub: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role || 'user',
+            auth_provider: 'keycloak',
+            auth_method: 'oauth',
+            session_id: session.id,
+            type: 'access'
+          };
+        },
+        issuer: 'modular-monolith',
+        audience: 'modular-monolith-api',
+        expirationTime: '3h'
+      }
+    }] : []),
     genericOAuth({
       config: [
         keycloak({
@@ -89,7 +142,13 @@ export const auth = betterAuth({
   },
   jwt: {
     expiresIn: 60 * 15, // 15 minutes
-    secret: config.auth.jwt.secret
+    secret: config.auth.jwt.secret,
+    ...(process.env.ENABLE_RS256_TOKENS === 'true' ? {
+      algorithm: 'RS256',
+      privateKey: rs256KeyManager.getPrivateKey(),
+      publicKey: rs256KeyManager.getPublicKey(),
+      keyId: rs256KeyManager.getKeyId()
+    } : {})
   },
   callbacks: {
     signIn: async ({ user, account }: any) => {
@@ -131,5 +190,40 @@ export const auth = betterAuth({
 
 console.log('[BETTERAUTH] ✅ BetterAuth configuration completed successfully')
 
+// Helper function to convert PEM to JWK format
+function pemToJWK(pemKey: string, kid: string): any {
+  try {
+    // Extract the public key from PEM format
+    const publicKeyObject = crypto.createPublicKey(pemKey);
+    const keyDetails = publicKeyObject.asymmetricKeyDetails;
+
+    // Get the raw key components
+    const publicKeyExport = publicKeyObject.export({
+      format: 'jwk'
+    });
+
+    return {
+      ...publicKeyExport,
+      kid: kid,
+      alg: 'RS256',
+      use: 'sig'
+    };
+  } catch (error) {
+    console.error('[BETTERAUTH] Error converting PEM to JWK:', error);
+    // Fallback to basic JWK structure
+    return {
+      kty: 'RSA',
+      alg: 'RS256',
+      use: 'sig',
+      kid: kid,
+      n: 'fallback_modulus',
+      e: 'AQAB'
+    };
+  }
+}
+
 // Export auth instance for use in routes and middleware
 export default auth;
+
+// Export RS256 key manager for use in other parts of the application
+export { rs256KeyManager };

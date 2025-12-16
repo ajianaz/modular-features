@@ -3,18 +3,21 @@ import { LoginController } from './controllers/LoginController';
 import { RegisterController } from './controllers/RegisterController';
 import { LogoutController } from './controllers/LogoutController';
 import { RefreshTokenController } from './controllers/RefreshTokenController';
+import { JWKSController } from './controllers/JWKSController';
 
 // Infrastructure dependencies
 import { AuthContainer } from '../infrastructure/container/AuthContainer';
+import { createAuthMiddleware, UnifiedTokenValidator } from '../infrastructure/middleware/UnifiedTokenValidator';
 
 // Initialize dependencies
 const authContainer = AuthContainer.getInstance();
+const tokenValidator = new UnifiedTokenValidator();
+const jwksController = new JWKSController();
 
 // Auth routes
 export const authRoutes = new Hono();
 
-
-// Register route
+// Register route (public)
 authRoutes.post(
   '/register',
   async (c: Context) => {
@@ -23,7 +26,7 @@ authRoutes.post(
   }
 );
 
-// Login route
+// Login route (public)
 authRoutes.post(
   '/login',
   async (c: Context) => {
@@ -32,21 +35,54 @@ authRoutes.post(
   }
 );
 
-// Logout route
+// Refresh token route (public)
+authRoutes.post(
+  '/refresh-token',
+  async (c: Context) => {
+    const controller = new RefreshTokenController(authContainer.getRefreshTokenUseCase());
+    return await controller.handle(c);
+  }
+);
+
+// Logout route (requires authentication)
 authRoutes.post(
   '/logout',
+  createAuthMiddleware(tokenValidator),
   async (c: Context) => {
     const controller = new LogoutController(authContainer.getLogoutUseCase());
     return await controller.handle(c);
   }
 );
 
-// Refresh token route
-authRoutes.post(
-  '/refresh-token',
+// JWKS endpoints (public)
+authRoutes.get(
+  '/.well-known/jwks.json',
   async (c: Context) => {
-    const controller = new RefreshTokenController(authContainer.getRefreshTokenUseCase());
-    return await controller.handle(c);
+    return await jwksController.getJWKS(c);
+  }
+);
+
+// Alternative JWKS endpoint
+authRoutes.get(
+  '/jwks',
+  async (c: Context) => {
+    return await jwksController.getJWKS(c);
+  }
+);
+
+// Public key endpoint (PEM format)
+authRoutes.get(
+  '/public-key',
+  async (c: Context) => {
+    return await jwksController.getPublicKey(c);
+  }
+);
+
+// Key validation endpoint
+authRoutes.get(
+  '/keys/validate',
+  async (c: Context) => {
+    return await jwksController.validateKeys(c);
   }
 );
 

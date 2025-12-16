@@ -51,13 +51,16 @@ export class LoginUseCase {
       throw new InvalidCredentialsError();
     }
 
-    // Generate tokens
+    // Generate tokens with unified schema
     const tokenPair = await this.tokenGenerator.generateTokenPair(
       {
         sub: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        auth_provider: 'custom',
+        auth_method: 'password',
+        session_id: crypto.randomUUID()
       }
     );
 

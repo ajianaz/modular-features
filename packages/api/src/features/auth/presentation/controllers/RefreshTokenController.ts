@@ -4,7 +4,7 @@ import { RefreshTokenRequest } from '../../application/dtos/input/RefreshTokenRe
 import { RefreshTokenResponse } from '../../application/dtos/output/RefreshTokenResponse';
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { SessionRepository } from '../../infrastructure/repositories/SessionRepository';
-import { JWTTokenGenerator } from '../../infrastructure/lib/JWTTokenGenerator';
+import { UnifiedRS256TokenGenerator } from '../../infrastructure/lib/JWTTokenGenerator';
 import { ValidationError } from '@modular-monolith/shared';
 
 export class RefreshTokenController {

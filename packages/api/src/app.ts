@@ -3,8 +3,10 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { userRoutes } from "./features/users/presentation/routes";
 import { notificationRoutes } from "./features/notifications/presentation/routes";
+import { authRoutes } from "./features/auth/presentation/routes";
 import { auth } from "./features/auth/infrastructure/lib/BetterAuthConfig";
 import { errorHandler } from "./middleware/error";
+import { createAuthMiddleware, UnifiedTokenValidator } from "./features/auth/infrastructure/middleware/UnifiedTokenValidator";
 import type { Context } from "hono";
 
 // Create Hono app instance
@@ -31,7 +33,7 @@ app.get("/", (c) => {
 });
 
 // BetterAuth integration with Hono-compatible wrapper
-app.all("/api/auth/*", async (c) => {
+app.all("/api/auth/better/*", async (c) => {
   try {
     console.log(`[BETTERAUTH] ${c.req.method} ${c.req.url}`);
 
@@ -79,9 +81,17 @@ app.all("/api/auth/*", async (c) => {
   }
 });
 
-// API routes (removed custom auth routes to avoid conflicts)
+// Initialize token validator for middleware
+const tokenValidator = new UnifiedTokenValidator();
+
+// API routes with custom auth enabled
+app.route("/api/auth/custom", authRoutes); // Custom auth endpoints
 app.route("/api/users", userRoutes);
 app.route("/api/notifications", notificationRoutes);
+
+// Global auth middleware for protected routes
+app.use("/api/users/*", createAuthMiddleware(tokenValidator));
+app.use("/api/notifications/*", createAuthMiddleware(tokenValidator));
 
 export { app };
 export type App = typeof app;

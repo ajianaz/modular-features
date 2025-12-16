@@ -37,13 +37,16 @@ export class RefreshTokenUseCase {
       throw new SessionNotFoundError(`User not found for session ${session.id}`);
     }
 
-    // Generate new token pair
+    // Generate new token pair with unified schema
     const tokenPair = await this.tokenGenerator.generateTokenPair(
       {
         sub: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        auth_provider: 'custom',
+        auth_method: 'password',
+        session_id: session.id
       },
       { expiresIn: '15m' }, // Access token expires in 15 minutes
       { expiresIn: '7d' } // Refresh token expires in 7 days
