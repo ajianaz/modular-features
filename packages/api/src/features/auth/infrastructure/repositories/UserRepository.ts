@@ -2,8 +2,8 @@ import { eq, and, or, desc, asc, ilike, getTableColumns, count, db } from '@modu
 import { users } from '@modular-monolith/database';
 import type { User, NewUser } from '@modular-monolith/database';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-const usersTable = users as any;
+// Use the users table directly without type assertion
+const usersTable = users;
 
 import {
   IUserRepository,
@@ -15,7 +15,7 @@ import { User as UserEntity } from '../../domain/entities/User.entity';
 export class UserRepository implements IUserRepository {
   // CRUD operations
   async findById(id: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.id, id) as any).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -25,7 +25,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()) as any).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -35,7 +35,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByUsername(username: string): Promise<UserEntity | null> {
-    const user = await db.select().from(usersTable).where(eq(usersTable.username, username) as any).limit(1);
+    const user = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
 
     if (user.length === 0) {
       return null;
@@ -58,7 +58,7 @@ export class UserRepository implements IUserRepository {
       updatedAt: new Date()
     };
 
-    const [insertedUser] = await db.insert(usersTable).values(newUser as any).returning();
+    const [insertedUser] = await db.insert(usersTable).values(newUser).returning();
 
     return this.mapToDomainEntity(insertedUser!);
   }
@@ -79,8 +79,8 @@ export class UserRepository implements IUserRepository {
 
     const [updatedUser] = await db
       .update(usersTable)
-      .set(updateData as any)
-      .where(eq(usersTable.id, user.id) as any)
+      .set(updateData)
+      .where(eq(usersTable.id, user.id))
       .returning();
 
     if (!updatedUser) {
@@ -93,7 +93,7 @@ export class UserRepository implements IUserRepository {
   async delete(id: string): Promise<boolean> {
     const deleteResult = await db
       .delete(usersTable)
-      .where(eq(usersTable.id, id) as any)
+      .where(eq(usersTable.id, id))
       .returning({ id: usersTable.id });
 
     return deleteResult.length > 0;
@@ -101,13 +101,13 @@ export class UserRepository implements IUserRepository {
 
   // Query operations
   async findAll(): Promise<UserEntity[]> {
-    const userList = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt) as any);
+    const userList = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
     return userList.map(user => this.mapToDomainEntity(user));
   }
 
   async findMany(criteria: Partial<UserEntity>): Promise<UserEntity[]> {
     const conditions = Object.entries(criteria).map(([key, value]) => {
-      if (value === undefined) return null;
+      if (value === undefined) return undefined;
 
       // Type-safe property access
       switch (key) {
@@ -126,43 +126,43 @@ export class UserRepository implements IUserRepository {
         case 'avatar':
           return eq(usersTable.avatar, value as string);
         case 'role':
-          return eq(usersTable.role, value as string);
+          return eq(usersTable.role, value as 'user' | 'admin' | 'super_admin');
         case 'status':
-          return eq(usersTable.status, value as string);
+          return eq(usersTable.status, value as 'active' | 'inactive' | 'suspended');
         case 'metadata':
           return eq(usersTable.metadata, value as Record<string, any>);
         default:
-          return null;
+          return undefined;
       }
-    }).filter(Boolean) as any[];
+    }).filter((condition): condition is NonNullable<typeof condition> => condition !== undefined);
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const userList = await db
       .select()
       .from(usersTable)
-      .where(whereClause as any)
-      .orderBy(desc(usersTable.createdAt) as any);
+      .where(whereClause)
+      .orderBy(desc(usersTable.createdAt));
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
 
-  async findByRole(role: string): Promise<UserEntity[]> {
+  async findByRole(role: 'user' | 'admin' | 'super_admin'): Promise<UserEntity[]> {
     const userList = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.role, role) as any)
-      .orderBy(asc(usersTable.name) as any);
+      .where(eq(usersTable.role, role))
+      .orderBy(asc(usersTable.name));
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
 
-  async findByStatus(status: string): Promise<UserEntity[]> {
+  async findByStatus(status: 'active' | 'inactive' | 'suspended'): Promise<UserEntity[]> {
     const userList = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.status, status) as any)
-      .orderBy(asc(usersTable.name) as any);
+      .where(eq(usersTable.status, status))
+      .orderBy(asc(usersTable.name));
 
     return userList.map(user => this.mapToDomainEntity(user));
   }
@@ -171,8 +171,8 @@ export class UserRepository implements IUserRepository {
     const activeUsers = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.status, 'active') as any)
-      .orderBy(asc(usersTable.name) as any);
+      .where(eq(usersTable.status, 'active'))
+      .orderBy(asc(usersTable.name));
 
     return activeUsers.map(user => this.mapToDomainEntity(user));
   }
@@ -183,14 +183,14 @@ export class UserRepository implements IUserRepository {
       .from(usersTable)
       .where(
         and(
-          eq(usersTable.status, 'active') as any,
+          eq(usersTable.status, 'active'),
           or(
-            eq(usersTable.role, 'admin') as any,
-            eq(usersTable.role, 'super_admin') as any
-          ) as any
-        ) as any
+            eq(usersTable.role, 'admin'),
+            eq(usersTable.role, 'super_admin')
+          )
+        )
       )
-      .orderBy(asc(usersTable.name) as any);
+      .orderBy(asc(usersTable.name));
 
     return adminUsers.map(user => this.mapToDomainEntity(user));
   }
@@ -200,7 +200,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.email, email.toLowerCase()) as any)
+      .where(eq(usersTable.email, email.toLowerCase()))
       .limit(1);
 
     return user.length > 0;
@@ -210,7 +210,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.id, id) as any)
+      .where(eq(usersTable.id, id))
       .limit(1);
 
     return user.length > 0;
@@ -220,7 +220,7 @@ export class UserRepository implements IUserRepository {
     const user = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.username, username) as any)
+      .where(eq(usersTable.username, username))
       .limit(1);
 
     return user.length > 0;
@@ -234,7 +234,7 @@ export class UserRepository implements IUserRepository {
         passwordHash,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -247,7 +247,7 @@ export class UserRepository implements IUserRepository {
         emailVerified: verified,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -257,7 +257,7 @@ export class UserRepository implements IUserRepository {
     const [updatedUser] = await db
       .update(usersTable)
       .set({ updatedAt: new Date() })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -271,7 +271,7 @@ export class UserRepository implements IUserRepository {
         status: 'active',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -284,7 +284,7 @@ export class UserRepository implements IUserRepository {
         status: 'inactive',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -297,7 +297,7 @@ export class UserRepository implements IUserRepository {
         status: 'suspended',
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -310,7 +310,7 @@ export class UserRepository implements IUserRepository {
         role,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -318,7 +318,7 @@ export class UserRepository implements IUserRepository {
 
   // Profile management
   async updateProfile(userId: string, data: { name?: string; username?: string; avatar?: string }): Promise<UserEntity | null> {
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: Partial<User> = { updatedAt: new Date() };
 
     if (data.name !== undefined) {
       updateData.name = data.name.trim();
@@ -332,8 +332,8 @@ export class UserRepository implements IUserRepository {
 
     const [updatedUser] = await db
       .update(usersTable)
-      .set(updateData as any)
-      .where(eq(usersTable.id, userId) as any)
+      .set(updateData)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
@@ -346,22 +346,22 @@ export class UserRepository implements IUserRepository {
         metadata,
         updatedAt: new Date()
       })
-      .where(eq(usersTable.id, userId) as any)
+      .where(eq(usersTable.id, userId))
       .returning();
 
     return updatedUser ? this.mapToDomainEntity(updatedUser) : null;
   }
 
   // Private helper methods
-  private mapToDomainEntity(user: any): UserEntity {
+  private mapToDomainEntity(user: User): UserEntity {
     return new UserEntity(
       user.id,
       user.email,
       user.name || '',
       user.passwordHash || '',
       user.emailVerified || false,
-      user.username,
-      user.avatar,
+      user.username || undefined,
+      user.avatar || undefined,
       user.role as 'user' | 'admin' | 'super_admin',
       user.status as 'active' | 'inactive' | 'suspended',
       user.metadata || {},

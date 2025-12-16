@@ -4,7 +4,7 @@ import { RegisterRequest } from '../../application/dtos/input/RegisterRequest';
 import { RegisterResponse } from '../../application/dtos/output/RegisterResponse';
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { BcryptHashProvider } from '../../infrastructure/lib/BcryptHashProvider';
-import { ValidationError } from '@repo/shared';
+import { ValidationError } from '@modular-monolith/shared';
 
 export class RegisterController {
   private registerUseCase: RegisterUseCase;

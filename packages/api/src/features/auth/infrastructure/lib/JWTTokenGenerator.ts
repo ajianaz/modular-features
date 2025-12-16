@@ -1,4 +1,5 @@
-import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+import { Algorithm } from 'jsonwebtoken';
 import { ITokenGenerator, TokenPayload, TokenOptions, TokenPair } from '../../domain/interfaces/ITokenGenerator';
 
 export class JWTTokenGenerator implements ITokenGenerator {
@@ -35,13 +36,11 @@ export class JWTTokenGenerator implements ITokenGenerator {
       aud: this.audience
     };
 
-    const signOptions: SignOptions = {
-      algorithm: 'HS256',
-      expiresIn: (options?.expiresIn as any) || this.accessTokenExpiry
-    };
-
     try {
-      return jwt.sign(jwtPayload, this.secretKey, signOptions);
+      return jwt.sign(jwtPayload, this.secretKey, {
+        algorithm: 'HS256',
+        expiresIn: (options?.expiresIn as any) || this.accessTokenExpiry
+      });
     } catch (error) {
       throw new Error(`Failed to generate access token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -60,13 +59,11 @@ export class JWTTokenGenerator implements ITokenGenerator {
       aud: this.audience
     };
 
-    const signOptions: SignOptions = {
-      algorithm: 'HS256',
-      expiresIn: (options?.expiresIn as any) || this.refreshTokenExpiry
-    };
-
     try {
-      return jwt.sign(jwtPayload, this.secretKey, signOptions);
+      return jwt.sign(jwtPayload, this.secretKey, {
+        algorithm: 'HS256',
+        expiresIn: (options?.expiresIn as any) || this.refreshTokenExpiry
+      });
     } catch (error) {
       throw new Error(`Failed to generate refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -93,14 +90,14 @@ export class JWTTokenGenerator implements ITokenGenerator {
     payload?: TokenPayload;
     error?: string;
   }> {
-    const verifyOptions: VerifyOptions = {
-      algorithms: ['HS256'],
+    const verifyOptions = {
+      algorithms: ['HS256' as Algorithm],
       issuer: this.issuer,
       audience: this.audience
     };
 
     try {
-      const decoded = jwt.verify(token, this.secretKey, verifyOptions) as TokenPayload;
+      const decoded = jwt.verify(token, this.secretKey, verifyOptions) as any;
 
       return {
         valid: true,
@@ -140,7 +137,7 @@ export class JWTTokenGenerator implements ITokenGenerator {
   // Helper method to extract token without verification (for debugging)
   decodeToken(token: string): TokenPayload | null {
     try {
-      const decoded = jwt.decode(token) as TokenPayload;
+      const decoded = jwt.decode(token) as any;
       return decoded;
     } catch (error) {
       return null;

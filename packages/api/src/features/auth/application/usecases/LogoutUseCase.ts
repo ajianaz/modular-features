@@ -17,14 +17,20 @@ export class LogoutUseCase {
 
       // Check if session is already inactive
       if (!session.isActive) {
-        return LogoutResponse.success('Session already logged out');
+        return {
+          success: true,
+          message: 'Session already logged out'
+        };
       }
 
       // Deactivate the session
       const deactivatedSession = session.deactivate();
       await this.sessionRepository.update(deactivatedSession);
 
-      return LogoutResponse.success('Successfully logged out');
+      return {
+        success: true,
+        message: 'Successfully logged out'
+      };
     } catch (error) {
       if (error instanceof SessionNotFoundError) {
         throw error;

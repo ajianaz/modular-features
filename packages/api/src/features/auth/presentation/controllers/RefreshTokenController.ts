@@ -5,7 +5,7 @@ import { RefreshTokenResponse } from '../../application/dtos/output/RefreshToken
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { SessionRepository } from '../../infrastructure/repositories/SessionRepository';
 import { JWTTokenGenerator } from '../../infrastructure/lib/JWTTokenGenerator';
-import { ValidationError } from '@repo/shared';
+import { ValidationError } from '@modular-monolith/shared';
 
 export class RefreshTokenController {
   private refreshTokenUseCase: RefreshTokenUseCase;

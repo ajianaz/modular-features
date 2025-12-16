@@ -2,8 +2,8 @@ import { eq, and, or, desc, asc, lt, db } from '@modular-monolith/database';
 import { sessions } from '@modular-monolith/database';
 import type { Session, NewSession } from '@modular-monolith/database';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-const sessionsTable = sessions as any;
+// Use sessions table directly without type assertion
+const sessionsTable = sessions;
 
 import {
   ISessionRepository,
@@ -16,7 +16,7 @@ import { Session as SessionEntity } from '../../domain/entities/Session.entity';
 export class SessionRepository implements ISessionRepository {
   // CRUD operations
   async findById(id: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id) as any).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id)).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -26,7 +26,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async findByToken(token: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, token) as any).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.token, token)).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -36,7 +36,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async findByRefreshToken(refreshToken: string): Promise<SessionEntity | null> {
-    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.refreshToken, refreshToken) as any).limit(1);
+    const session = await db.select().from(sessionsTable).where(eq(sessionsTable.refreshToken, refreshToken)).limit(1);
 
     if (session.length === 0) {
       return null;
@@ -49,8 +49,8 @@ export class SessionRepository implements ISessionRepository {
     const userSessions = await db
       .select()
       .from(sessionsTable)
-      .where(eq(sessionsTable.userId, userId) as any)
-      .orderBy(desc(sessionsTable.createdAt) as any);
+      .where(eq(sessionsTable.userId, userId))
+      .orderBy(desc(sessionsTable.createdAt));
 
     return userSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -68,7 +68,7 @@ export class SessionRepository implements ISessionRepository {
       updatedAt: new Date()
     };
 
-    const [insertedSession] = await db.insert(sessionsTable).values(newSession as any).returning();
+    const [insertedSession] = await db.insert(sessionsTable).values(newSession).returning();
 
     return this.mapToDomainEntity(insertedSession!);
   }
@@ -88,8 +88,8 @@ export class SessionRepository implements ISessionRepository {
 
     const [updatedSession] = await db
       .update(sessionsTable)
-      .set(updateData as any)
-      .where(eq(sessionsTable.id, session.id) as any)
+      .set(updateData)
+      .where(eq(sessionsTable.id, session.id))
       .returning();
 
     if (!updatedSession) {
@@ -102,7 +102,7 @@ export class SessionRepository implements ISessionRepository {
   async delete(id: string): Promise<boolean> {
     const deleteResult = await db
       .delete(sessionsTable)
-      .where(eq(sessionsTable.id, id) as any)
+      .where(eq(sessionsTable.id, id))
       .returning({ id: sessionsTable.id });
 
     return deleteResult.length > 0;
@@ -110,7 +110,7 @@ export class SessionRepository implements ISessionRepository {
 
   // Query operations
   async findAll(): Promise<SessionEntity[]> {
-    const sessionList = await db.select().from(sessionsTable).orderBy(desc(sessionsTable.createdAt) as any);
+    const sessionList = await db.select().from(sessionsTable).orderBy(desc(sessionsTable.createdAt));
     return sessionList.map(session => this.mapToDomainEntity(session));
   }
 
@@ -120,11 +120,11 @@ export class SessionRepository implements ISessionRepository {
       .from(sessionsTable)
       .where(
         and(
-          eq(sessionsTable.userId, userId) as any,
-          eq(sessionsTable.isActive, true) as any
-        ) as any
+          eq(sessionsTable.userId, userId),
+          eq(sessionsTable.isActive, true)
+        )
       )
-      .orderBy(desc(sessionsTable.lastAccessedAt) as any);
+      .orderBy(desc(sessionsTable.lastAccessedAt));
 
     return activeSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -135,11 +135,11 @@ export class SessionRepository implements ISessionRepository {
       .from(sessionsTable)
       .where(
         and(
-          eq(sessionsTable.isActive, true) as any,
-          lt(sessionsTable.expiresAt, new Date()) as any
-        ) as any
+          eq(sessionsTable.isActive, true),
+          lt(sessionsTable.expiresAt, new Date())
+        )
       )
-      .orderBy(asc(sessionsTable.expiresAt) as any);
+      .orderBy(asc(sessionsTable.expiresAt));
 
     return expiredSessions.map(session => this.mapToDomainEntity(session));
   }
@@ -149,7 +149,7 @@ export class SessionRepository implements ISessionRepository {
     const session = await db
       .select({ id: sessionsTable.id })
       .from(sessionsTable)
-      .where(eq(sessionsTable.token, token) as any)
+      .where(eq(sessionsTable.token, token))
       .limit(1);
 
     return session.length > 0;
@@ -159,7 +159,7 @@ export class SessionRepository implements ISessionRepository {
     const session = await db
       .select({ id: sessionsTable.id })
       .from(sessionsTable)
-      .where(eq(sessionsTable.refreshToken, refreshToken) as any)
+      .where(eq(sessionsTable.refreshToken, refreshToken))
       .limit(1);
 
     return session.length > 0;
@@ -172,7 +172,7 @@ export class SessionRepository implements ISessionRepository {
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.userId, userId) as any)
+      .where(eq(sessionsTable.userId, userId))
       .returning({ id: sessionsTable.id });
 
     return result.length > 0;
@@ -185,7 +185,7 @@ export class SessionRepository implements ISessionRepository {
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.id, id) as any)
+      .where(eq(sessionsTable.id, id))
       .returning({ id: sessionsTable.id });
 
     return result.length > 0;
@@ -205,9 +205,9 @@ export class SessionRepository implements ISessionRepository {
       .delete(sessionsTable)
       .where(
         and(
-          eq(sessionsTable.isActive, true) as any,
-          lt(sessionsTable.expiresAt, new Date()) as any
-        ) as any
+          eq(sessionsTable.isActive, true),
+          lt(sessionsTable.expiresAt, new Date())
+        )
       )
       .returning({ id: sessionsTable.id });
 
@@ -225,7 +225,7 @@ export class SessionRepository implements ISessionRepository {
         lastAccessedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.id, sessionId) as any)
+      .where(eq(sessionsTable.id, sessionId))
       .returning();
 
     return updatedSession ? this.mapToDomainEntity(updatedSession) : null;
@@ -238,7 +238,7 @@ export class SessionRepository implements ISessionRepository {
         lastAccessedAt: new Date(),
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.id, sessionId) as any)
+      .where(eq(sessionsTable.id, sessionId))
       .returning();
 
     return updatedSession ? this.mapToDomainEntity(updatedSession) : null;
@@ -252,7 +252,7 @@ export class SessionRepository implements ISessionRepository {
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.userId, userId) as any)
+      .where(eq(sessionsTable.userId, userId))
       .returning({ id: sessionsTable.id });
 
     return result.length > 0;
@@ -265,7 +265,7 @@ export class SessionRepository implements ISessionRepository {
         isActive: false,
         updatedAt: new Date()
       })
-      .where(eq(sessionsTable.id, sessionId) as any)
+      .where(eq(sessionsTable.id, sessionId))
       .returning({ id: sessionsTable.id });
 
     return result.length > 0;
@@ -290,7 +290,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   // Private helper methods
-  private mapToDomainEntity(session: any): SessionEntity {
+  private mapToDomainEntity(session: Session): SessionEntity {
     return new SessionEntity(
       session.id,
       session.userId,

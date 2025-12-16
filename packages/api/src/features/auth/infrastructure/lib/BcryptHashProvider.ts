@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import { IHashProvider } from '../../domain/interfaces/IHashProvider';
 
 export class BcryptHashProvider implements IHashProvider {
