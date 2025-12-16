@@ -1,12 +1,21 @@
 import { betterAuth } from 'better-auth';
 import { genericOAuth, keycloak } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
+import { config } from '@modular-monolith/shared';
+
+console.log('[BETTERAUTH] Initializing BetterAuth configuration...')
+console.log('[BETTERAUTH] Database URL:', config.database.url)
+console.log('[BETTERAUTH] BetterAuth URL:', config.auth.betterAuth.url)
+console.log('[BETTERAUTH] Keycloak URL:', config.auth.keycloak.url)
+console.log('[BETTERAUTH] Database instance available:', !!db)
 
 // BetterAuth configuration with Keycloak integration
 export const auth = betterAuth({
   database: {
     provider: 'pg',
-    url: process.env.DATABASE_URL || 'postgresql://localhost:5432/modular_monolith'
+    url: config.database.url,
+    // Use the existing Drizzle instance
+    db: db
   },
   emailAndPassword: {
     enabled: true,
@@ -16,11 +25,11 @@ export const auth = betterAuth({
     genericOAuth({
       config: [
         keycloak({
-          clientId: process.env.KEYCLOAK_CLIENT_ID || '',
-          clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
-          issuer: process.env.KEYCLOAK_ISSUER || 'http://localhost:8080/realms/master',
+          clientId: process.env.KEYCLOAK_CLIENT_ID || config.auth.keycloak.clientId,
+          clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || config.auth.keycloak.clientSecret,
+          issuer: process.env.KEYCLOAK_ISSUER || `${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}`,
           scopes: ['openid', 'email', 'profile'],
-          redirectURI: process.env.KEYCLOAK_REDIRECT_URI || 'http://localhost:3000/api/auth/oauth2/callback/keycloak'
+          redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `${config.auth.betterAuth.url}/api/auth/oauth2/callback/keycloak`
         })
       ]
     })
@@ -35,7 +44,7 @@ export const auth = betterAuth({
   },
   jwt: {
     expiresIn: 60 * 15, // 15 minutes
-    secret: process.env.JWT_SECRET || 'your-secret-key'
+    secret: config.auth.jwt.secret
   },
   callbacks: {
     signIn: async ({ user, account }: any) => {
@@ -71,6 +80,8 @@ export const auth = betterAuth({
     }
   }
 });
+
+console.log('[BETTERAUTH] ✅ BetterAuth configuration completed successfully')
 
 // Export auth instance for use in routes and middleware
 export default auth;

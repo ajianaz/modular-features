@@ -4,7 +4,7 @@
 export * from './schema'
 
 // Export database connection
-export { db } from './connection'
+export { db, healthCheck, closeConnection, pool } from './connection'
 
 // Export drizzle-orm operators
 export {

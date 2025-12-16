@@ -10,8 +10,8 @@
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
     "noEmit": false,
-    "moduleResolution": "node",
-    "module": "CommonJS",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "paths": {
       "@repo/database": ["../../packages/database/src"],
       "@repo/shared": ["./src"],

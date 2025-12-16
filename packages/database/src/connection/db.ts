@@ -5,6 +5,7 @@ import * as schema from '../schema'
 
 // Create PostgreSQL connection pool
 console.log(`[DATABASE] Connecting to PostgreSQL at ${config.database.host}:${config.database.port}/${config.database.database}`)
+console.log(`[DATABASE] Full connection URL: ${config.database.url}`)
 const pool = new Pool({
   host: config.database.host,
   port: config.database.port,
@@ -22,6 +23,9 @@ export const db = drizzle(pool, {
   schema,
   logger: config.nodeEnv === 'development',
 })
+
+console.log(`[DATABASE] ✅ Drizzle ORM instance created successfully`)
+console.log(`[DATABASE] Schema tables loaded:`, Object.keys(schema))
 
 // Export connection for direct access if needed
 export { pool }

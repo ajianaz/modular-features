@@ -1,12 +1,17 @@
 import { z } from 'zod'
 import { config as dotenvConfig } from 'dotenv'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
-// Load environment variables from root directory
-// Load environment variables from root directory
-const envPath = join(process.cwd(), '../../.env')
+// Get the directory of the current file
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Calculate path to root .env file (from packages/shared/src/config to root)
+const envPath = join(__dirname, '../../../../.env')
 console.log(`[CONFIG] Loading .env from: ${envPath}`)
 console.log(`[CONFIG] Current working directory: ${process.cwd()}`)
+console.log(`[CONFIG] Shared config directory: ${__dirname}`)
 const dotenvResult = dotenvConfig({ path: envPath })
 
 if (dotenvResult.error) {

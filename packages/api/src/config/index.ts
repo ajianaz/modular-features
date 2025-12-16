@@ -1,5 +1,5 @@
-// Re-export configuration
-export { config } from './config';
-export type { Config } from './config';
-import { config as defaultConfig } from './config';
+// Re-export configuration from shared package
+export { config } from '@modular-monolith/shared';
+export type { Config } from '@modular-monolith/shared';
+import { config as defaultConfig } from '@modular-monolith/shared';
 export default defaultConfig;
