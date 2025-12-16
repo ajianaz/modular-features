@@ -128,7 +128,7 @@ const envSchema = z.object({
   MINIO_ROOT_PASSWORD: z.string().min(8),
   MINIO_API_PORT: z.coerce.number().default(9000),
   MINIO_CONSOLE_PORT: z.coerce.number().default(9001),
-  MINIO_ENDPOINT: z.string().url().default('http://localhost:9000'),
+  MINIO_ENDPOINT: z.string().default('http://localhost:9000'),
   MINIO_BUCKET_NAME: z.string().default('modular-monolith'),
   MINIO_ACCESS_KEY: z.string(),
   MINIO_SECRET_KEY: z.string(),

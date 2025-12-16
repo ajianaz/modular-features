@@ -24,52 +24,71 @@ export class JWTTokenGenerator implements ITokenGenerator {
   }
 
   async generateAccessToken(payload: TokenPayload, options?: TokenOptions): Promise<string> {
-    const now = Math.floor(Date.now() / 1000);
-    const jwtPayload = {
-      sub: payload.sub,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role,
-      iat: now,
-      exp: now + this.accessTokenExpiry,
-      iss: this.issuer,
-      aud: this.audience
-    };
-
     try {
-      return jwt.sign(jwtPayload, this.secretKey, {
-        algorithm: 'HS256',
-        expiresIn: (options?.expiresIn as any) || this.accessTokenExpiry
-      });
+      const signOptions: any = {
+        algorithm: 'HS256'
+      };
+
+      // Add expiration time if provided in options
+      if (options?.expiresIn) {
+        signOptions.expiresIn = options.expiresIn;
+      } else {
+        signOptions.expiresIn = `${this.accessTokenExpiry}s`;
+      }
+
+      // Create a clean payload without any JWT-specific fields
+      const { exp, iat, jti, type, ...cleanPayload } = payload;
+
+      const jwtPayload = {
+        ...cleanPayload,
+        iss: this.issuer,
+        aud: this.audience
+      };
+
+      console.log('[JWT] Generating access token with payload:', JSON.stringify(jwtPayload, null, 2));
+      console.log('[JWT] Sign options:', JSON.stringify(signOptions, null, 2));
+
+      const token = jwt.sign(jwtPayload, this.secretKey, signOptions);
+      console.log('[JWT] Access token generated successfully');
+
+      return token;
     } catch (error) {
+      console.error('[JWT] Error generating access token:', error);
       throw new Error(`Failed to generate access token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   async generateRefreshToken(payload: TokenPayload, options?: TokenOptions): Promise<string> {
-    const now = Math.floor(Date.now() / 1000);
-    const jwtPayload = {
-      sub: payload.sub,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role,
-      iat: now,
-      exp: now + this.refreshTokenExpiry,
-      iss: this.issuer,
-      aud: this.audience
-    };
-
     try {
-      return jwt.sign(jwtPayload, this.secretKey, {
-        algorithm: 'HS256',
-        expiresIn: (options?.expiresIn as any) || this.refreshTokenExpiry
-      });
+      const signOptions: any = {
+        algorithm: 'HS256'
+      };
+
+      // Add expiration time if provided in options
+      if (options?.expiresIn) {
+        signOptions.expiresIn = options.expiresIn;
+      } else {
+        signOptions.expiresIn = `${this.refreshTokenExpiry}s`;
+      }
+
+      // Create a clean payload without any JWT-specific fields
+      const { exp, iat, jti, type, ...cleanPayload } = payload;
+
+      const jwtPayload = {
+        ...cleanPayload,
+        iss: this.issuer,
+        aud: this.audience
+      };
+
+      return jwt.sign(jwtPayload, this.secretKey, signOptions);
     } catch (error) {
       throw new Error(`Failed to generate refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   async generateTokenPair(payload: TokenPayload, accessOptions?: TokenOptions, refreshOptions?: TokenOptions): Promise<TokenPair> {
+    console.log('[JWT] Generating token pair with payload:', JSON.stringify(payload, null, 2));
+
     const [accessToken, refreshToken] = await Promise.all([
       this.generateAccessToken(payload, accessOptions),
       this.generateRefreshToken(payload, refreshOptions)

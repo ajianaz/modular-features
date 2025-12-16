@@ -58,9 +58,7 @@ export class LoginUseCase {
         email: user.email,
         name: user.name,
         role: user.role
-      },
-      { expiresIn: rememberMe ? '7d' : '15m' },
-      { expiresIn: rememberMe ? '30d' : '7d' }
+      }
     );
 
     // Create session

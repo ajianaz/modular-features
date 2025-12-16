@@ -67,6 +67,6 @@
     "prettier": "^3",
     "vitest": "^2",
     "@vitest/coverage-v8": "^2",
-    "drizzle-kit": "catalog:"
+    "drizzle-kit": "^0.31.8"
   }
 }
