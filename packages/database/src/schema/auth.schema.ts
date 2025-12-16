@@ -57,6 +57,9 @@ export const oauthAccounts = pgTable('oauth_accounts', {
   providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
   accessToken: varchar('access_token', { length: 1000 }),
   refreshToken: varchar('refresh_token', { length: 1000 }),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'), // BetterAuth compatibility
+  idToken: text('id_token'), // BetterAuth compatibility
+  password: varchar('password', { length: 255 }), // BetterAuth compatibility
   tokenExpiresAt: timestamp('token_expires_at'),
   scopes: jsonb('scopes'),
   metadata: jsonb('metadata'),
@@ -89,6 +92,8 @@ export const emailVerifications = pgTable('email_verifications', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
+  identifier: varchar('identifier', { length: 255 }), // BetterAuth compatibility (maps to email)
+  value: varchar('value', { length: 500 }), // BetterAuth compatibility (maps to token)
   token: varchar('token', { length: 500 }).notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   isUsed: boolean('is_used').default(false).notNull(),
@@ -97,7 +102,9 @@ export const emailVerifications = pgTable('email_verifications', {
 }, (table) => ({
   userIdIdx: index('idx_email_verifications_user_id').on(table.userId),
   emailIdx: index('idx_email_verifications_email').on(table.email),
+  identifierIdx: index('idx_email_verifications_identifier').on(table.identifier), // BetterAuth compatibility
   tokenIdx: index('idx_email_verifications_token').on(table.token),
+  valueIdx: index('idx_email_verifications_value').on(table.value), // BetterAuth compatibility
   expiresAtIdx: index('idx_email_verifications_expires_at').on(table.expiresAt),
 }))
 

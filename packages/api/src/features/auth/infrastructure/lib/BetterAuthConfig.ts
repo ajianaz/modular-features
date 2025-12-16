@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { genericOAuth, keycloak } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
 import { config } from '@modular-monolith/shared';
+import { users, sessions, oauthAccounts, emailVerifications } from '@modular-monolith/database';
 
 console.log('[BETTERAUTH] Initializing BetterAuth configuration...')
 console.log('[BETTERAUTH] Database URL:', config.database.url)
@@ -14,10 +15,19 @@ console.log('[BETTERAUTH] Database instance available:', !!db)
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
+    usePlural: false, // Use plural table names (users, sessions, etc.)
+    schema: {
+      user: users,
+      session: sessions,
+      oauthAccount: oauthAccounts,
+      emailVerification: emailVerifications,
+    },
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false
+    requireEmailVerification: false,
+    minPasswordLength: 8,
+    maxPasswordLength: 128
   },
   plugins: [
     genericOAuth({
@@ -38,6 +48,43 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60 // 5 minutes
+    }
+  },
+  user: {
+    modelName: 'users', // Explicitly set table name
+    additionalFields: {
+      role: {
+        type: 'string',
+        required: false,
+        defaultValue: 'user',
+        input: false
+      },
+      username: {
+        type: 'string',
+        required: false,
+        input: true
+      },
+      status: {
+        type: 'string',
+        required: false,
+        defaultValue: 'active',
+        input: false
+      }
+    }
+  },
+  account: {
+    modelName: 'oauth_accounts',
+    fields: {
+      providerId: 'provider', // Map BetterAuth's providerId to our provider field
+      accountId: 'providerAccountId', // Map BetterAuth's accountId to our providerAccountId field
+      accessTokenExpiresAt: 'tokenExpiresAt', // Map BetterAuth's accessTokenExpiresAt to our tokenExpiresAt field
+    }
+  },
+  verification: {
+    modelName: 'email_verifications',
+    fields: {
+      identifier: 'email', // Map BetterAuth's identifier to our email field
+      value: 'token', // Map BetterAuth's value to our token field
     }
   },
   jwt: {
@@ -75,7 +122,10 @@ export const auth = betterAuth({
   advanced: {
     crossSubDomainCookies: {
       enabled: false
-    }
+    },
+    generateId: true, // BetterAuth will generate UUIDs that are compatible with our schema
+    cookiePrefix: 'better-auth', // Custom cookie prefix
+    idGenerator: 'uuid' // Use UUID generator for primary keys
   }
 });
 

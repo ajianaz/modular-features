@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { authRoutes } from "./features/auth/presentation/routes";
 import { userRoutes } from "./features/users/presentation/routes";
 import { notificationRoutes } from "./features/notifications/presentation/routes";
 import { auth } from "./features/auth/infrastructure/lib/BetterAuthConfig";
@@ -80,8 +79,7 @@ app.all("/api/auth/*", async (c) => {
   }
 });
 
-// API routes
-app.route("/api/auth", authRoutes);
+// API routes (removed custom auth routes to avoid conflicts)
 app.route("/api/users", userRoutes);
 app.route("/api/notifications", notificationRoutes);
 
