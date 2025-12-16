@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { genericOAuth, keycloak } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
 import { config } from '@modular-monolith/shared';
@@ -11,12 +12,9 @@ console.log('[BETTERAUTH] Database instance available:', !!db)
 
 // BetterAuth configuration with Keycloak integration
 export const auth = betterAuth({
-  database: {
+  database: drizzleAdapter(db, {
     provider: 'pg',
-    url: config.database.url,
-    // Use the existing Drizzle instance
-    db: db
-  },
+  }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false

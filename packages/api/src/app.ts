@@ -16,9 +16,9 @@ app.use(logger());
 app.use(
 	"/*",
 	cors({
-		origin: process.env.CORS_ORIGIN || "",
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization"],
+		origin: process.env.CORS_ORIGIN || "*",
+		allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization", "Cookie", "Set-Cookie"],
 		credentials: true,
 	}),
 );
@@ -31,14 +31,11 @@ app.get("/", (c) => {
 	return c.text("OK");
 });
 
-// API routes
-app.route("/api/auth", authRoutes);
-app.route("/api/users", userRoutes);
-app.route("/api/notifications", notificationRoutes);
-
 // BetterAuth integration with Hono-compatible wrapper
-app.use("/api/auth/*", async (c, next) => {
+app.all("/api/auth/*", async (c) => {
   try {
+    console.log(`[BETTERAUTH] ${c.req.method} ${c.req.url}`);
+
     // Create a Request object from Hono context
     const request = new Request(c.req.url, {
       method: c.req.method,
@@ -49,6 +46,8 @@ app.use("/api/auth/*", async (c, next) => {
     // Call BetterAuth handler
     const response = await auth.handler(request);
 
+    console.log(`[BETTERAUTH] Response status: ${response?.status}`);
+
     // Convert BetterAuth response to Hono response
     if (response) {
       const headers: Record<string, string> = {};
@@ -56,16 +55,35 @@ app.use("/api/auth/*", async (c, next) => {
         headers[key] = value;
       });
 
-      return c.json(await response.json(), response.status as any, headers);
+      // Handle different response types
+      const contentType = response.headers.get('content-type');
+      let body;
+
+      if (contentType?.includes('application/json')) {
+        try {
+          body = await response.json();
+        } catch {
+          body = null;
+        }
+      } else {
+        body = await response.text();
+      }
+
+      return c.body(body, response.status as any, headers);
     }
 
-    // If no response, continue to next middleware
-    return next();
+    // If no response, return 404
+    return c.text('Not Found', 404);
   } catch (error) {
     console.error('BetterAuth middleware error:', error);
-    return next();
+    return c.text('Internal Server Error', 500);
   }
 });
+
+// API routes
+app.route("/api/auth", authRoutes);
+app.route("/api/users", userRoutes);
+app.route("/api/notifications", notificationRoutes);
 
 export { app };
 export type App = typeof app;
