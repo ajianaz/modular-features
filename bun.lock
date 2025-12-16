@@ -64,7 +64,7 @@
       "devDependencies": {
         "@types/bun": "^1.2.6",
         "@types/node": "^20",
-        "@types/pg": "^8.11.10",
+        "@types/pg": "^8.16.0",
         "@vitest/coverage-v8": "^2",
         "drizzle-kit": "catalog:",
         "eslint": "^8",

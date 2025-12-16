@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/node-postgres'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import { Pool } from 'pg'
 import { config } from '@modular-monolith/shared'
 import * as schema from '../schema'
@@ -23,7 +23,7 @@ export const db = drizzle(pool, {
 })
 
 // Export connection for direct access if needed
-export { pool as connection }
+export { pool }
 
 // Helper function to close connection
 export async function closeConnection() {
