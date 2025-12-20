@@ -1,0 +1,79 @@
+# =============================================================================
+# Docker Ignore - Files to exclude from Docker build context
+# =============================================================================
+
+# Node modules (will be installed in container)
+node_modules/
+**/node_modules/
+
+# Build outputs (will be generated in container)
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Testing
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+vitest.config.ts
+tests/
+
+# Environment files (use .env from host or bind mount)
+.env
+.env.*.local
+.env.test
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+*.md
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun.lockb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker files (not needed in container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Package manager files (lock files included, but others excluded)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+.cache/
+.parcel-cache/
+.eslintcache

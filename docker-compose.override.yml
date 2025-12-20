@@ -1,0 +1,104 @@
+# Docker Compose Override for Development
+# This file is automatically loaded by docker-compose when running in local environment
+# It extends docker-compose.yml with development-specific configurations
+
+services:
+  # PostgreSQL - development configuration
+  postgres:
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  # Redis - development configuration
+  redis:
+    command: redis-server --appendonly yes --requirepass redis123
+
+  # API Service - Development Mode with Hot Reload
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: development  # Use development stage from Dockerfile
+    container_name: modular-monolith-api-dev
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      # Database connection (using Docker service names)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: modular_monolith
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/modular_monolith
+      # Redis connection (using Docker service names)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis123
+      REDIS_URL: redis://:redis123@redis:6379
+      # Better Auth configuration
+      BETTER_AUTH_SECRET: 43a689d3db1e99a54015d41421e4295d9dd7168cd953fdfb93bdd2712860012e
+      BETTER_AUTH_URL: http://localhost:3000/api/auth
+      # Keycloak configuration
+      KEYCLOAK_URL: https://auth.azfirazka.com
+      KEYCLOAK_REALM: azfirazka
+      KEYCLOAK_ISSUER: https://auth.azfirazka.com/realms/azfirazka
+      KEYCLOAK_CLIENT_ID: modular-monolith-api
+      KEYCLOAK_CLIENT_SECRET: MGFkC1Php3267rD0f0PxzZrIFPnTWWjA
+      KEYCLOAK_REDIRECT_URI: http://localhost:3000/api/auth/oauth/keycloak/callback
+      # JWT configuration
+      JWT_SECRET: 3deb495530f9b58e4b25044d43bd76a595e302611f56d9d76219db848013af93
+      JWT_EXPIRES_IN: 24h
+      # RS256 configuration
+      JWT_ACCESS_TOKEN_EXPIRY: 3h
+      JWT_REFRESH_TOKEN_EXPIRY: 7d
+      # Feature flags
+      ENABLE_KEYCLOAK: "true"
+      ENABLE_BETTER_AUTH: "true"
+      ENABLE_EMAIL_PASSWORD_AUTH: "false"
+      ENABLE_RS256_TOKENS: "true"
+      # CORS configuration
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
+      CORS_CREDENTIALS: "true"
+      # Logging
+      LOG_LEVEL: debug
+      LOG_FORMAT: json
+      # Security
+      SESSION_SECRET: 1bb5f5efef5ae3b2e12df15086e5ac2b5f52ac40905342a3656d40fbc0366aa2
+      CSRF_SECRET: c3ea7343081b6562676ca56cbf963163122c35d16df75b33746df95765744884
+      BCRYPT_ROUNDS: "12"
+      # MinIO (S3-compatible storage)
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_ENDPOINT: http://localhost:9000
+      MINIO_BUCKET_NAME: modular-monolith
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      # Rate limiting
+      ENABLE_RATE_LIMITING: "true"
+      RATE_LIMIT_WINDOW_MS: "900000"
+      RATE_LIMIT_MAX_REQUESTS: "100"
+      QUOTA_CHECK_INTERVAL_MS: "60000"
+      # File upload
+      MAX_FILE_SIZE: "5242880"
+      ALLOWED_FILE_TYPES: image/jpeg,image/png,image/gif,image/webp
+      UPLOAD_DIR: ./uploads
+      # Feature flags
+      ENABLE_AUDIT_LOGGING: "true"
+    volumes:
+      # Mount source code for hot reload
+      - ./packages/api/src:/app/packages/api/src:ro
+      - ./packages/shared/src:/app/packages/shared/src:ro
+      - ./packages/database/src:/app/packages/database/src:ro
+      - ./packages/api/package.json:/app/packages/api/package.json:ro
+      - ./packages/shared/package.json:/app/packages/shared/package.json:ro
+      - ./packages/database/package.json:/app/packages/database/package.json:ro
+      - ./packages/api/tsconfig.json:/app/packages/api/tsconfig.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+    # Override restart policy for development (don't restart on errors while coding)
+    restart: unless-stopped
+    # Disable health check in development (it may fail during code changes)
+    healthcheck:
+      test: ['CMD', 'bun', '-e', "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
