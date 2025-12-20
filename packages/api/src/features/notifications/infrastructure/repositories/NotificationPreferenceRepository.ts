@@ -1,128 +1,142 @@
-import { eq, and, or, desc, asc, ilike, getTableColumns, count, lt, gte, lte, inArray } from 'drizzle-orm';
-import { db } from '@modular-monolith/database';
-import {
-  NotificationFrequency
-} from '../../domain';
-import { INotificationPreferenceRepository } from '../../domain/interfaces/INotificationPreferenceRepository';
-import { NotificationPreference } from '../../domain/entities/NotificationPreference.entity';
+import { eq, and, desc, asc, sql } from 'drizzle-orm';
+import { db } from '../db';
+import { notificationPreferences } from '../../domain/entities/Notification';
+import type { NotificationPreference, NewNotificationPreference } from '../../domain/entities/Notification';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-// Note: This assumes database schema has been set up for notification preferences
-// If not, we'll need to create schema first
-const notificationPreferencesTable = {} as any; // Placeholder - would be actual table reference
+/**
+ * Notification Preference Repository
+ * 
+ * Handles user notification preferences
+ */
+export class NotificationPreferenceRepository {
+  private db = db;
 
-export class NotificationPreferenceRepository implements INotificationPreferenceRepository {
-  // CRUD operations
-  async findById(id: string): Promise<NotificationPreference | null> {
-    // For now, return null since we don't have database schema
-    // In a real implementation, this would query database
-    return null;
-  }
-
+  /**
+   * Get user preferences
+   */
   async findByUserId(userId: string): Promise<NotificationPreference[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
+    const result = await this.db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .orderBy(desc(notificationPreferences.createdAt));
+
+    return result;
   }
 
-  async findByUserIdAndType(userId: string, type: string): Promise<NotificationPreference | null> {
-    // For now, return null since we don't have database schema
-    return null;
+  /**
+   * Get user preference by category
+   */
+  async findByUserIdAndCategory(userId: string, category: string): Promise<NotificationPreference | null> {
+    const [preference] = await this.db
+      .select()
+      .from(notificationPreferences)
+      .where(
+        and(
+          eq(notificationPreferences.userId, userId),
+          eq(notificationPreferences.category, category)
+        )
+      )
+      .limit(1);
+
+    return preference || null;
   }
 
-  async create(preference: NotificationPreference): Promise<NotificationPreference> {
-    // For now, just return preference since we don't have database schema
-    return preference;
+  /**
+   * Upsert preference
+   */
+  async upsert(data: NewNotificationPreference): Promise<NotificationPreference> {
+    const existing = await this.findByUserIdAndCategory(data.userId, data.category);
+
+    if (existing) {
+      const [updated] = await this.db
+        .update(notificationPreferences)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(notificationPreferences.id, existing.id))
+        .returning();
+
+      return updated;
+    }
+
+    const [created] = await this.db
+      .insert(notificationPreferences)
+      .values(data)
+      .returning();
+
+    return created;
   }
 
-  async update(preference: NotificationPreference): Promise<NotificationPreference> {
-    // For now, just return preference since we don't have database schema
-    return preference;
+  /**
+   * Set user default preferences
+   */
+  async setDefaults(userId: string): Promise<void> {
+    const defaults = [
+      {
+        userId,
+        category: 'general',
+        emailEnabled: true,
+        pushEnabled: true,
+        smsEnabled: false,
+        inAppEnabled: true,
+        frequency: 'immediate'
+      },
+      {
+        userId,
+        category: 'marketing',
+        emailEnabled: false,
+        pushEnabled: false,
+        smsEnabled: false,
+        inAppEnabled: false,
+        frequency: 'daily'
+      },
+      {
+        userId,
+        category: 'security',
+        emailEnabled: true,
+        pushEnabled: true,
+        smsEnabled: true,
+        inAppEnabled: true,
+        frequency: 'immediate'
+      }
+    ];
+
+    await this.db.insert(notificationPreferences).values(defaults);
   }
 
-  async delete(id: string): Promise<void> {
-    // For now, do nothing since we don't have database schema
-    // In a real implementation, this would delete from database
+  /**
+   * Check if user has enabled channel for category
+   */
+  async isChannelEnabled(userId: string, category: string, channel: 'email' | 'push' | 'sms' | 'in_app'): Promise<boolean> {
+    const preference = await this.findByUserIdAndCategory(userId, category);
+
+    if (!preference) {
+      // Default to true for general notifications
+      return category === 'general';
+    }
+
+    switch (channel) {
+      case 'email':
+        return preference.emailEnabled;
+      case 'push':
+        return preference.pushEnabled;
+      case 'sms':
+        return preference.smsEnabled;
+      case 'in_app':
+        return preference.inAppEnabled;
+      default:
+        return true;
+    }
   }
 
+  /**
+   * Delete user preferences
+   */
   async deleteByUserId(userId: string): Promise<void> {
-    // For now, do nothing since we don't have database schema
-    // In a real implementation, this would delete from database
-  }
-
-  // Query operations
-  async findByType(type: string): Promise<NotificationPreference[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findByFrequency(frequency: NotificationFrequency): Promise<NotificationPreference[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findActive(): Promise<NotificationPreference[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async updateByUserIdAndType(
-    userId: string,
-    type: string,
-    data: Partial<NotificationPreference>
-  ): Promise<NotificationPreference> {
-    // For now, create a mock preference since we don't have database schema
-    const mockPreference = NotificationPreference.create({
-      userId,
-      type,
-      emailEnabled: data.emailEnabled ?? true,
-      smsEnabled: data.smsEnabled ?? true,
-      pushEnabled: data.pushEnabled ?? true,
-      inAppEnabled: data.inAppEnabled ?? true,
-      frequency: data.frequency ?? NotificationFrequency.IMMEDIATE
-    });
-    return mockPreference;
-  }
-
-  // Private helper methods
-  private mapToDomainEntity(data: any): NotificationPreference {
-    return new NotificationPreference(
-      data.id,
-      data.userId,
-      data.type,
-      data.emailEnabled !== false, // Default to true if not specified
-      data.smsEnabled !== false, // Default to false if not specified
-      data.pushEnabled !== false, // Default to true if not specified
-      data.inAppEnabled !== false, // Default to true if not specified
-      data.frequency || NotificationFrequency.IMMEDIATE,
-      data.quietHoursEnabled || false,
-      data.quietHoursStart,
-      data.quietHoursEnd,
-      data.timezone || 'UTC',
-      data.metadata || {},
-      data.createdAt || new Date(),
-      data.updatedAt || new Date()
-    );
-  }
-
-  private buildWhereClause(userId?: string, type?: string, frequency?: NotificationFrequency, isActive?: boolean) {
-    const conditions = [];
-
-    if (userId) {
-      conditions.push(eq(notificationPreferencesTable.userId, userId));
-    }
-
-    if (type) {
-      conditions.push(eq(notificationPreferencesTable.type, type));
-    }
-
-    if (frequency) {
-      conditions.push(eq(notificationPreferencesTable.frequency, frequency));
-    }
-
-    if (isActive !== undefined) {
-      conditions.push(eq(notificationPreferencesTable.isActive, isActive));
-    }
-
-    return conditions.length > 0 ? and(...conditions) : undefined;
+    await this.db
+      .delete(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
   }
 }
+
+// Export singleton instance
+export const notificationPreferenceRepository = new NotificationPreferenceRepository();

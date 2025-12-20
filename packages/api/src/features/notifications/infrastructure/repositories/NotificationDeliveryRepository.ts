@@ -1,158 +1,267 @@
-import { eq, and, or, desc, asc, ilike, getTableColumns, count, lt, gte, lte, inArray } from 'drizzle-orm';
-import { db } from '@modular-monolith/database';
-import {
-  NotificationChannel
-} from '../../domain';
-import { INotificationDeliveryRepository } from '../../domain/interfaces/INotificationDeliveryRepository';
-import { NotificationDelivery } from '../../domain/entities/NotificationDelivery.entity';
+import { eq, and, desc, asc, sql, gte, lte, inArray } from 'drizzle-orm';
+import { db } from '../db';
+import { notificationDeliveries } from '../../domain/entities/Notification';
+import type { NotificationDelivery, NewNotificationDelivery } from '../../domain/entities/Notification';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-// Note: This assumes database schema has been set up for notification deliveries
-// If not, we'll need to create schema first
-const notificationDeliveriesTable = {} as any; // Placeholder - would be actual table reference
+/**
+ * Notification Delivery Repository
+ * 
+ * Tracks delivery attempts per channel
+ */
+export class NotificationDeliveryRepository {
+  private db = db;
 
-export class NotificationDeliveryRepository implements INotificationDeliveryRepository {
-  // CRUD operations
-  async findById(id: string): Promise<NotificationDelivery | null> {
-    // For now, return null since we don't have database schema
-    // In a real implementation, this would query database
-    return null;
+  /**
+   * Create delivery record
+   */
+  async create(data: NewNotificationDelivery): Promise<NotificationDelivery> {
+    const [delivery] = await this.db
+      .insert(notificationDeliveries)
+      .values(data)
+      .returning();
+
+    return delivery;
   }
 
+  /**
+   * Find deliveries by notification ID
+   */
   async findByNotificationId(notificationId: string): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
+    const result = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(eq(notificationDeliveries.notificationId, notificationId))
+      .orderBy(desc(notificationDeliveries.createdAt));
+
+    return result;
   }
 
-  async create(delivery: NotificationDelivery): Promise<NotificationDelivery> {
-    // For now, just return delivery since we don't have database schema
-    return delivery;
+  /**
+   * Find deliveries by status
+   */
+  async findByStatus(status: string, limit: number = 50): Promise<NotificationDelivery[]> {
+    const result = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(eq(notificationDeliveries.status, status))
+      .orderBy(asc(notificationDeliveries.createdAt))
+      .limit(limit);
+
+    return result;
   }
 
-  async update(delivery: NotificationDelivery): Promise<NotificationDelivery> {
-    // For now, just return delivery since we don't have database schema
-    return delivery;
-  }
-
-  async delete(id: string): Promise<void> {
-    // For now, do nothing since we don't have database schema
-    // In a real implementation, this would delete from database
-  }
-
-  async deleteByNotificationId(notificationId: string): Promise<void> {
-    // For now, do nothing since we don't have database schema
-    // In a real implementation, this would delete from database
-  }
-
-  // Query operations
-  async findByChannel(channel: NotificationChannel): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findByStatus(status: string): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findByRecipient(recipient: string): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findPending(): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findFailed(): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async findDelivered(): Promise<NotificationDelivery[]> {
-    // For now, return empty array since we don't have database schema
-    return [];
-  }
-
-  async countByStatus(notificationId: string): Promise<Record<string, number>> {
-    // For now, return empty object since we don't have database schema
-    return {};
-  }
-
-  // Status update operations
-  async markAsSent(id: string, messageId?: string): Promise<NotificationDelivery> {
-    // For now, create a mock delivery since we don't have database schema
-    const mockDelivery = NotificationDelivery.create({
-      notificationId: 'mock-notification-id',
-      channel: NotificationChannel.EMAIL,
-      recipient: 'test@example.com'
-    });
-    return mockDelivery.markAsSent(messageId);
-  }
-
-  async markAsDelivered(id: string): Promise<NotificationDelivery> {
-    // For now, create a mock delivery since we don't have database schema
-    const mockDelivery = NotificationDelivery.create({
-      notificationId: 'mock-notification-id',
-      channel: NotificationChannel.EMAIL,
-      recipient: 'test@example.com'
-    });
-    return mockDelivery.markAsDelivered();
-  }
-
-  async markAsFailed(id: string, error: string): Promise<NotificationDelivery> {
-    // For now, create a mock delivery since we don't have database schema
-    const mockDelivery = NotificationDelivery.create({
-      notificationId: 'mock-notification-id',
-      channel: NotificationChannel.EMAIL,
-      recipient: 'test@example.com'
-    });
-    return mockDelivery.markAsFailed(error);
-  }
-
-  // Private helper methods
-  private mapToDomainEntity(data: any): NotificationDelivery {
-    return new NotificationDelivery(
-      data.id,
-      data.notificationId,
-      data.channel,
-      data.recipient,
-      data.status || 'pending',
-      data.messageId,
-      data.error,
-      data.metadata || {},
-      data.sentAt,
-      data.deliveredAt,
-      data.createdAt || new Date(),
-      data.updatedAt || new Date()
-    );
-  }
-
-  private buildWhereClause(
-    notificationId?: string,
-    channel?: NotificationChannel,
-    status?: string,
-    recipient?: string
-  ) {
-    const conditions = [];
-
-    if (notificationId) {
-      conditions.push(eq(notificationDeliveriesTable.notificationId, notificationId));
+  /**
+   * Update delivery status
+   */
+  async updateStatus(
+    id: string,
+    status: string,
+    metadata?: {
+      sentAt?: Date;
+      deliveredAt?: Date;
+      openedAt?: Date;
+      clickedAt?: Date;
+      errorMessage?: string;
+      providerMessageId?: string;
     }
+  ): Promise<void> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date()
+    };
+
+    if (metadata?.sentAt) updateData.sentAt = metadata.sentAt;
+    if (metadata?.deliveredAt) updateData.deliveredAt = metadata.deliveredAt;
+    if (metadata?.openedAt) updateData.openedAt = metadata.openedAt;
+    if (metadata?.clickedAt) updateData.clickedAt = metadata.clickedAt;
+    if (metadata?.errorMessage) updateData.errorMessage = metadata.errorMessage;
+    if (metadata?.providerMessageId) updateData.providerMessageId = metadata.providerMessageId;
+
+    await this.db
+      .update(notificationDeliveries)
+      .set(updateData)
+      .where(eq(notificationDeliveries.id, id));
+  }
+
+  /**
+   * Mark delivery as delivered
+   */
+  async markAsDelivered(id: string, providerMessageId?: string): Promise<void> {
+    await this.updateStatus(id, 'delivered', {
+      deliveredAt: new Date(),
+      providerMessageId
+    });
+  }
+
+  /**
+   * Mark delivery as opened
+   */
+  async markAsOpened(id: string): Promise<void> {
+    await this.updateStatus(id, 'delivered', {
+      openedAt: new Date()
+    });
+  }
+
+  /**
+   * Mark delivery as clicked
+   */
+  async markAsClicked(id: string): Promise<void> {
+    await this.updateStatus(id, 'delivered', {
+      clickedAt: new Date()
+    });
+  }
+
+  /**
+   * Mark delivery as failed
+   */
+  async markAsFailed(id: string, errorMessage: string): Promise<void> {
+    const delivery = await this.findById(id);
+    
+    await this.db
+      .update(notificationDeliveries)
+      .set({
+        status: 'failed',
+        errorMessage,
+        failedAt: new Date(),
+        retryCount: (delivery?.retryCount || 0) + 1,
+        nextRetryAt: this.calculateNextRetry((delivery?.retryCount || 0) + 1),
+        updatedAt: new Date()
+      })
+      .where(eq(notificationDeliveries.id, id));
+  }
+
+  /**
+   * Calculate next retry time with exponential backoff
+   */
+  private calculateNextRetry(retryCount: number): Date {
+    const delays = [1, 5, 15, 30, 60]; // minutes
+    const delay = delays[Math.min(retryCount - 1, delays.length - 1)] || 60;
+    
+    const nextRetry = new Date();
+    nextRetry.setMinutes(nextRetry.getMinutes() + delay);
+    
+    return nextRetry;
+  }
+
+  /**
+   * Find deliveries ready for retry
+   */
+  async findReadyForRetry(): Promise<NotificationDelivery[]> {
+    const now = new Date();
+
+    const result = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(
+        and(
+          eq(notificationDeliveries.status, 'failed'),
+          sql`${notificationDeliveries.nextRetryAt} IS NOT NULL`,
+          sql`${notificationDeliveries.retryCount} < ${notificationDeliveries.maxRetries}`,
+          lte(notificationDeliveries.nextRetryAt, now)
+        )
+      )
+      .orderBy(asc(notificationDeliveries.nextRetryAt))
+      .limit(50);
+
+    return result;
+  }
+
+  /**
+   * Get delivery statistics for notification
+   */
+  async getStats(notificationId: string): Promise<{
+    total: number;
+    sent: number;
+    delivered: number;
+    failed: number;
+    opened: number;
+    clicked: number;
+  }> {
+    const deliveries = await this.findByNotificationId(notificationId);
+
+    return {
+      total: deliveries.length,
+      sent: deliveries.filter(d => d.status === 'sent').length,
+      delivered: deliveries.filter(d => d.status === 'delivered').length,
+      failed: deliveries.filter(d => d.status === 'failed').length,
+      opened: deliveries.filter(d => d.openedAt !== null).length,
+      clicked: deliveries.filter(d => d.clickedAt !== null).length
+    };
+  }
+
+  /**
+   * Find delivery by ID
+   */
+  async findById(id: string): Promise<NotificationDelivery | null> {
+    const [delivery] = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(eq(notificationDeliveries.id, id))
+      .limit(1);
+
+    return delivery || null;
+  }
+
+  /**
+   * Delete old delivery records
+   */
+  async deleteOlderThan(days: number = 30): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const result = await this.db
+      .delete(notificationDeliveries)
+      .where(
+        and(
+          lte(notificationDeliveries.createdAt, cutoffDate),
+          inArray(notificationDeliveries.status, ['delivered', 'failed'])
+        )
+      );
+
+    return result.rowCount || 0;
+  }
+
+  /**
+   * Get delivery analytics by date range
+   */
+  async getAnalyticsByDateRange(
+    startDate: Date,
+    endDate: Date,
+    options?: {
+      channel?: string;
+      status?: string;
+    }
+  ): Promise<any[]> {
+    const { channel, status } = options || {};
+
+    const conditions = [
+      gte(notificationDeliveries.createdAt, startDate),
+      lte(notificationDeliveries.createdAt, endDate)
+    ];
 
     if (channel) {
-      conditions.push(eq(notificationDeliveriesTable.channel, channel));
+      conditions.push(eq(notificationDeliveries.channel, channel));
     }
 
     if (status) {
-      conditions.push(eq(notificationDeliveriesTable.status, status));
+      conditions.push(eq(notificationDeliveries.status, status));
     }
 
-    if (recipient) {
-      conditions.push(eq(notificationDeliveriesTable.recipient, recipient));
-    }
+    const result = await this.db
+      .select({
+        channel: notificationDeliveries.channel,
+        status: notificationDeliveries.status,
+        count: sql<number>`COUNT(*)`.mapWith(Number),
+        sentDate: sql<string>`DATE(${notificationDeliveries.sentAt})`
+      })
+      .from(notificationDeliveries)
+      .where(and(...conditions))
+      .groupBy(notificationDeliveries.channel, notificationDeliveries.status, sql`DATE(${notificationDeliveries.sentAt})`)
+      .orderBy(desc(sql`DATE(${notificationDeliveries.sentAt})`));
 
-    return conditions.length > 0 ? and(...conditions) : undefined;
+    return result;
   }
 }
+
+// Export singleton instance
+export const notificationDeliveryRepository = new NotificationDeliveryRepository();

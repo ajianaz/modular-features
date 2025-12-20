@@ -1,208 +1,358 @@
-import { eq, and, or, desc, asc, ilike, getTableColumns, count, lt, gte, lte, inArray } from 'drizzle-orm';
-import { db } from '@modular-monolith/database';
-import {
-  NotificationStatus,
-  NotificationType,
-  NotificationChannel,
-  NotificationPriority,
-  GetNotificationsOptions
-} from '../../domain';
-import { INotificationRepository } from '../../domain/interfaces/INotificationRepository';
-import { Notification } from '../../domain/entities/Notification.entity';
+import { eq, and, desc, asc, or, sql, gte, lte, inArray } from 'drizzle-orm';
+import { db } from '../db';
+import { notifications, notificationDeliveries, notificationRecipients } from '../../domain/entities/Notification';
+import type { Notification, NewNotification } from '../../domain/entities/Notification';
 
-// Type assertion to handle Drizzle ORM compatibility issues
-// Note: This assumes the database schema has been set up for notifications
-// If not, we'll need to create the schema first
-const notificationsTable = {} as any; // Placeholder - would be actual table reference
+/**
+ * Notification Repository
+ * 
+ * Handles all database operations for notifications
+ */
+export class NotificationRepository {
+  private db = db;
 
-export class NotificationRepository implements INotificationRepository {
-  // CRUD operations
+  /**
+   * Create a new notification
+   */
+  async create(data: NewNotification): Promise<Notification> {
+    const [notification] = await this.db
+      .insert(notifications)
+      .values(data)
+      .returning();
+    
+    return notification;
+  }
+
+  /**
+   * Create multiple notifications (bulk)
+   */
+  async createMany(data: NewNotification[]): Promise<Notification[]> {
+    const result = await this.db
+      .insert(notifications)
+      .values(data)
+      .returning();
+    
+    return result;
+  }
+
+  /**
+   * Find notification by ID
+   */
   async findById(id: string): Promise<Notification | null> {
-    // For now, return null since we don't have the database schema
-    // In a real implementation, this would query the database
-    return null;
+    const [notification] = await this.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id))
+      .limit(1);
+    
+    return notification || null;
   }
 
-  async findByUserId(userId: string, options?: GetNotificationsOptions): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    // In a real implementation, this would query the database with filters
-    return [];
-  }
-
-  async create(notification: Notification): Promise<Notification> {
-    // For now, just return the notification since we don't have the database schema
-    // In a real implementation, this would insert into the database
-    return notification;
-  }
-
-  async update(notification: Notification): Promise<Notification> {
-    // For now, just return the notification since we don't have the database schema
-    // In a real implementation, this would update the database
-    return notification;
-  }
-
-  async delete(id: string): Promise<void> {
-    // For now, do nothing since we don't have the database schema
-    // In a real implementation, this would delete from the database
-  }
-
-  // Query operations
-  async findPendingNotifications(limit?: number): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findScheduledNotifications(before: Date): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findFailedNotifications(maxRetries?: number): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async countByStatus(userId?: string): Promise<Record<NotificationStatus, number>> {
-    // For now, return empty object since we don't have the database schema
-    return {
-      [NotificationStatus.PENDING]: 0,
-      [NotificationStatus.PROCESSING]: 0,
-      [NotificationStatus.SENT]: 0,
-      [NotificationStatus.DELIVERED]: 0,
-      [NotificationStatus.FAILED]: 0,
-      [NotificationStatus.CANCELLED]: 0
-    };
-  }
-
-  async findByStatus(status: NotificationStatus): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findByType(type: NotificationType): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findByChannel(channel: NotificationChannel): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findByPriority(priority: NotificationPriority): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findExpired(): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findScheduledForUser(userId: string): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async findUnreadByUser(userId: string): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  // Status update operations
-  async markAsRead(id: string): Promise<Notification> {
-    // For now, create a mock notification since we don't have the database schema
-    const mockNotification = Notification.create({
-      userId: 'mock-user-id',
-      type: NotificationType.INFO,
-      title: 'Mock Notification',
-      message: 'This is a mock notification',
-      channels: [NotificationChannel.IN_APP]
-    });
-    return mockNotification.markAsRead();
-  }
-
-  async markMultipleAsRead(ids: string[]): Promise<Notification[]> {
-    // For now, return empty array since we don't have the database schema
-    return [];
-  }
-
-  async cancelScheduled(id: string): Promise<Notification> {
-    // For now, create a mock notification since we don't have the database schema
-    const mockNotification = Notification.create({
-      userId: 'mock-user-id',
-      type: NotificationType.INFO,
-      title: 'Mock Notification',
-      message: 'This is a mock notification',
-      channels: [NotificationChannel.IN_APP]
-    });
-    return mockNotification.markAsCancelled();
-  }
-
-  // Cleanup operations
-  async deleteExpired(): Promise<number> {
-    // For now, return 0 since we don't have the database schema
-    return 0;
-  }
-
-  async deleteOlderThan(date: Date): Promise<number> {
-    // For now, return 0 since we don't have the database schema
-    return 0;
-  }
-
-  // Private helper methods
-  private mapToDomainEntity(data: any): Notification {
-    return new Notification(
-      data.id,
-      data.userId,
-      data.type,
-      data.title,
-      data.message,
-      data.channels || [],
-      data.status || NotificationStatus.PENDING,
-      data.priority || NotificationPriority.NORMAL,
-      data.templateId,
-      data.scheduledFor,
-      data.sentAt,
-      data.deliveredAt,
-      data.readAt,
-      data.expiresAt,
-      data.metadata || {},
-      data.deliveryData || {},
-      data.retryCount || 0,
-      data.maxRetries || 3,
-      data.lastError,
-      data.createdAt || new Date(),
-      data.updatedAt || new Date()
-    );
-  }
-
-  private buildWhereClause(options?: GetNotificationsOptions) {
-    if (!options) return undefined;
+  /**
+   * Find notifications by user ID
+   */
+  async findByUserId(userId: string, options?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    type?: string;
+    unreadOnly?: boolean;
+  }): Promise<Notification[]> {
+    const { limit = 50, offset = 0, status, type, unreadOnly } = options || {};
 
     const conditions = [];
-
-    if (options.status) {
-      conditions.push(eq(notificationsTable.status, options.status));
+    
+    if (userId) {
+      conditions.push(eq(notifications.userId, userId));
+    }
+    
+    if (status) {
+      conditions.push(eq(notifications.status, status));
+    }
+    
+    if (type) {
+      conditions.push(eq(notifications.type, type));
+    }
+    
+    if (unreadOnly) {
+      conditions.push(sql`${notifications.readAt} IS NULL`);
     }
 
-    if (options.type) {
-      conditions.push(eq(notificationsTable.type, options.type));
-    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    if (options.channel) {
-      conditions.push(eq(notificationsTable.channel, options.channel));
-    }
+    const result = await this.db
+      .select()
+      .from(notifications)
+      .where(where)
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    if (options.priority) {
-      conditions.push(eq(notificationsTable.priority, options.priority));
-    }
-
-    return conditions.length > 0 ? and(...conditions) : undefined;
+    return result;
   }
 
-  private buildOrderClause(sortBy?: string, sortOrder?: string) {
-    const column = notificationsTable[sortBy as keyof typeof notificationsTable] || notificationsTable.createdAt;
-    return sortOrder === 'asc' ? asc(column as any) : desc(column as any);
+  /**
+   * Find scheduled notifications that need to be sent
+   */
+  async findScheduledToSend(): Promise<Notification[]> {
+    const now = new Date();
+
+    const result = await this.db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.status, 'pending'),
+          sql`${notifications.scheduledFor} IS NOT NULL`,
+          lte(notifications.scheduledFor, now)
+        )
+      )
+      .orderBy(asc(notifications.scheduledFor))
+      .limit(100);
+
+    return result;
+  }
+
+  /**
+   * Find notifications that need retry
+   */
+  async findFailedToRetry(maxRetries: number = 3): Promise<Notification[]> {
+    const result = await this.db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.status, 'failed'),
+          sql`${notifications.retryCount} < ${notifications.maxRetries}`,
+          lte(notifications.retryCount, maxRetries)
+        )
+      )
+      .orderBy(asc(notifications.createdAt))
+      .limit(50);
+
+    return result;
+  }
+
+  /**
+   * Update notification
+   */
+  async update(id: string, data: Partial<NewNotification>): Promise<Notification | null> {
+    const [notification] = await this.db
+      .update(notifications)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(notifications.id, id))
+      .returning();
+
+    return notification || null;
+  }
+
+  /**
+   * Update notification status
+   */
+  async updateStatus(id: string, status: string, metadata?: Record<string, any>): Promise<void> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date()
+    };
+
+    if (status === 'sent') {
+      updateData.sentAt = new Date();
+    } else if (status === 'delivered') {
+      updateData.deliveredAt = new Date();
+    } else if (status === 'failed') {
+      updateData.retryCount = sql`${notifications.retryCount} + 1`;
+    }
+
+    if (metadata) {
+      updateData.metadata = metadata;
+    }
+
+    await this.db
+      .update(notifications)
+      .set(updateData)
+      .where(eq(notifications.id, id));
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(id: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({
+        readAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(notifications.id, id));
+  }
+
+  /**
+   * Mark all notifications as read for a user
+   */
+  async markAllAsRead(userId: string): Promise<void> {
+    await this.db
+      .update(notifications)
+      .set({
+        readAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          sql`${notifications.readAt} IS NULL`
+        )
+      );
+  }
+
+  /**
+   * Delete notification
+   */
+  async delete(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(notifications)
+      .where(eq(notifications.id, id));
+
+    return result.rowCount > 0;
+  }
+
+  /**
+   * Delete old notifications (cleanup)
+   */
+  async deleteOlderThan(days: number = 30): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const result = await this.db
+      .delete(notifications)
+      .where(
+        and(
+          lte(notifications.createdAt, cutoffDate),
+          inArray(notifications.status, ['delivered', 'cancelled', 'failed'])
+        )
+      );
+
+    return result.rowCount || 0;
+  }
+
+  /**
+   * Count notifications by status for a user
+   */
+  async countByStatus(userId: string): Promise<Record<string, number>> {
+    const result = await this.db
+      .select({
+        status: notifications.status,
+        count: sql<number>`COUNT(*)`.mapWith(Number)
+      })
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .groupBy(notifications.status);
+
+    const counts: Record<string, number> = {};
+    for (const row of result) {
+      counts[row.status] = row.count;
+    }
+
+    return counts;
+  }
+
+  /**
+   * Get unread count for a user
+   */
+  async getUnreadCount(userId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          sql`${notifications.readAt} IS NULL`
+        )
+      );
+
+    return result[0]?.count || 0;
+  }
+
+  /**
+   * Search notifications
+   */
+  async search(query: string, userId?: string, limit: number = 20): Promise<Notification[]> {
+    const conditions = [
+      sql`${notifications.title} ILIKE ${`%${query}%`}`,
+      sql`${notifications.message} ILIKE ${`%${query}%`}`
+    ];
+
+    if (userId) {
+      conditions.push(eq(notifications.userId, userId));
+    }
+
+    const result = await this.db
+      .select()
+      .from(notifications)
+      .where(or(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit);
+
+    return result;
+  }
+
+  /**
+   * Get notifications by date range
+   */
+  async getByDateRange(
+    startDate: Date,
+    endDate: Date,
+    options?: {
+      userId?: string;
+      status?: string;
+      limit?: number;
+    }
+  ): Promise<Notification[]> {
+    const { userId, status, limit = 100 } = options || {};
+
+    const conditions = [
+      gte(notifications.createdAt, startDate),
+      lte(notifications.createdAt, endDate)
+    ];
+
+    if (userId) {
+      conditions.push(eq(notifications.userId, userId));
+    }
+
+    if (status) {
+      conditions.push(eq(notifications.status, status));
+    }
+
+    const result = await this.db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit);
+
+    return result;
+  }
+
+  /**
+   * Get notifications with delivery info
+   */
+  async findByIdWithDelivery(id: string): Promise<(Notification & { deliveries: any[] }) | null> {
+    const notification = await this.findById(id);
+    
+    if (!notification) {
+      return null;
+    }
+
+    const deliveries = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(eq(notificationDeliveries.notificationId, id));
+
+    return {
+      ...notification,
+      deliveries
+    };
   }
 }
+
+// Export singleton instance
+export const notificationRepository = new NotificationRepository();

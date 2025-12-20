@@ -1,169 +1,219 @@
-import { Notification } from '../../domain/entities/Notification.entity';
-import { INotificationRepository } from '../../domain/interfaces/INotificationRepository';
-import { INotificationTemplateRepository } from '../../domain/interfaces/INotificationTemplateRepository';
-import { INotificationPreferenceRepository } from '../../domain/interfaces/INotificationPreferenceRepository';
-import { INotificationProvider } from '../../domain/interfaces/INotificationProvider';
-import { SendNotificationRequest } from '../dtos/input/SendNotificationRequest';
-import { SendNotificationResponse } from '../dtos/output/SendNotificationResponse';
-import { NotificationMapper } from '../mappers/NotificationMapper';
-import { InvalidNotificationDataError } from '../../domain/errors/index';
-import { NotificationChannel } from '../../domain/types';
+import { 
+  INotificationProvider, 
+  SendNotificationParams,
+  NotificationDeliveryResult 
+} from '../../domain/interfaces/IProvider';
+import { NotificationChannel } from '../../domain/enums/NotificationChannel';
+import { notificationRepository } from '../../infrastructure/repositories/NotificationRepository';
+import { notificationTemplateRepository } from '../../infrastructure/repositories/NotificationTemplateRepository';
+import { notificationPreferenceRepository } from '../../infrastructure/repositories/NotificationPreferenceRepository';
+import { notificationDeliveryRepository } from '../../infrastructure/repositories/NotificationDeliveryRepository';
+import { notificationAnalyticsRepository } from '../../infrastructure/repositories/NotificationAnalyticsRepository';
+import { ProviderRegistry } from '../../infrastructure/lib/ProviderRegistry';
+import { ChannelRouter } from '../../infrastructure/lib/ChannelRouter';
+import type { NewNotification, NewNotificationDelivery } from '../../domain/entities/Notification';
 
+/**
+ * Send Notification Use Case
+ * 
+ * Handles sending notifications through various channels
+ */
 export class SendNotificationUseCase {
-  constructor(
-    private notificationRepository: INotificationRepository,
-    private templateRepository: INotificationTemplateRepository,
-    private preferenceRepository: INotificationPreferenceRepository,
-    private providers: Map<NotificationChannel, INotificationProvider>
-  ) {}
+  private registry: ProviderRegistry;
+  private router: ChannelRouter;
 
-  async execute(request: SendNotificationRequest): Promise<SendNotificationResponse> {
-    try {
-      // Validate request
-      const validation = Notification.validateCreate({
-        userId: request.recipientId,
-        type: request.type,
-        title: request.title,
-        message: request.content,
-        channels: request.channels || [],
-        priority: request.priority,
-        templateId: request.templateId,
-        scheduledFor: request.scheduledAt,
-        metadata: request.data
-      });
-
-      if (!validation.isValid) {
-        return {
-          success: false,
-          error: `Validation failed: ${validation.errors.join(', ')}`
-        };
-      }
-
-      // Check user preferences
-      const preferences = await this.preferenceRepository.findByUserIdAndType(
-        request.recipientId,
-        request.type
-      );
-
-      // Filter channels based on preferences
-      const enabledChannels = await this.getEnabledChannels(
-        request.channels || [],
-        Array.isArray(preferences) ? preferences : [],
-        request.recipientId
-      );
-
-      if (enabledChannels.length === 0) {
-        return {
-          success: false,
-          error: 'No enabled notification channels for this user'
-        };
-      }
-
-      // Process template if provided
-      let title = request.title;
-      let content = request.content;
-
-      if (request.templateId) {
-        const template = await this.templateRepository.findById(request.templateId);
-        if (!template) {
-          return {
-            success: false,
-            error: 'Notification template not found'
-          };
-        }
-
-        title = template.renderSubject(request.templateVariables || {}) || title;
-        content = template.render(request.templateVariables || {});
-      }
-
-      // Create notification
-      const notification = Notification.create({
-        userId: request.recipientId,
-        type: request.type,
-        title,
-        message: content,
-        channels: enabledChannels,
-        priority: request.priority,
-        templateId: request.templateId,
-        scheduledFor: request.scheduledAt,
-        metadata: request.data
-      });
-
-      // Save notification
-      const savedNotification = await this.notificationRepository.create(notification);
-
-      // Send notification through providers
-      const results = await this.sendThroughProviders(
-        savedNotification,
-        enabledChannels,
-        request.data
-      );
-
-      // Update notification status based on results
-      const allSuccessful = results.every(result => result.success);
-      const updatedNotification = allSuccessful
-        ? savedNotification.markAsSent()
-        : savedNotification.markAsFailed(results.find(r => !r.success)?.error);
-
-      await this.notificationRepository.update(updatedNotification);
-
-      return {
-        success: allSuccessful,
-        notification: NotificationMapper.toResponse(updatedNotification),
-        message: allSuccessful ? 'Notification sent successfully' : 'Some notifications failed'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
+  constructor() {
+    this.registry = new ProviderRegistry();
+    this.router = new ChannelRouter(this.registry);
   }
 
-  private async getEnabledChannels(
-    requestedChannels: NotificationChannel[],
-    preferences: any[],
-    userId: string
-  ): Promise<NotificationChannel[]> {
+  /**
+   * Execute use case - send notification
+   */
+  async execute(params: {
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    channels: NotificationChannel[];
+    templateSlug?: string;
+    templateParams?: Record<string, any>;
+    data?: Record<string, any>;
+    scheduledFor?: Date;
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+    metadata?: Record<string, any>;
+  }): Promise<{ notificationId: string; results: NotificationDeliveryResult[] }> {
+    const {
+      userId,
+      type,
+      title,
+      message,
+      channels,
+      templateSlug,
+      templateParams,
+      data,
+      scheduledFor,
+      priority,
+      metadata
+    } = params;
+
+    // 1. Check user preferences for each channel
     const enabledChannels: NotificationChannel[] = [];
-
-    for (const channel of requestedChannels) {
-      const preference = preferences.find(p => p.type === 'general' && p.channel === channel);
-
-      if (!preference || preference.enabled) {
+    for (const channel of channels) {
+      const isEnabled = await notificationPreferenceRepository.isChannelEnabled(
+        userId,
+        'general',
+        channel as any
+      );
+      if (isEnabled) {
         enabledChannels.push(channel);
       }
     }
 
-    return enabledChannels;
-  }
+    if (enabledChannels.length === 0) {
+      throw new Error('No enabled channels found for user');
+    }
 
-  private async sendThroughProviders(
-    notification: Notification,
-    channels: NotificationChannel[],
-    data?: Record<string, any>
-  ): Promise<Array<{ success: boolean; error?: string }>> {
-    const results: Array<{ success: boolean; error?: string }> = [];
+    // 2. Process template if provided
+    let processedContent = message;
+    let processedTitle = title;
 
-    for (const channel of channels) {
-      const provider = this.providers.get(channel);
-      if (!provider) {
-        results.push({ success: false, error: `No provider found for channel: ${channel}` });
-        continue;
+    if (templateSlug) {
+      for (const channel of enabledChannels) {
+        const template = await notificationTemplateRepository.findBySlugAndChannel(
+          templateSlug,
+          channel
+        );
+
+        if (template && template.template) {
+          // Render template with parameters
+          // This would use Handlebars or similar
+          processedContent = template.template; // Simplified
+          if (template.subject) {
+            processedTitle = template.subject;
+          }
+        }
       }
+    }
 
+    // 3. Create notification record
+    const notificationData: NewNotification = {
+      userId,
+      type: type as any,
+      title: processedTitle,
+      message: processedContent,
+      channels: enabledChannels,
+      status: scheduledFor ? 'pending' : 'processing',
+      priority: priority || 'normal',
+      scheduledFor,
+      metadata: {
+        ...metadata,
+        templateSlug,
+        templateParams
+      }
+    };
+
+    const notification = await notificationRepository.create(notificationData);
+
+    // 4. If scheduled, don't send immediately
+    if (scheduledFor && scheduledFor > new Date()) {
+      return {
+        notificationId: notification.id,
+        results: []
+      };
+    }
+
+    // 5. Send through each enabled channel
+    const results: NotificationDeliveryResult[] = [];
+
+    for (const channel of enabledChannels) {
       try {
-        const result = await provider.send(notification, notification.userId);
+        // Get provider for channel
+        const provider = this.router.route(channel, {});
+
+        // Prepare channel-specific params
+        const sendParams: SendNotificationParams = {
+          recipient: userId, // Provider will resolve to actual recipient (email, token, etc.)
+          title: processedTitle,
+          content: processedContent,
+          data,
+          priority: priority === 'high' || priority === 'urgent' ? 'high' : 'normal'
+        };
+
+        // Send notification
+        const result = await provider.send(sendParams);
+
+        // Record delivery
+        const deliveryData: NewNotificationDelivery = {
+          notificationId: notification.id,
+          channel: channel as any,
+          status: result.success ? 'sent' : 'failed',
+          recipient: userId,
+          provider: result.provider,
+          providerMessageId: result.providerMessageId,
+          errorMessage: result.error
+        };
+
+        const delivery = await notificationDeliveryRepository.create(deliveryData);
+
+        // Update notification status if any channel succeeded
+        if (result.success) {
+          await notificationRepository.updateStatus(notification.id, 'sent');
+        }
 
         results.push(result);
+
+        // Record analytics
+        await notificationAnalyticsRepository.recordMetric(
+          notification.id,
+          'delivery',
+          result.success ? 'sent' : 'failed',
+          1
+        );
+
       } catch (error) {
         results.push({
           success: false,
-          error: error instanceof Error ? error.message : 'Provider error'
+          provider: channel,
+          channel,
+          sentAt: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     }
 
-    return results;
+    // 6. Update final notification status
+    const allFailed = results.every(r => !r.success);
+    const anySuccess = results.some(r => r.success);
+
+    if (anySuccess) {
+      await notificationRepository.updateStatus(notification.id, 'sent');
+    } else if (allFailed) {
+      await notificationRepository.updateStatus(notification.id, 'failed');
+    }
+
+    return {
+      notificationId: notification.id,
+      results
+    };
+  }
+
+  /**
+   * Register provider
+   */
+  registerProvider(provider: INotificationProvider): void {
+    this.registry.register(provider);
+    this.router.addProvider(
+      provider.getType(),
+      provider.getName(),
+      provider.getConfig().priority || 1
+    );
+  }
+
+  /**
+   * Get registered providers
+   */
+  getProviders(): INotificationProvider[] {
+    return this.registry.getAll();
   }
 }

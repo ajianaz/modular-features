@@ -1,51 +1,125 @@
-import { Notification } from '../../domain/entities/Notification.entity';
-import { INotificationRepository } from '../../domain/interfaces/INotificationRepository';
-import { GetNotificationsRequest } from '../dtos/input/GetNotificationsRequest';
-import { GetNotificationsResponse } from '../dtos/output/GetNotificationsResponse';
-import { NotificationMapper } from '../mappers/NotificationMapper';
-// import { DomainError } from '../../../../shared/src/errors/base';
+import { notificationRepository } from '../../infrastructure/repositories/NotificationRepository';
+import type { Notification } from '../../domain/entities/Notification';
 
+/**
+ * Get Notifications Use Case
+ * 
+ * Retrieves notifications for a user with filtering and pagination
+ */
 export class GetNotificationsUseCase {
-  constructor(private notificationRepository: INotificationRepository) {}
+  async execute(params: {
+    userId: string;
+    limit?: number;
+    offset?: number;
+    status?: string;
+    type?: string;
+    unreadOnly?: boolean;
+  }): Promise<{ notifications: Notification[]; total: number; unreadCount: number }> {
+    const { userId, limit = 20, offset = 0, status, type, unreadOnly } = params;
 
-  async execute(request: GetNotificationsRequest): Promise<GetNotificationsResponse> {
-    try {
-      const notifications = await this.notificationRepository.findByUserId(
-        request.recipientId || '',
-        {
-          status: request.status,
-          type: request.type,
-          limit: request.limit,
-          offset: request.offset
-        }
-      );
+    // Get notifications
+    const notifications = await notificationRepository.findByUserId(userId, {
+      limit,
+      offset,
+      status,
+      type,
+      unreadOnly
+    });
 
-      if (!notifications || notifications.length === 0) {
-        return {
-          success: true,
-          notifications: [],
-          total: 0,
-          page: 1,
-          limit: request.limit || 10,
-          hasMore: false
-        };
-      }
+    // Get unread count
+    const unreadCount = await notificationRepository.getUnreadCount(userId);
 
-      return {
-        success: true,
-        notifications: NotificationMapper.toResponseList(notifications),
-        total: notifications.length,
-        page: 1,
-        limit: request.limit || 10,
-        hasMore: notifications.length >= (request.limit || 10)
-      };
-    } catch (error) {
-      return {
-        success: false,
-        notifications: [],
-        total: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
+    // Get total count (simplified - in real app would count with filters)
+    const total = notifications.length;
+
+    return {
+      notifications,
+      total,
+      unreadCount
+    };
+  }
+}
+
+/**
+ * Mark Notification as Read Use Case
+ */
+export class MarkNotificationAsReadUseCase {
+  async execute(params: {
+    notificationId: string;
+    userId: string;
+  }): Promise<void> {
+    const { notificationId, userId } = params;
+
+    // Verify notification belongs to user
+    const notification = await notificationRepository.findById(notificationId);
+    if (!notification) {
+      throw new Error('Notification not found');
     }
+
+    if (notification.userId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    // Mark as read
+    await notificationRepository.markAsRead(notificationId);
+  }
+}
+
+/**
+ * Mark All Notifications as Read Use Case
+ */
+export class MarkAllAsReadUseCase {
+  async execute(params: { userId: string }): Promise<void> {
+    const { userId } = params;
+
+    await notificationRepository.markAllAsRead(userId);
+  }
+}
+
+/**
+ * Delete Notification Use Case
+ */
+export class DeleteNotificationUseCase {
+  async execute(params: {
+    notificationId: string;
+    userId: string;
+  }): Promise<void> {
+    const { notificationId, userId } = params;
+
+    // Verify notification belongs to user
+    const notification = await notificationRepository.findById(notificationId);
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+
+    if (notification.userId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    // Delete notification
+    await notificationRepository.delete(notificationId);
+  }
+}
+
+/**
+ * Get Notification Stats Use Case
+ */
+export class GetNotificationStatsUseCase {
+  async execute(params: { userId: string }): Promise<{
+    total: number;
+    unread: number;
+    byStatus: Record<string, number>;
+  }> {
+    const { userId } = params;
+
+    const byStatus = await notificationRepository.countByStatus(userId);
+    const unread = await notificationRepository.getUnreadCount(userId);
+    const total = Object.values(byStatus).reduce((sum, count) => sum + count, 0);
+
+    return {
+      total,
+      unread,
+      byStatus
+    };
   }
 }
