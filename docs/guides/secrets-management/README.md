@@ -1,127 +1,121 @@
 # Secrets Management Guides
 
-Complete documentation for secrets management using Infisical.
-
----
+Complete guides for managing secrets using Infisical in development and production.
 
 ## 📚 Available Guides
 
-### 1. [Infisical Setup Guide](./infisical-setup.md)
-Complete guide for integrating Infisical secrets management into the Modular Monolith project.
+### Getting Started
+1. **[Infisical Setup Guide](./infisical-setup.md)**
+   - Complete Infisical installation and configuration
+   - Machine Identity setup
+   - Project and environment creation
+   - Secret importing
 
-**Topics Covered:**
-- Prerequisites & requirements
-- Infisical configuration
-- Project setup in Infisical
-- Importing secrets from .env
-- Machine Identity setup (Universal Auth)
-- Local development workflow
-- Production deployment (Docker, Kubernetes)
-- Troubleshooting common issues
+2. **[Infisical Quick Reference](./infisical-quick-reference.md)**
+   - Quick commands and common operations
+   - Environment variable reference
+   - Troubleshooting tips
 
-**Target Audience:** Developers, DevOps Engineers
+### Docker Integration
+3. **[Docker Development Success](./docker-development-success.md)**
+   - Docker development with Infisical
+   - Development environment setup
+   - Verification and testing
+   - Success checklist
 
-**Estimated Reading Time:** 20 minutes
+4. **[Production Ready Summary](./production-ready-summary.md)**
+   - Production deployment with Infisical
+   - Security architecture
+   - Monitoring and maintenance
+   - Rollback procedures
 
----
-
-### 2. [Infisical Quick Reference](./infisical-quick-reference.md)
-Quick reference guide for using Infisical after initial setup.
-
-**Topics Covered:**
-- Implementation summary
-- How to use checklist
-- API reference
-- Environment variables reference
-- Security best practices
-- Troubleshooting quick fixes
-
-**Target Audience:** Developers (after setup)
-
-**Estimated Reading Time:** 10 minutes
+5. **[Docker Production Deployment](./DOCKER_PRODUCTION_DEPLOYMENT.md)**
+   - Complete production deployment guide
+   - Step-by-step instructions
+   - Troubleshooting section
+   - Best practices
 
 ---
 
-## 🚀 Getting Started
+## 🎯 Quick Start
 
-### New to Infisical?
+### Development
+```bash
+# Start Docker with Infisical
+docker-compose up -d
 
-Start with the **[Infisical Setup Guide](./infisical-setup.md)** for complete step-by-step instructions.
+# Verify Infisical connection
+docker-compose logs api | grep INFISICAL
+```
 
-### Already Set Up?
+### Production
+```bash
+# Deploy with Infisical
+docker-compose --env-file .env.production up -d
 
-Use the **[Infisical Quick Reference](./infisical-quick-reference.md)** for daily usage.
-
----
-
-## 📋 What is Secrets Management?
-
-**Secrets management** is the practice of securely managing sensitive information like:
-- API keys
-- Database passwords
-- OAuth tokens
-- Private keys
-- Configuration secrets
-
-### Why Use Infisical?
-
-| Without Infisical | With Infisical |
-|-------------------|---------------|
-| ❌ Secrets in `.env` files | ✅ Encrypted in vault |
-| ❌ Risk of committing secrets to git | ✅ Never in code |
-| ❌ Manual secret rotation | ✅ Automatic rotation |
-| ❌ No audit trail | ✅ Complete access logs |
-| ❌ Same secrets for all environments | ✅ Environment-specific |
+# Verify production deployment
+docker-compose logs api | grep "prod"
+```
 
 ---
 
-## 🎯 Key Concepts
+## 🔧 Configuration Files
 
-### 1. **Project**
-Container for your secrets with multiple environments.
-
-### 2. **Environment**
-Separate secret sets for dev/staging/production.
-
-### 3. **Machine Identity**
-Service account that allows applications to authenticate with Infisical automatically.
-
-### 4. **Universal Auth**
-Authentication method using Client ID + Client Secret (no user interaction needed).
-
-### 5. **Secret Caching**
-Temporary storage of secrets to reduce API calls (default: 5 minutes).
+- `.env` - Development environment
+- `.env.example` - Environment template
+- `.env.production.example` - Production template
+- `docker-compose.yml` - Production configuration
+- `docker-compose.override.yml` - Development configuration
 
 ---
 
-## 🔗 Related Documentation
+## 📊 Architecture
 
-- [Configuration Guide](../../guides/project_structure.md) - Environment variables structure
-- [Deployment Guide](../../guides/development_guide.md) - Production deployment
-- [Security Best Practices](../implementation_checklist.md) - Security guidelines
+```
+Development:
+  docker-compose.override.yml
+      ↓
+  Infisical (dev environment)
+      ↓
+  Secrets fetched and cached
 
----
-
-## 📞 Support & Resources
-
-### Official Resources
-- [Infisical Official Docs](https://infisical.com/docs)
-- [Infisical Node.js SDK](https://infisical.com/docs/sdks/languages/node)
-- [Infisical GitHub](https://github.com/Infisical/infisical)
-
-### Internal Resources
-- Create issue in project repository
-- Contact DevOps team
-- Check team Slack channel
+Production:
+  docker-compose.yml
+      ↓
+  Infisical (prod environment)
+      ↓
+  Secrets fetched and cached
+```
 
 ---
 
-## 📝 Maintenance
+## 🔒 Security Best Practices
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2025-01-20 | Initial documentation |
+1. ✅ Never commit `.env` or `.env.production` to git
+2. ✅ Use different Machine Identities for dev/prod
+3. ✅ Rotate secrets regularly (90 days recommended)
+4. ✅ Enable audit logging in Infisical
+5. ✅ Monitor secret access patterns
+6. ✅ Use fallback values only for emergencies
+
+---
+
+## 📞 Support
+
+### Documentation
+- [Infisical Setup Guide](./infisical-setup.md)
+- [Quick Reference](./infisical-quick-reference.md)
+- [Production Deployment](./DOCKER_PRODUCTION_DEPLOYMENT.md)
+
+### Tools
+- Test script: `./scripts/test-infisical-docker.sh`
+- Debug script: `./packages/shared/src/config/infisical.ts`
+
+### External Links
+- Infisical Documentation: https://infisical.com/docs
+- Infisical Instance: https://infisical.ajianaz.dev
 
 ---
 
 **Last Updated:** 2025-01-20
+**Status:** ✅ Production Ready

@@ -54,28 +54,51 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     environment:
+      # Application Environment
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3000}
+
+      # Infisical Secrets Management Configuration
+      USE_INFISICAL: ${USE_INFISICAL:-false}
+      INFISICAL_SITE_URL: ${INFISICAL_SITE_URL}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-prod}
+      INFISICAL_CACHE_TTL: ${INFISICAL_CACHE_TTL:-300000}
+
+      # Service Connection Configuration
+      # NOTE: Secrets (POSTGRES_PASSWORD, REDIS_PASSWORD) will be fetched from Infisical
+      # These are only service host/port configurations
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-modular_monolith}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-modular_monolith}
+
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis123}@redis:6379
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+
+      # Better Auth Configuration
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000/api/auth}
+
+      # Keycloak Configuration (for OIDC provider)
       KEYCLOAK_URL: ${KEYCLOAK_URL}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM:-azfirazka}
+      ENABLE_KEYCLOAK: ${ENABLE_KEYCLOAK:-true}
+
+      # Feature Flags
+      ENABLE_RS256_TOKENS: ${ENABLE_RS256_TOKENS:-true}
+
+      # Optional: Fallback secrets (only used if Infisical fails or is disabled)
+      # WARNING: These are fallback values - prefer Infisical in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       JWT_SECRET: ${JWT_SECRET}
-      ENABLE_RS256_TOKENS: ${ENABLE_RS256_TOKENS:-true}
-      ENABLE_KEYCLOAK: ${ENABLE_KEYCLOAK:-true}
+
     networks:
       - app-network
     depends_on:

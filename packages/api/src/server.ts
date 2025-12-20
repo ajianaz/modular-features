@@ -1,12 +1,17 @@
 import { serve } from '@hono/node-server'
+import { loadConfig } from '@modular-monolith/shared'
 import { app } from './app'
-import { config } from '@modular-monolith/shared'
 import { db, healthCheck } from '@modular-monolith/database'
-
-const port = config.port
 
 async function startServer() {
   try {
+    // Load configuration with Infisical integration
+    console.log(`[CONFIG] Loading configuration with Infisical...`)
+    const config = await loadConfig()
+    console.log(`[CONFIG] ✅ Configuration loaded successfully`)
+
+    const port = config.port
+
     console.log(`[SERVER] Starting server on port ${port}...`)
     console.log(`[SERVER] Environment: ${config.nodeEnv}`)
 

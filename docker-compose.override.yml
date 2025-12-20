@@ -12,7 +12,7 @@ services:
   redis:
     command: redis-server --appendonly yes --requirepass redis123
 
-  # API Service - Development Mode with Hot Reload
+  # API Service - Development Mode with Hot Reload & Infisical
   api:
     build:
       context: .
@@ -20,69 +20,91 @@ services:
       target: development  # Use development stage from Dockerfile
     container_name: modular-monolith-api-dev
     environment:
+      # Application Environment
       NODE_ENV: development
       PORT: 3000
-      # Database connection (using Docker service names)
+
+      # Infisical Secrets Management (Development)
+      USE_INFISICAL: "true"
+      INFISICAL_SITE_URL: ${INFISICAL_SITE_URL}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-dev}
+      INFISICAL_CACHE_TTL: ${INFISICAL_CACHE_TTL:-300000}
+
+      # Service Connection Configuration (Not secrets)
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: modular_monolith
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/modular_monolith
-      # Redis connection (using Docker service names)
+
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: redis123
-      REDIS_URL: redis://:redis123@redis:6379
-      # Better Auth configuration
-      BETTER_AUTH_SECRET: 43a689d3db1e99a54015d41421e4295d9dd7168cd953fdfb93bdd2712860012e
+
+      # Better Auth Configuration
       BETTER_AUTH_URL: http://localhost:3000/api/auth
-      # Keycloak configuration
+
+      # Keycloak Configuration
       KEYCLOAK_URL: https://auth.azfirazka.com
       KEYCLOAK_REALM: azfirazka
       KEYCLOAK_ISSUER: https://auth.azfirazka.com/realms/azfirazka
       KEYCLOAK_CLIENT_ID: modular-monolith-api
-      KEYCLOAK_CLIENT_SECRET: MGFkC1Php3267rD0f0PxzZrIFPnTWWjA
       KEYCLOAK_REDIRECT_URI: http://localhost:3000/api/auth/oauth/keycloak/callback
-      # JWT configuration
-      JWT_SECRET: 3deb495530f9b58e4b25044d43bd76a595e302611f56d9d76219db848013af93
+
+      # JWT Configuration
       JWT_EXPIRES_IN: 24h
-      # RS256 configuration
       JWT_ACCESS_TOKEN_EXPIRY: 3h
       JWT_REFRESH_TOKEN_EXPIRY: 7d
-      # Feature flags
+
+      # Feature Flags
       ENABLE_KEYCLOAK: "true"
       ENABLE_BETTER_AUTH: "true"
       ENABLE_EMAIL_PASSWORD_AUTH: "false"
       ENABLE_RS256_TOKENS: "true"
-      # CORS configuration
+
+      # CORS Configuration
       CORS_ORIGIN: http://localhost:3000,http://localhost:5173
       CORS_CREDENTIALS: "true"
+
       # Logging
       LOG_LEVEL: debug
       LOG_FORMAT: json
-      # Security
-      SESSION_SECRET: 1bb5f5efef5ae3b2e12df15086e5ac2b5f52ac40905342a3656d40fbc0366aa2
-      CSRF_SECRET: c3ea7343081b6562676ca56cbf963163122c35d16df75b33746df95765744884
+
+      # Security Configuration
       BCRYPT_ROUNDS: "12"
-      # MinIO (S3-compatible storage)
+
+      # MinIO (S3-compatible storage) Configuration
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
       MINIO_ENDPOINT: http://localhost:9000
       MINIO_BUCKET_NAME: modular-monolith
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-      # Rate limiting
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+
+      # Rate Limiting Configuration
       ENABLE_RATE_LIMITING: "true"
       RATE_LIMIT_WINDOW_MS: "900000"
       RATE_LIMIT_MAX_REQUESTS: "100"
       QUOTA_CHECK_INTERVAL_MS: "60000"
-      # File upload
+
+      # File Upload Configuration
       MAX_FILE_SIZE: "5242880"
       ALLOWED_FILE_TYPES: image/jpeg,image/png,image/gif,image/webp
       UPLOAD_DIR: ./uploads
-      # Feature flags
+
+      # Feature Flags
       ENABLE_AUDIT_LOGGING: "true"
+
+      # Optional: Fallback secrets (only used if Infisical fails)
+      # These should match values in Infisical for development environment
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       # Mount source code for hot reload
       - ./packages/api/src:/app/packages/api/src:ro
