@@ -4,6 +4,7 @@ import { RegisterController } from './controllers/RegisterController';
 import { LogoutController } from './controllers/LogoutController';
 import { RefreshTokenController } from './controllers/RefreshTokenController';
 import { JWKSController } from './controllers/JWKSController';
+import { KeycloakSyncController } from './controllers/KeycloakSyncController';
 
 // Infrastructure dependencies
 import { AuthContainer } from '../infrastructure/container/AuthContainer';
@@ -83,6 +84,15 @@ authRoutes.get(
   '/keys/validate',
   async (c: Context) => {
     return await jwksController.validateKeys(c);
+  }
+);
+
+// Keycloak sync endpoint (public)
+// Syncs Keycloak JWT to BetterAuth session
+authRoutes.post(
+  '/sign-in/keycloak',
+  async (c: Context) => {
+    return await KeycloakSyncController.signIn(c);
   }
 );
 

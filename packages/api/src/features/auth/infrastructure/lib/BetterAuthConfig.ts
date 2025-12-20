@@ -90,7 +90,7 @@ export const auth = betterAuth({
             clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || config.auth.keycloak.clientSecret,
             issuer: process.env.KEYCLOAK_ISSUER || `${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}`,
             scopes: ['openid', 'email', 'profile'],
-            redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `${config.auth.betterAuth.url}/api/auth/oauth2/callback/keycloak`
+            redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `http://localhost:3000/api/auth/oauth/keycloak/callback`
           })
         ]
       })

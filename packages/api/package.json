@@ -43,6 +43,7 @@
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^3.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {

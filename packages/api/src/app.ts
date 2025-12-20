@@ -6,6 +6,9 @@ import { notificationRoutes } from "./features/notifications/presentation/routes
 import { auth, getJWKS, getPublicKeyPEM, validateKeys } from "./features/auth/infrastructure/lib/BetterAuthConfig";
 import { errorHandler } from "./middleware/error";
 import type { Context } from "hono";
+import { config } from "@modular-monolith/shared";
+import { db } from "@modular-monolith/database";
+import * as crypto from "crypto";
 
 // Create Hono app instance
 const app = new Hono();
@@ -90,12 +93,18 @@ app.get("/api/auth/keys/validate", async (c: Context) => {
 // BetterAuth request handler function - MUST BE DEFINED BEFORE ROUTES!
 async function handleBetterAuthRequest(c: Context) {
   try {
-    console.log(`[BETTERAUTH] ${c.req.method} ${c.req.url}`);
+    const originalUrl = c.req.url;
+    const originalPath = c.req.path;
 
-    const request = new Request(c.req.url, {
+    console.log(`[BETTERAUTH] ${c.req.method} ${originalUrl}`);
+
+    // BetterAuth uses the URL as-is for routing
+    // No URL rewriting needed
+    const request = new Request(originalUrl, {
       method: c.req.method,
-      headers: c.req.header(),
-      body: c.req.raw.body,
+      headers: c.req.raw.headers,
+      // Only include body for POST/PUT/PATCH requests
+      body: ['POST', 'PUT', 'PATCH'].includes(c.req.method) ? c.req.raw.body : undefined,
       signal: AbortSignal.timeout(10000)
     });
 
@@ -104,25 +113,23 @@ async function handleBetterAuthRequest(c: Context) {
     console.log(`[BETTERAUTH] Response status: ${response?.status}`);
 
     if (response) {
-      const headers: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-
       const contentType = response.headers.get('content-type');
-      let body;
 
       if (contentType?.includes('application/json')) {
+        // For JSON responses, parse and return with c.json()
         try {
-          body = await response.json();
+          const jsonData = await response.json();
+          // Set status code separately
+          return c.json(jsonData, response.status as any);
         } catch {
-          body = null;
+          // If parsing fails, return empty JSON
+          return c.json({}, response.status as any);
         }
       } else {
-        body = await response.text();
+        // For text responses, use c.body()
+        const textData = await response.text();
+        return c.body(textData, response.status as any);
       }
-
-      return c.body(body, response.status as any, headers);
     }
 
     return c.text('Not Found', 404);
@@ -140,30 +147,146 @@ async function handleBetterAuthRequest(c: Context) {
   }
 }
 
-// Register BetterAuth routes explicitly (function must be defined first!)
-app.all("/api/auth/signin/*", handleBetterAuthRequest);
-app.all("/api/auth/sign-out/*", handleBetterAuthRequest);
-app.all("/api/auth/sign-up/*", handleBetterAuthRequest);
-app.all("/api/auth/session/*", handleBetterAuthRequest);
-app.all("/api/auth/oauth/*", handleBetterAuthRequest);
-app.get("/api/auth/get-session", handleBetterAuthRequest);
+// =============================================================================
+// BETTER AUTH ROUTES (Keycloak as Source of Truth)
+// =============================================================================
 
-// Catch-all for any other /api/auth/* routes
-app.all("/api/auth/*", async (c: Context) => {
-  const url = c.req.url;
-  // Skip custom endpoints
-  if (url.includes('/jwks') || url.includes('/public-key') || url.includes('/keys/validate')) {
-    return c.text('Not Found', 404);
+// Explicit OAuth callback handler (must be BEFORE catch-all)
+app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
+  const provider = c.req.param('provider');
+  const state = c.req.query('state');
+  const code = c.req.query('code');
+  
+  console.log(`[OAUTH-CALLBACK] Received callback for provider: ${provider}`);
+  console.log(`[OAUTH-CALLBACK] State: ${state}`);
+  console.log(`[OAUTH-CALLBACK] Code: ${code ? 'present' : 'missing'}`);
+
+  try {
+    // Manual OAuth callback handling for Keycloak
+    if (provider === 'keycloak' && code) {
+      console.log(`[OAUTH-CALLBACK] Processing Keycloak OAuth callback...`);
+      
+      // Exchange code for tokens
+      // IMPORTANT: redirect_uri must match exactly what was sent to Keycloak
+      // The correct redirect_uri is: http://localhost:3000/api/auth/oauth/keycloak/callback
+      const redirectUri = `http://localhost:3000/api/auth/oauth/keycloak/callback`;
+      
+      console.log(`[OAUTH-CALLBACK] Exchanging code with redirect_uri: ${redirectUri}`);
+      
+      const tokenResponse = await fetch(`${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}/protocol/openid-connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: config.auth.keycloak.clientId,
+          client_secret: config.auth.keycloak.clientSecret,
+          code: code,
+          redirect_uri: redirectUri
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error(`[OAUTH-CALLBACK] Token exchange failed: ${tokenResponse.statusText}`);
+        console.error(`[OAUTH-CALLBACK] Error response:`, errorText);
+        console.error(`[OAUTH-CALLBACK] Redirect URI used:`, `${config.auth.betterAuth.url}/oauth/callback/keycloak`);
+        console.error(`[OAUTH-CALLBACK] Expected redirect URI in Keycloak:`, `${config.auth.betterAuth.url}/api/auth/oauth/keycloak/callback`);
+        return c.text(`Failed to exchange code for tokens: ${errorText}`, 500);
+      }
+
+      const tokens = await tokenResponse.json();
+      console.log(`[OAUTH-CALLBACK] Tokens received:`, { access_token: !!tokens.access_token, id_token: !!tokens.id_token });
+
+      // Get user info from Keycloak
+      const userInfoResponse = await fetch(`${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}/protocol/openid-connect/userinfo`, {
+        headers: { Authorization: `Bearer ${tokens.access_token}` }
+      });
+
+      if (!userInfoResponse.ok) {
+        console.error(`[OAUTH-CALLBACK] Failed to get user info: ${userInfoResponse.statusText}`);
+        return c.text('Failed to get user info', 500);
+      }
+
+      const keycloakUser = await userInfoResponse.json();
+      console.log(`[OAUTH-CALLBACK] Keycloak user:`, { sub: keycloakUser.sub, email: keycloakUser.email });
+
+      // Create or update user and session using BetterAuth API
+      const { auth: betterAuth } = await import('./features/auth/infrastructure/lib/BetterAuthConfig');
+      
+      // Check if user exists
+      const { db } = await import('@modular-monolith/database');
+      const { users, eq } = await import('@modular-monolith/database');
+      
+      let user = await db.query.users.findFirst({
+        where: eq(users.id, keycloakUser.sub)
+      });
+
+      // Create user if not exists
+      if (!user) {
+        console.log(`[OAUTH-CALLBACK] Creating new user:`, keycloakUser.sub);
+        const newUsers = await db.insert(users).values({
+          id: keycloakUser.sub,
+          email: keycloakUser.email,
+          name: keycloakUser.name || keycloakUser.preferred_username,
+          username: keycloakUser.preferred_username,
+          emailVerified: true,
+          role: 'user',
+          status: 'active',
+        }).returning();
+        user = newUsers[0];
+      }
+
+      // Create session using BetterAuth API
+      // BetterAuth doesn't have createSession method, use signUp or signIn instead
+      // Or directly insert into database
+      
+      console.log(`[OAUTH-CALLBACK] Creating session for user:`, user.id);
+      
+      const { sessions } = await import('@modular-monolith/database');
+      
+      // Generate session token
+      const sessionToken = crypto.randomBytes(32).toString('base64url');
+      const expiresAt = new Date(Date.now() + (60 * 60 * 24 * 7 * 1000)); // 7 days
+      
+      // Insert session into database
+      const newSessions = await db.insert(sessions).values({
+        // id is auto-generated (serial), don't provide it
+        userId: user.id,
+        token: sessionToken,
+        expiresAt: expiresAt,
+        ipAddress: c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown',
+        userAgent: c.req.header('user-agent') || 'unknown'
+      }).returning();
+      
+      const session = newSessions[0];
+      console.log(`[OAUTH-CALLBACK] Session created:`, session.id);
+
+      // Set session cookie
+      c.header('Set-Cookie', `better-auth.session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; MaxAge=${60 * 60 * 24 * 7}`);
+
+      // Redirect to dashboard
+      return c.redirect('/dashboard');
+    }
+
+    // Fallback: Forward to BetterAuth handler
+    console.log(`[OAUTH-CALLBACK] Fallback to BetterAuth handler`);
+    return handleBetterAuthRequest(c);
+  } catch (error) {
+    console.error(`[OAUTH-CALLBACK] Error:`, error);
+    return c.text('OAuth callback failed', 500);
   }
-  // Forward to BetterAuth handler
-  return handleBetterAuthRequest(c);
 });
 
+app.all("/api/auth/oauth/*", handleBetterAuthRequest);
+
+// Catch-all for all other /api/auth/* routes
+app.all("/api/auth/*", handleBetterAuthRequest);
+
 // =============================================================================
-// PROTECTED ROUTES (with BetterAuth session validation)
+// API ROUTES
 // =============================================================================
 
-// API routes
+// Feature routes
 app.route("/api/users", userRoutes);
 app.route("/api/notifications", notificationRoutes);
 
