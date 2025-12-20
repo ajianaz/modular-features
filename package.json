@@ -30,6 +30,7 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
+    "db:setup": "bun scripts/setup-database.ts",
     "db:push": "turbo -F @modular-monolith/database db:push",
     "db:studio": "turbo -F @modular-monolith/database db:studio",
     "db:generate": "turbo -F @modular-monolith/database db:generate",
@@ -38,6 +39,7 @@
     "db:watch": "turbo -F @modular-monolith/database db:watch",
     "db:stop": "turbo -F @modular-monolith/database db:stop",
     "db:down": "turbo -F @modular-monolith/database db:down",
+    "db:reset": "bun run db:down && bun run db:start && bun run db:migrate",
     "auth:generate-keys": "node scripts/generate-rsa-keys.js"
   },
   "dependencies": {

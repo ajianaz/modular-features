@@ -39,7 +39,7 @@ export const orderTypeEnum = pgEnum('order_type', [
 export const orders = pgTable('orders', {
   id: uuid('id').primaryKey().defaultRandom(),
   orderNumber: varchar('order_number', { length: 100 }).notNull().unique(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: orderTypeEnum('type').notNull(),
   status: orderStatusEnum('status').default('draft').notNull(),
   subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
@@ -106,7 +106,7 @@ export const orderStatusHistory = pgTable('order_status_history', {
   currentStatus: orderStatusEnum('current_status').notNull(),
   reason: varchar('reason', { length: 500 }), // Reason for status change
   notes: text('notes'), // Additional notes about the change
-  changedBy: uuid('changed_by').references(() => users.id, { onDelete: 'set null' }), // Who made the change
+  changedBy: varchar('changed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }), // Who made the change
   metadata: jsonb('metadata'), // Additional status data
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
@@ -156,8 +156,8 @@ export const orderReturns = pgTable('order_returns', {
   trackingNumber: varchar('tracking_number', { length: 255 }), // Return shipping tracking
   notes: text('notes'), // Return notes
   metadata: jsonb('metadata'), // Additional return data
-  requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
-  processedBy: uuid('processed_by').references(() => users.id, { onDelete: 'set null' }),
+  requestedBy: varchar('requested_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
+  processedBy: varchar('processed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   approvedAt: timestamp('approved_at'),
@@ -175,8 +175,8 @@ export const orderReturns = pgTable('order_returns', {
 // Order Reviews table - Customer reviews for orders
 export const orderReviews = pgTable('order_reviews', {
   id: uuid('id').primaryKey().defaultRandom(),
-  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  orderId: varchar('order_id', { length: 255 }).references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   rating: integer('rating').notNull(), // 1-5 rating
   title: varchar('title', { length: 255 }),
   review: text('review'), // Review text

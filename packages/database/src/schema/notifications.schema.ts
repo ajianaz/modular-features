@@ -43,14 +43,14 @@ export const notificationStatusEnum = pgEnum('notification_status', [
 // Notifications table - Main notification records
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: notificationTypeEnum('type').notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   message: text('message').notNull(),
   channels: jsonb('channels'), // Array of channels to send through
   status: notificationStatusEnum('status').default('pending').notNull(),
   priority: varchar('priority', { length: 20, enum: ['low', 'normal', 'high', 'urgent'] }).default('normal').notNull(),
-  templateId: uuid('template_id'), // Reference to notification template
+  templateId: varchar('template_id', { length: 255 }), // Reference to notification template
   scheduledFor: timestamp('scheduled_for'), // When to send notification
   sentAt: timestamp('sent_at'),
   deliveredAt: timestamp('delivered_at'),
@@ -106,7 +106,7 @@ export const notificationTemplates = pgTable('notification_templates', {
 // Notification Preferences table - User notification preferences
 export const notificationPreferences = pgTable('notification_preferences', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: varchar('type', { length: 100 }).notNull(), // Notification category
   emailEnabled: boolean('email_enabled').default(true).notNull(),
   smsEnabled: boolean('sms_enabled').default(false).notNull(),
@@ -131,7 +131,7 @@ export const notificationPreferences = pgTable('notification_preferences', {
 // Notification Deliveries table - Track delivery attempts per channel
 export const notificationDeliveries = pgTable('notification_deliveries', {
   id: uuid('id').primaryKey().defaultRandom(),
-  notificationId: uuid('notification_id').references(() => notifications.id, { onDelete: 'cascade' }).notNull(),
+  notificationId: varchar('notification_id', { length: 255 }).references(() => notifications.id, { onDelete: 'cascade' }).notNull(),
   channel: notificationChannelEnum('channel').notNull(),
   status: notificationStatusEnum('status').default('pending').notNull(),
   recipient: varchar('recipient', { length: 500 }).notNull(), // Email, phone number, device token
@@ -185,8 +185,8 @@ export const notificationGroups = pgTable('notification_groups', {
 // Notification Recipients table - Track recipients in bulk notifications
 export const notificationRecipients = pgTable('notification_recipients', {
   id: uuid('id').primaryKey().defaultRandom(),
-  notificationId: uuid('notification_id').references(() => notifications.id, { onDelete: 'cascade' }).notNull(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  notificationId: varchar('notification_id', { length: 255 }).references(() => notifications.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   status: notificationStatusEnum('status').default('pending').notNull(),
   sentAt: timestamp('sent_at'),
   deliveredAt: timestamp('delivered_at'),
@@ -215,7 +215,7 @@ export const notificationRecipients = pgTable('notification_recipients', {
 // Notification Analytics table - Track notification performance metrics
 export const notificationAnalytics = pgTable('notification_analytics', {
   id: uuid('id').primaryKey().defaultRandom(),
-  notificationId: uuid('notification_id').references(() => notifications.id, { onDelete: 'cascade' }),
+  notificationId: varchar('notification_id', { length: 255 }).references(() => notifications.id, { onDelete: 'cascade' }),
   type: varchar('type', { length: 50, enum: ['delivery', 'engagement', 'error'] }).notNull(),
   metric: varchar('metric', { length: 100 }).notNull(), // sent_rate, open_rate, click_rate, etc.
   value: varchar('value', { length: 50 }).notNull(), // Metric value

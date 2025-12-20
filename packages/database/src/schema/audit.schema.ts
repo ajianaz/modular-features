@@ -65,13 +65,13 @@ export const systemLogLevelEnum = pgEnum('system_log_level', [
 // Audit Logs table - Main audit trail
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  sessionId: uuid('session_id'), // User session if available
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
+  sessionId: varchar('session_id', { length: 255 }), // User session if available
   action: auditActionEnum('action').notNull(),
   category: auditCategoryEnum('category').notNull(),
   severity: auditSeverityEnum('severity').default('low').notNull(),
   resource: varchar('resource', { length: 255 }), // Resource type (user, order, etc.)
-  resourceId: uuid('resource_id'), // Specific resource ID
+  resourceId: varchar('resource_id', { length: 255 }), // Specific resource ID
   oldValues: jsonb('old_values'), // Previous values for updates
   newValues: jsonb('new_values'), // New values for updates
   ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
@@ -110,20 +110,20 @@ export const auditLogs = pgTable('audit_logs', {
 // Audit Events table - Significant audit events for reporting
 export const auditEvents = pgTable('audit_events', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   eventType: varchar('event_type', { length: 100 }).notNull(), // Custom event type
   category: auditCategoryEnum('category').notNull(),
   severity: auditSeverityEnum('severity').notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),
   resource: varchar('resource', { length: 255 }),
-  resourceId: uuid('resource_id'),
+  resourceId: varchar('resource_id', { length: 255 }),
   affectedUsers: jsonb('affected_users'), // Array of affected user IDs
   eventMetadata: jsonb('event_metadata'), // Event-specific data
   requiresAction: boolean('requires_action').default(false).notNull(), // Requires follow-up
   actionTaken: text('action_taken'), // What action was taken
-  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }), // Who to handle
-  resolvedBy: uuid('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+  assignedTo: varchar('assigned_to', { length: 255 }).references(() => users.id, { onDelete: 'set null' }), // Who to handle
+  resolvedBy: varchar('resolved_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   resolution: text('resolution'), // How it was resolved
   isResolved: boolean('is_resolved').default(false).notNull(),
   resolvedAt: timestamp('resolved_at'),
@@ -154,8 +154,8 @@ export const systemLogs = pgTable('system_logs', {
   message: text('message').notNull(),
   category: varchar('category', { length: 100 }), // Application, Database, API, etc.
   source: varchar('source', { length: 255 }), // Source component/module
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  sessionId: uuid('session_id'),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
+  sessionId: varchar('session_id', { length: 255 }),
   requestId: varchar('request_id', { length: 255 }),
   stackTrace: text('stack_trace'), // Error stack trace
   context: jsonb('context'), // Log context data
@@ -191,7 +191,7 @@ export const complianceReports = pgTable('compliance_reports', {
   recordCount: integer('record_count'), // Number of records included
   filters: jsonb('filters'), // Filters applied to generate report
   metadata: jsonb('metadata'), // Report metadata
-  generatedBy: uuid('generated_by').references(() => users.id, { onDelete: 'set null' }),
+  generatedBy: varchar('generated_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   downloadedBy: jsonb('downloaded_by'), // Array of user IDs who downloaded
   retentionUntil: timestamp('retention_until'), // When to delete report
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -215,12 +215,12 @@ export const complianceReports = pgTable('compliance_reports', {
 // Data Access Logs table - Track sensitive data access
 export const dataAccessLogs = pgTable('data_access_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }).notNull(),
-  accessedBy: uuid('accessed_by').references(() => users.id, { onDelete: 'set null' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }).notNull(),
+  accessedBy: varchar('accessed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }).notNull(),
   dataType: varchar('data_type', { length: 100 }).notNull(), // PII, Financial, Medical, etc.
   dataCategory: varchar('data_category', { length: 100 }).notNull(), // Personal, Payment, Health, etc.
   recordType: varchar('record_type', { length: 100 }).notNull(), // User, Order, Subscription, etc.
-  recordId: uuid('record_id').notNull(),
+  recordId: varchar('record_id', { length: 255 }).notNull(),
   accessType: varchar('access_type', { length: 50, enum: ['read', 'write', 'delete', 'export'] }).notNull(),
   purpose: varchar('purpose', { length: 500 }), // Business purpose for access
   ipAddress: varchar('ip_address', { length: 45 }),
@@ -255,15 +255,15 @@ export const securityEvents = pgTable('security_events', {
   severity: auditSeverityEnum('severity').notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
-  sessionId: uuid('session_id'),
+  sessionId: varchar('session_id', { length: 255 }),
   affectedResources: jsonb('affected_resources'), // Resources potentially affected
   riskScore: integer('risk_score'), // 0-100 risk assessment
   requiresAction: boolean('requires_action').default(false).notNull(),
   actionTaken: text('action_taken'),
-  resolvedBy: uuid('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+  resolvedBy: varchar('resolved_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   resolution: text('resolution'),
   isResolved: boolean('is_resolved').default(false).notNull(),
   resolvedAt: timestamp('resolved_at'),

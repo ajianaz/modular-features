@@ -49,7 +49,7 @@ export const paymentMethodEnum = pgEnum('payment_method', [
 // Transactions table - Main payment transactions
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   orderId: uuid('order_id'), // Reference to order if applicable
   invoiceId: uuid('invoice_id'), // Reference to invoice if applicable
   providerTransactionId: varchar('provider_transaction_id', { length: 255 }), // Provider's transaction ID
@@ -83,7 +83,7 @@ export const transactions = pgTable('transactions', {
 // Payment Methods table - User's saved payment methods
 export const paymentMethods = pgTable('payment_methods', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: paymentMethodEnum('type').notNull(),
   provider: paymentProviderEnum('provider').notNull(),
   providerMethodId: varchar('provider_method_id', { length: 255 }), // Provider's method ID
@@ -115,7 +115,7 @@ export const paymentMethods = pgTable('payment_methods', {
 // Invoices table - Billing invoices
 export const invoices = pgTable('invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   invoiceNumber: varchar('invoice_number', { length: 100 }).notNull().unique(),
   orderId: uuid('order_id'), // Related order
   subscriptionId: uuid('subscription_id'), // Related subscription
@@ -180,7 +180,7 @@ export const paymentRefunds = pgTable('payment_refunds', {
   reason: varchar('reason', { length: 255 }), // Reason for refund
   status: varchar('status', { length: 20, enum: ['pending', 'processing', 'completed', 'failed'] }).default('pending').notNull(),
   metadata: jsonb('metadata'), // Additional refund data
-  processedBy: uuid('processed_by').references(() => users.id, { onDelete: 'set null' }), // Who processed the refund
+  processedBy: varchar('processed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }), // Who processed the refund
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),

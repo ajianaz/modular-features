@@ -62,8 +62,8 @@ export const subscriptionPlans = pgTable('subscription_plans', {
 // Subscriptions table - User subscription instances
 export const subscriptions = pgTable('subscriptions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  planId: uuid('plan_id').references(() => subscriptionPlans.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  planId: varchar('plan_id', { length: 255 }).references(() => subscriptionPlans.id, { onDelete: 'cascade' }).notNull(),
   status: subscriptionStatusEnum('status').default('trial').notNull(),
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date'),
@@ -154,16 +154,16 @@ export const subscriptionInvoices = pgTable('subscription_invoices', {
 // Subscription Events table - Track subscription lifecycle events
 export const subscriptionEvents = pgTable('subscription_events', {
   id: uuid('id').primaryKey().defaultRandom(),
-  subscriptionId: uuid('subscription_id').references(() => subscriptions.id, { onDelete: 'cascade' }).notNull(),
+  subscriptionId: varchar('subscription_id', { length: 255 }).references(() => subscriptions.id, { onDelete: 'cascade' }).notNull(),
   eventType: varchar('event_type', { length: 100 }).notNull(), // created, upgraded, downgraded, cancelled, renewed, etc.
   previousStatus: subscriptionStatusEnum('previous_status'),
   currentStatus: subscriptionStatusEnum('current_status'),
-  previousPlanId: uuid('previous_plan_id').references(() => subscriptionPlans.id),
-  currentPlanId: uuid('current_plan_id').references(() => subscriptionPlans.id),
+  previousPlanId: varchar('previous_plan_id', { length: 255 }).references(() => subscriptionPlans.id),
+  currentPlanId: varchar('current_plan_id', { length: 255 }).references(() => subscriptionPlans.id),
   reason: varchar('reason', { length: 500 }), // Reason for the event
   description: text('description'),
   metadata: jsonb('metadata'), // Event-specific data
-  processedBy: uuid('processed_by').references(() => users.id, { onDelete: 'set null' }), // Who processed the event
+  processedBy: varchar('processed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }), // Who processed the event
   externalEventId: varchar('external_event_id', { length: 255 }), // External provider event ID
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
@@ -204,9 +204,9 @@ export const subscriptionAddons = pgTable('subscription_addons', {
 // User Subscription Add-ons table - User's active add-ons
 export const userSubscriptionAddons = pgTable('user_subscription_addons', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  subscriptionId: uuid('subscription_id').references(() => subscriptions.id, { onDelete: 'cascade' }).notNull(),
-  addonId: uuid('addon_id').references(() => subscriptionAddons.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  subscriptionId: varchar('subscription_id', { length: 255 }).references(() => subscriptions.id, { onDelete: 'cascade' }).notNull(),
+  addonId: varchar('addon_id', { length: 255 }).references(() => subscriptionAddons.id, { onDelete: 'cascade' }).notNull(),
   status: varchar('status', { length: 20, enum: ['active', 'cancelled', 'expired'] }).default('active').notNull(),
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date'),

@@ -17,7 +17,7 @@ import { users } from './auth.schema'
 // User Profiles table - Extended user information
 export const userProfiles = pgTable('user_profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
   firstName: varchar('first_name', { length: 100 }),
   lastName: varchar('last_name', { length: 100 }),
   displayName: varchar('display_name', { length: 255 }),
@@ -43,7 +43,7 @@ export const userProfiles = pgTable('user_profiles', {
 // User Settings table - Application preferences
 export const userSettings = pgTable('user_settings', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
   theme: varchar('theme', { length: 20, enum: ['light', 'dark', 'auto'] }).default('auto').notNull(),
   language: varchar('language', { length: 10 }).default('en').notNull(),
   timezone: varchar('timezone', { length: 50 }).default('UTC').notNull(),
@@ -85,9 +85,9 @@ export const userRoles = pgTable('user_roles', {
 // User Role Assignments table - Many-to-many relationship between users and roles
 export const userRoleAssignments = pgTable('user_role_assignments', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  roleId: uuid('role_id').references(() => userRoles.id, { onDelete: 'cascade' }).notNull(),
-  assignedBy: uuid('assigned_by').references(() => users.id, { onDelete: 'set null' }),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  roleId: varchar('role_id', { length: 255 }).references(() => userRoles.id, { onDelete: 'cascade' }).notNull(),
+  assignedBy: varchar('assigned_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   assignedAt: timestamp('assigned_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at'), // For temporary role assignments
   isActive: boolean('is_active').default(true).notNull(),
@@ -106,16 +106,16 @@ export const userRoleAssignments = pgTable('user_role_assignments', {
 // User Activity table - Track user activities
 export const userActivity = pgTable('user_activity', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   type: varchar('type', { length: 50 }).notNull(), // login, logout, update, delete, etc.
   action: varchar('action', { length: 100 }).notNull(), // Specific action performed
   description: text('description'),
   resource: varchar('resource', { length: 255 }), // Resource that was acted upon
-  resourceId: uuid('resource_id'), // ID of the resource
+  resourceId: varchar('resource_id', { length: 255 }), // ID of the resource
   metadata: jsonb('metadata'), // Additional data about the activity
   ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
   userAgent: text('user_agent'),
-  sessionId: uuid('session_id'), // Related session if available
+  sessionId: varchar('session_id', { length: 255 }), // Related session if available
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index('idx_user_activity_user_id').on(table.userId),
@@ -129,7 +129,7 @@ export const userActivity = pgTable('user_activity', {
 // User Stats table - User statistics and metrics
 export const userStats = pgTable('user_stats', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
   loginCount: integer('login_count').default(0).notNull(),
   lastLoginAt: timestamp('last_login_at'),
   lastActiveAt: timestamp('last_active_at'),
@@ -155,7 +155,7 @@ export const userStats = pgTable('user_stats', {
 // User Preferences table - Fine-grained user preferences
 export const userPreferences = pgTable('user_preferences', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   category: varchar('category', { length: 50 }).notNull(), // notifications, privacy, security, etc.
   key: varchar('key', { length: 100 }).notNull(),
   value: jsonb('value').notNull(), // Flexible value storage
