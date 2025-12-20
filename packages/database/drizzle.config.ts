@@ -1,22 +1,24 @@
 import { defineConfig } from 'drizzle-kit'
-import { config } from '@modular-monolith/shared'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export default defineConfig({
   schema: './src/schema/*.ts',
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: config.database.url,
-    ssl: config.nodeEnv === 'production' ? {
+    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/modular_monolith',
+    ssl: process.env.NODE_ENV === 'production' ? {
       rejectUnauthorized: false
     } : false
   },
   strict: true,
   verbose: true,
   // For development and testing
-  ...(config.nodeEnv === 'test' && {
+  ...(process.env.NODE_ENV === 'test' && {
     dbCredentials: {
-      url: config.database.testUrl
+      url: process.env.DATABASE_TEST_URL || process.env.DATABASE_URL
     }
   }),
   // Table filter for migrations

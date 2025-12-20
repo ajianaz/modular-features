@@ -1,6 +1,6 @@
 import {
   pgTable,
-  uuid,
+  serial,
   timestamp,
   varchar,
   text,
@@ -12,15 +12,15 @@ import {
 
 // Users table - Core user information
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: varchar('id', { length: 255 }).primaryKey(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   emailVerified: boolean('email_verified').default(false).notNull(),
-  name: varchar('name', { length: 255 }),
+  name: varchar('name', { length: 255 }).notNull(),
   username: varchar('username', { length: 100 }).unique(),
-  passwordHash: varchar('password_hash', { length: 255 }),
-  avatar: varchar('avatar', { length: 500 }),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull().default(''),
+  avatar: text('avatar'),
   role: varchar('role', { length: 50, enum: ['user', 'admin', 'super_admin'] }).default('user').notNull(),
-  status: varchar('status', { length: 20, enum: ['active', 'inactive', 'suspended'] }).default('active').notNull(),
+  status: varchar('status', { length: 50, enum: ['active', 'inactive', 'suspended'] }).default('active').notNull(),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -32,12 +32,12 @@ export const users = pgTable('users', {
 
 // Sessions table - User session management
 export const sessions = pgTable('sessions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  token: varchar('token', { length: 500 }).notNull(),
-  refreshToken: varchar('refresh_token', { length: 500 }),
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: text('token').notNull(),
+  refreshToken: text('refresh_token'),
   userAgent: text('user_agent'),
-  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+  ipAddress: text('ip_address'),
   isActive: boolean('is_active').default(true).notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   lastAccessedAt: timestamp('last_accessed_at').defaultNow().notNull(),
@@ -51,8 +51,8 @@ export const sessions = pgTable('sessions', {
 
 // OAuth Accounts table - External authentication providers
 export const oauthAccounts = pgTable('oauth_accounts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   provider: varchar('provider', { length: 50, enum: ['google', 'github', 'keycloak', 'microsoft'] }).notNull(),
   providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
   accessToken: varchar('access_token', { length: 1000 }),
@@ -74,8 +74,8 @@ export const oauthAccounts = pgTable('oauth_accounts', {
 
 // Password Resets table - Password reset functionality
 export const passwordResets = pgTable('password_resets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   token: varchar('token', { length: 500 }).notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   isUsed: boolean('is_used').default(false).notNull(),
@@ -89,14 +89,14 @@ export const passwordResets = pgTable('password_resets', {
 
 // Email Verifications table - Email verification functionality
 export const emailVerifications = pgTable('email_verifications', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
+  id: varchar('id', { length: 255 }).primaryKey(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }),
   identifier: varchar('identifier', { length: 255 }), // BetterAuth compatibility (maps to email)
   value: varchar('value', { length: 500 }), // BetterAuth compatibility (maps to token)
-  token: varchar('token', { length: 500 }).notNull(),
+  token: varchar('token', { length: 500 }),
   expiresAt: timestamp('expires_at').notNull(),
-  isUsed: boolean('is_used').default(false).notNull(),
+  isUsed: boolean('is_used').default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -110,8 +110,8 @@ export const emailVerifications = pgTable('email_verifications', {
 
 // MFA Settings table - Multi-factor authentication
 export const mfaSettings = pgTable('mfa_settings', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   isTotpEnabled: boolean('is_totp_enabled').default(false).notNull(),
   totpSecret: varchar('totp_secret', { length: 255 }),
   backupCodes: jsonb('backup_codes'), // Array of backup codes
@@ -128,13 +128,13 @@ export const mfaSettings = pgTable('mfa_settings', {
 
 // Login Attempts table - Security monitoring
 export const loginAttempts = pgTable('login_attempts', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull(),
-  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+  ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   success: boolean('success').notNull(),
   failureReason: varchar('failure_reason', { length: 255 }), // e.g., 'invalid_password', 'user_not_found', 'account_locked'
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   emailIdx: index('idx_login_attempts_email').on(table.email),

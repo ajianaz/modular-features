@@ -3,7 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { genericOAuth, keycloak, jwt } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
 import { config } from '@modular-monolith/shared';
-import { users, sessions, oauthAccounts } from '@modular-monolith/database';
+import { users, sessions, oauthAccounts, emailVerifications } from '@modular-monolith/database';
 import { RS256KeyManager } from './RS256KeyManager';
 import * as crypto from 'crypto';
 
@@ -27,6 +27,7 @@ export const auth = betterAuth({
       user: users,
       session: sessions,
       oauthAccount: oauthAccounts,
+      verification: emailVerifications,
     },
   }),
 
