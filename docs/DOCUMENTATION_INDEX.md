@@ -80,6 +80,16 @@ Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Mo
 
 ---
 
+### 6. **guides/secrets-management/** - Secrets Management with Infisical
+- [Infisical Setup Guide](./guides/secrets-management/infisical-setup.md) - Complete setup guide
+- [Infisical Quick Reference](./guides/secrets-management/infisical-quick-reference.md) - Quick reference
+
+**Gunakan untuk:** Secure secrets management, API keys, passwords
+
+**Target Audience:** Developers, DevOps Engineers
+
+---
+
 ## 🚀 QUICK START (5 MINUTES)
 
 ### 1. Setup Project
@@ -209,6 +219,7 @@ curl -X GET http://localhost:3000/auth/me \
 ### **DevOps / Infrastructure**
 - [ ] Read: project_structure.md (sections 2.5)
 - [ ] Read: DATABASE_SETUP.md (see appendix)
+- [ ] Read: guides/secrets-management/infisical-setup.md
 
 ### **QA / Tester**
 - [ ] Read: project_prd.md (Feature sections)

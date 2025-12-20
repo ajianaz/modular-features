@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { config as dotenvConfig } from 'dotenv'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { fetchSecret, isInfisicalEnabled, getInfisicalStatus } from './infisical'
 
 // Get the directory of the current file
 const __filename = fileURLToPath(import.meta.url)
@@ -143,7 +144,13 @@ const envSchema = z.object({
   ENABLE_SUBSCRIPTIONS: z.coerce.boolean().default(true)
 })
 
+// Check Infisical status
+const infisicalStatus = getInfisicalStatus();
+console.log('[CONFIG] Infisical Status:', JSON.stringify(infisicalStatus));
+
 // Validate and parse environment variables
+// Note: When Infisical is enabled, we use the sync schema first,
+// then async loadConfig() will override with Infisical values
 const env = envSchema.parse(process.env)
 
 // Build derived configuration
@@ -324,4 +331,263 @@ const config = {
 export type Config = typeof config
 
 export { config }
+
+/**
+ * Async config loader that fetches secrets from Infisical
+ * Call this at application startup to load secrets from Infisical
+ *
+ * @example
+ * ```typescript
+ * import { loadConfig } from '@modular-monolith/shared/config'
+ *
+ * // In your app entry point
+ * const config = await loadConfig()
+ * ```
+ */
+export async function loadConfig(): Promise<Config> {
+	// If Infisical is not enabled, return current config
+	if (!isInfisicalEnabled()) {
+		console.log('[CONFIG] Infisical not enabled, using environment variables');
+		return config;
+	}
+
+	console.log('[CONFIG] Loading secrets from Infisical...');
+
+	// List of secret keys to fetch from Infisical
+	// These are sensitive values that should be stored in Infisical
+	const secretKeys = [
+		// Database
+		'POSTGRES_PASSWORD',
+
+		// Redis
+		'REDIS_PASSWORD',
+
+		// Better Auth
+		'BETTER_AUTH_SECRET',
+
+		// Keycloak
+		'KEYCLOAK_CLIENT_SECRET',
+
+		// JWT
+		'JWT_SECRET',
+		'SESSION_SECRET',
+		'CSRF_SECRET',
+
+		// Payment Providers
+		'POLAR_API_KEY',
+		'POLAR_WEBHOOK_SECRET',
+		'MIDTRANS_SERVER_KEY',
+		'MIDTRANS_CLIENT_KEY',
+		'XENDIT_SECRET_KEY',
+		'COINBASE_COMMERCE_API_KEY',
+		'COINBASE_COMMERCE_WEBHOOK_SECRET',
+
+		// Email
+		'SENDGRID_API_KEY',
+
+		// SMS
+		'TWILIO_ACCOUNT_SID',
+		'TWILIO_AUTH_TOKEN',
+
+		// Push Notifications
+		'FIREBASE_PRIVATE_KEY',
+
+		// Sentry
+		'SENTRY_DSN',
+
+		// MinIO
+		'MINIO_ROOT_PASSWORD',
+		'MINIO_SECRET_KEY',
+	];
+
+	try {
+		// Fetch secrets from Infisical
+		const secrets: Record<string, string> = {};
+
+		for (const key of secretKeys) {
+			const value = await fetchSecret(key);
+			if (value) {
+				secrets[key] = value;
+				// Update process.env so subsequent reads use the Infisical value
+				process.env[key] = value;
+			}
+		}
+
+		console.log(`[CONFIG] ✅ Loaded ${Object.keys(secrets).length} secrets from Infisical`);
+
+		// Re-validate environment with Infisical secrets
+		const envWithInfisical = envSchema.parse({
+			...process.env,
+			...secrets,
+		});
+
+		// Build config with Infisical values
+		const configWithInfisical = {
+			nodeEnv: envWithInfisical.NODE_ENV,
+			port: envWithInfisical.PORT,
+			apiVersion: envWithInfisical.API_VERSION,
+			isDevelopment: envWithInfisical.NODE_ENV === 'development',
+			isProduction: envWithInfisical.NODE_ENV === 'production',
+			isTest: envWithInfisical.NODE_ENV === 'test',
+
+			database: {
+				url: `postgresql://${envWithInfisical.POSTGRES_USER}:${envWithInfisical.POSTGRES_PASSWORD}@${envWithInfisical.POSTGRES_HOST}:${envWithInfisical.POSTGRES_PORT}/${envWithInfisical.POSTGRES_DB}`,
+				host: envWithInfisical.POSTGRES_HOST,
+				port: envWithInfisical.POSTGRES_PORT,
+				database: envWithInfisical.POSTGRES_DB,
+				user: envWithInfisical.POSTGRES_USER,
+				password: envWithInfisical.POSTGRES_PASSWORD,
+				testUrl: envWithInfisical.TEST_DATABASE_URL,
+			},
+
+			redis: {
+				url: `redis://:${envWithInfisical.REDIS_PASSWORD}@${envWithInfisical.REDIS_HOST}:${envWithInfisical.REDIS_PORT}`,
+				host: envWithInfisical.REDIS_HOST,
+				port: envWithInfisical.REDIS_PORT,
+				password: envWithInfisical.REDIS_PASSWORD,
+				testUrl: envWithInfisical.TEST_REDIS_URL,
+			},
+
+			auth: {
+				betterAuth: {
+					secret: envWithInfisical.BETTER_AUTH_SECRET,
+					url: envWithInfisical.BETTER_AUTH_URL,
+				},
+				keycloak: {
+					url: envWithInfisical.KEYCLOAK_URL,
+					realm: envWithInfisical.KEYCLOAK_REALM,
+					clientId: envWithInfisical.KEYCLOAK_CLIENT_ID,
+					clientSecret: envWithInfisical.KEYCLOAK_CLIENT_SECRET,
+				},
+				jwt: {
+					secret: envWithInfisical.JWT_SECRET,
+					expiresIn: envWithInfisical.JWT_EXPIRES_IN,
+					refreshExpiresIn: envWithInfisical.JWT_REFRESH_EXPIRES_IN,
+				},
+				session: {
+					secret: envWithInfisical.SESSION_SECRET,
+				},
+				csrf: {
+					secret: envWithInfisical.CSRF_SECRET,
+				},
+			},
+
+			payments: {
+				polar: {
+					apiKey: envWithInfisical.POLAR_API_KEY,
+					webhookSecret: envWithInfisical.POLAR_WEBHOOK_SECRET,
+					apiUrl: envWithInfisical.POLAR_API_URL,
+				},
+				midtrans: {
+					serverKey: envWithInfisical.MIDTRANS_SERVER_KEY,
+					clientKey: envWithInfisical.MIDTRANS_CLIENT_KEY,
+					apiUrl: envWithInfisical.MIDTRANS_API_URL,
+				},
+				xendit: {
+					secretKey: envWithInfisical.XENDIT_SECRET_KEY,
+					apiUrl: envWithInfisical.XENDIT_API_URL,
+				},
+				coinbase: {
+					apiKey: envWithInfisical.COINBASE_COMMERCE_API_KEY,
+					webhookSecret: envWithInfisical.COINBASE_COMMERCE_WEBHOOK_SECRET,
+					apiUrl: envWithInfisical.COINBASE_COMMERCE_API_URL,
+				},
+			},
+
+			notifications: {
+				email: {
+					sendgrid: {
+						apiKey: envWithInfisical.SENDGRID_API_KEY,
+						fromEmail: envWithInfisical.SENDGRID_FROM_EMAIL,
+						fromName: envWithInfisical.SENDGRID_FROM_NAME,
+					},
+				},
+				sms: {
+					twilio: {
+						accountSid: envWithInfisical.TWILIO_ACCOUNT_SID,
+						authToken: envWithInfisical.TWILIO_AUTH_TOKEN,
+						phoneNumber: envWithInfisical.TWILIO_PHONE_NUMBER,
+					},
+				},
+				push: {
+					firebase: {
+						projectId: envWithInfisical.FIREBASE_PROJECT_ID,
+						privateKeyId: envWithInfisical.FIREBASE_PRIVATE_KEY_ID,
+						privateKey: envWithInfisical.FIREBASE_PRIVATE_KEY,
+						clientEmail: envWithInfisical.FIREBASE_CLIENT_EMAIL,
+						clientId: envWithInfisical.FIREBASE_CLIENT_ID,
+					},
+				},
+			},
+
+			logging: {
+				level: envWithInfisical.LOG_LEVEL,
+				format: envWithInfisical.LOG_FORMAT,
+				sentry: {
+					dsn: envWithInfisical.SENTRY_DSN,
+					environment: envWithInfisical.SENTRY_ENVIRONMENT,
+				},
+			},
+
+			rateLimiting: {
+				windowMs: envWithInfisical.RATE_LIMIT_WINDOW_MS,
+				maxRequests: envWithInfisical.RATE_LIMIT_MAX_REQUESTS,
+				quotaCheckIntervalMs: envWithInfisical.QUOTA_CHECK_INTERVAL_MS,
+			},
+
+			upload: {
+				maxSize: envWithInfisical.MAX_FILE_SIZE,
+				allowedTypes: envWithInfisical.ALLOWED_FILE_TYPES.split(','),
+				directory: envWithInfisical.UPLOAD_DIR,
+			},
+
+			storage: {
+				minio: {
+					rootUser: envWithInfisical.MINIO_ROOT_USER,
+					rootPassword: envWithInfisical.MINIO_ROOT_PASSWORD,
+					apiPort: envWithInfisical.MINIO_API_PORT,
+					consolePort: envWithInfisical.MINIO_CONSOLE_PORT,
+					endpoint: envWithInfisical.MINIO_ENDPOINT,
+					bucketName: envWithInfisical.MINIO_BUCKET_NAME,
+					accessKey: envWithInfisical.MINIO_ACCESS_KEY,
+					secretKey: envWithInfisical.MINIO_SECRET_KEY,
+				},
+			},
+
+			security: {
+				bcryptRounds: envWithInfisical.BCRYPT_ROUNDS,
+			},
+
+			cors: {
+				origin: envWithInfisical.CORS_ORIGIN.split(',').map((origin) => origin.trim()),
+				credentials: envWithInfisical.CORS_CREDENTIALS,
+			},
+
+			development: {
+				turbo: {
+					ui: envWithInfisical.TURBO_UI,
+					cacheDir: envWithInfisical.TURBO_CACHE_DIR,
+					persistence: envWithInfisical.TURBO_PERSISTENCE,
+				},
+			},
+
+			features: {
+				betterAuth: envWithInfisical.ENABLE_BETTER_AUTH,
+				keycloak: envWithInfisical.ENABLE_KEYCLOAK,
+				rateLimiting: envWithInfisical.ENABLE_RATE_LIMITING,
+				auditLogging: envWithInfisical.ENABLE_AUDIT_LOGGING,
+				notifications: envWithInfisical.ENABLE_NOTIFICATIONS,
+				paymentProcessing: envWithInfisical.ENABLE_PAYMENT_PROCESSING,
+				subscriptions: envWithInfisical.ENABLE_SUBSCRIPTIONS,
+			},
+		} as const;
+
+		return configWithInfisical;
+	} catch (error) {
+		console.error('[CONFIG] ❌ Error loading from Infisical:', error);
+		console.log('[CONFIG] ⚠️  Falling back to environment variables');
+		return config;
+	}
+}
+
 export default config

@@ -62,6 +62,7 @@
     "zod": "catalog:",
     "dotenv": "catalog:",
     "better-auth": "catalog:",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "@infisical/sdk": "^4.0.4"
   }
 }
