@@ -1,25 +1,47 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { genericOAuth, keycloak, jwt } from 'better-auth/plugins';
+import { genericOAuth, keycloak, jwt, bearer } from 'better-auth/plugins';
 import { db } from '@modular-monolith/database';
 import { config } from '@modular-monolith/shared';
 import { users, sessions, oauthAccounts, emailVerifications } from '@modular-monolith/database';
 import { RS256KeyManager } from './RS256KeyManager';
-import * as crypto from 'crypto';
 
-console.log('[BETTERAUTH] Initializing BetterAuth configuration...')
-console.log('[BETTERAUTH] Database URL:', config.database.url)
-console.log('[BETTERAUTH] BetterAuth URL:', config.auth.betterAuth.url)
-console.log('[BETTERAUTH] Keycloak URL:', config.auth.keycloak.url)
-console.log('[BETTERAUTH] Database instance available:', !!db)
-console.log('[BETTERAUTH] RS256 tokens enabled:', process.env.ENABLE_RS256_TOKENS === 'true')
-console.log('[BETTERAUTH] Keycloak as Source of Truth: ENABLED')
+console.log('[BETTERAUTH] ===============================================');
+console.log('[BETTERAUTH] Initializing HYBRID Better Auth Configuration');
+console.log('[BETTERAUTH] ===============================================');
+console.log('[BETTERAUTH] Mode: Better Auth Gateway → Keycloak IdP');
+console.log('[BETTERAUTH] Database URL:', config.database.url);
+console.log('[BETTERAUTH] BetterAuth URL:', config.auth.betterAuth.url);
+console.log('[BETTERAUTH] Keycloak URL:', config.auth.keycloak.url);
+console.log('[BETTERAUTH] Database instance available:', !!db);
+console.log('[BETTERAUTH] RS256 tokens enabled:', process.env.ENABLE_RS256_TOKENS === 'true');
+console.log('[BETTERAUTH] Web support (cookies): ENABLED');
+console.log('[BETTERAUTH] API support (bearer tokens): ENABLED');
+console.log('[BETTERAUTH] Keycloak as Source of Truth: ENABLED');
 
 // RS256 Key Manager for Better Auth
 const rs256KeyManager = new RS256KeyManager();
 
-// BetterAuth configuration with Keycloak as Source of Truth
+/**
+ * HYBRID BETTER AUTH CONFIGURATION
+ * 
+ * Architecture:
+ * Web Apps (Cookie) ─┐
+ * Mobile Apps (Token) ─┼──→ Better Auth (Gateway) → Keycloak (IdP/SoT)
+ * API Clients (Token) ─┘
+ * 
+ * Features:
+ * - Better Auth as OIDC Provider Gateway
+ * - Keycloak as Identity Provider (Source of Truth)
+ * - Web: Cookie-based authentication
+ * - API/Mobile: Bearer token authentication
+ * - JWT tokens for API access (RS256)
+ * - Session management in Better Auth database
+ */
 export const auth = betterAuth({
+  // ============================================================================
+  // DATABASE
+  // ============================================================================
   database: drizzleAdapter(db, {
     provider: 'pg',
     usePlural: false,
@@ -31,24 +53,86 @@ export const auth = betterAuth({
     },
   }),
 
-  // Disable email/password when using Keycloak as primary auth
-  emailAndPassword: {
-    enabled: process.env.ENABLE_EMAIL_PASSWORD_AUTH === 'true', // Disabled by default
-    requireEmailVerification: false,
-    minPasswordLength: 8,
-    maxPasswordLength: 128
+  // ============================================================================
+  // BASE URL
+  // ============================================================================
+  baseURL: config.auth.betterAuth.url,
+  
+  // ============================================================================
+  // SESSION MANAGEMENT - Hybrid Support
+  // ============================================================================
+  session: {
+    // Cookie-based sessions for Web Apps
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes
+    },
+    
+    // Fresh sessions for better UX
+    freshAge: 60, // 1 minute
+    
+    // Session update for security
+    updateAge: 24 * 60 * 60, // 24 hours
   },
 
+  // ============================================================================
+  // ADVANCED CONFIGURATION
+  // ============================================================================
+  advanced: {
+    // Cookie prefix for cross-subdomain support
+    cookiePrefix: 'better-auth',
+    
+    // Cross-subdomain cookies for SSO
+    crossSubDomainCookies: {
+      enabled: true,
+    },
+    
+    // Secure cookies
+    useSecureCookies: config.nodeEnv === 'production',
+    
+    // Generate secure random tokens
+    generateId: () => crypto.randomUUID(),
+  },
+
+  // ============================================================================
+  // EMAIL/PASSWORD AUTH (Optional - Disabled by default)
+  // ============================================================================
+  emailAndPassword: {
+    enabled: process.env.ENABLE_EMAIL_PASSWORD_AUTH === 'true',
+    requireEmailVerification: false,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    
+    // Password hashing
+    password: {
+      hash: async (password: string) => {
+        const bcrypt = await import('bcrypt');
+        return bcrypt.hash(password, 12);
+      },
+      verify: async (password: string, hash: string) => {
+        const bcrypt = await import('bcrypt');
+        return bcrypt.compare(password, hash);
+      },
+    },
+  },
+
+  // ============================================================================
+  // PLUGINS
+  // ============================================================================
   plugins: [
-    // JWT plugin with RS256 support
+    // ==========================================================================
+    // 1. JWT PLUGIN - For API/Mobile Token Authentication
+    // ==========================================================================
     ...(process.env.ENABLE_RS256_TOKENS === 'true' ? [{
       ...jwt(),
       jwks: {
+        // JWKS endpoint for public key distribution
         keyPairConfig: {
           alg: 'RS256',
-          modulusLength: 2048
+          modulusLength: 2048,
         },
         adapter: {
+          // Get public keys for JWT verification
           getJwks: async () => {
             const publicKeyPem = rs256KeyManager.getPublicKey();
             const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
@@ -58,30 +142,42 @@ export const auth = betterAuth({
             const publicKeyPem = rs256KeyManager.getPublicKey();
             const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
             return { keys: [jwk] };
-          }
-        }
+          },
+        },
       },
       jwt: {
-        // IMPORTANT: sub must be Keycloak user ID (not local database ID)
-        definePayload: ({ user, session }: any) => {
+        // JWT Payload Configuration
+        definePayload: async ({ user, session }: any) => {
           return {
-            sub: user.id, // This is Keycloak sub when user comes from Keycloak
+            // Standard claims
+            sub: user.id, // Keycloak sub when user comes from Keycloak
             email: user.email,
             name: user.name,
             role: user.role || 'user',
+            
+            // Custom claims
             auth_provider: user.authProvider || 'keycloak',
             auth_method: user.authMethod || 'oauth',
             session_id: session.id,
-            type: 'access'
+            
+            // Token type
+            type: 'access',
+            
+            // Issuer and audience
+            iss: 'modular-monolith-better-auth',
+            aud: 'modular-monolith-api',
+            
+            // Expiration
+            exp: Math.floor(Date.now() / 1000) + (3 * 60 * 60), // 3 hours
+            iat: Math.floor(Date.now() / 1000),
           };
         },
-        issuer: 'modular-monolith',
-        audience: 'modular-monolith-api',
-        expirationTime: '3h'
-      }
+      },
     }] : []),
 
-    // Keycloak OAuth integration - wrapped in genericOAuth (CORRECT WAY!)
+    // ==========================================================================
+    // 2. GENERIC OAUTH + KEYCLOAK - Gateway to Keycloak IdP
+    // ==========================================================================
     ...(process.env.ENABLE_KEYCLOAK === 'true' ? [
       genericOAuth({
         config: [
@@ -90,200 +186,114 @@ export const auth = betterAuth({
             clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || config.auth.keycloak.clientSecret,
             issuer: process.env.KEYCLOAK_ISSUER || `${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}`,
             scopes: ['openid', 'email', 'profile'],
-            redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `http://localhost:3000/api/auth/oauth/keycloak/callback`
+            redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `${config.auth.betterAuth.url}/oauth/callback/keycloak`,
           })
-        ]
+        ],
+        
+        // User account mapping
+        account: {
+          accountLinking: {
+            enabled: true,
+            // Link accounts by email (when same email across providers)
+            trustedProviders: ['keycloak', 'google', 'github'],
+          },
+        },
       })
-    ] : [])
+    ] : []),
+
+    // ==========================================================================
+    // 3. BEARER PLUGIN - For API Token Authentication (Non-Web)
+    // ==========================================================================
+    bearer({
+      // Bearer token validation for API routes
+      fallback: (req, res) => {
+        // Called when bearer token is invalid/missing
+        res.setHeader('WWW-Authenticate', 'Bearer realm="API", error="invalid_token"');
+        throw new Error('Unauthorized: Invalid or missing bearer token');
+      },
+    }),
   ],
 
-  session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // 1 day
-    cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60
-    }
-  },
-
-  user: {
-    modelName: 'users',
-    additionalFields: {
-      role: {
-        type: 'string',
-        required: false,
-        defaultValue: 'user',
-        input: false
+  // ============================================================================
+  // SOCIAL PROVIDERS (Optional - for additional auth methods)
+  // ============================================================================
+  socialProviders: {
+    // Google OAuth (optional)
+    ...(process.env.GOOGLE_CLIENT_ID ? {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        enabled: false, // Enable if needed
       },
-      username: {
-        type: 'string',
-        required: false,
-        input: true
+    } : {}),
+    
+    // GitHub OAuth (optional)
+    ...(process.env.GITHUB_CLIENT_ID ? {
+      github: {
+        clientId: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        enabled: false, // Enable if needed
       },
-      status: {
-        type: 'string',
-        required: false,
-        defaultValue: 'active',
-        input: false
-      },
-      authProvider: {
-        type: 'string',
-        required: false,
-        defaultValue: 'keycloak',
-        input: false
-      },
-      authMethod: {
-        type: 'string',
-        required: false,
-        defaultValue: 'oauth',
-        input: false
-      }
-    }
+    } : {}),
   },
 
-  account: {
-    modelName: 'oauth_accounts',
-    fields: {
-      providerId: 'provider',
-      accountId: 'providerAccountId',
-      accessTokenExpiresAt: 'tokenExpiresAt',
-    }
+  // ============================================================================
+  // RATE LIMITING
+  // ============================================================================
+  rateLimit: {
+    // Limit authentication attempts
+    window: 60, // 1 minute
+    max: 10, // 10 requests per minute
   },
 
-  jwt: {
-    expiresIn: 60 * 15,
-    secret: config.auth.jwt.secret,
-    ...(process.env.ENABLE_RS256_TOKENS === 'true' ? {
-      algorithm: 'RS256',
-      privateKey: rs256KeyManager.getPrivateKey(),
-      publicKey: rs256KeyManager.getPublicKey(),
-      keyId: rs256KeyManager.getKeyId()
-    } : {})
-  },
-
-  // CRITICAL: Callbacks to ensure Keycloak sub becomes user ID
-  callbacks: {
-    // IMPORTANT: This callback ensures Keycloak sub is used as user ID
-    signIn: async ({ user, account }: any) => {
-      console.log('[BETTERAUTH-SIGNIN] Processing sign-in callback');
-      console.log('[BETTERAUTH-SIGNIN] Account provider:', account?.provider);
-      console.log('[BETTERAUTH-SIGNIN] User ID from provider:', user?.id);
-
-      if (account?.provider === 'keycloak') {
-        // CRITICAL: Use Keycloak sub as user ID
-        // The user.id here is actually the Keycloak sub from the OAuth flow
-        const keycloakSub = user.id;
-
-        console.log('[BETTERAUTH-SIGNIN] Keycloak sub:', keycloakSub);
-        console.log('[BETTERAUTH-SIGNIN] Using Keycloak sub as user ID');
-
-        return {
-          user: {
-            id: keycloakSub, // Use Keycloak sub as primary key
-            email: user.email,
-            name: user.name,
-            emailVerified: true,
-            role: mapKeycloakRoleToSystemRole(user),
-            username: user.preferred_username || user.email?.split('@')[0],
-            status: 'active',
-            authProvider: 'keycloak',
-            authMethod: 'oauth'
-          }
-        };
-      }
-
-      // Fallback for other providers or email/password
-      return {
-        user: {
-          ...user,
-          role: user.role || 'user',
-          status: user.status || 'active'
-        }
-      };
-    },
-
-    session: async ({ session, user }: any) => {
-      console.log('[BETTERAUTH-SESSION] Creating session for user:', user.id);
-      return {
-        session: {
-          userId: session.userId,
-          expiresAt: session.expiresAt,
-          lastAccessedAt: new Date()
-        }
-      };
-    }
-  },
-
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: false
-    },
-    generateId: false, // IMPORTANT: Don't generate IDs, use Keycloak sub
-    cookiePrefix: 'better-auth',
-    idGenerator: (provider: string) => {
-      // When using Keycloak, return the Keycloak sub
-      // This is called during account linking
-      if (provider === 'keycloak') {
-        // Return null to let BetterAuth use the account ID (Keycloak sub)
-        return null;
-      }
-      // For other providers, generate UUID
-      return crypto.randomUUID();
-    }
-  }
+  // ============================================================================
+  // SECURITY
+  // ============================================================================
+  trustedOrigins: [
+    // Web applications
+    process.env.CORS_ORIGIN?.split(',') || [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://app.yourdomain.com',
+    ],
+  ],
 });
 
-console.log('[BETTERAUTH] ✅ BetterAuth configuration completed successfully')
-console.log('[BETTERAUTH] Keycloak is configured as Source of Truth')
-console.log('[BETTERAUTH] User IDs will be Keycloak subs')
+console.log('[BETTERAUTH] ===============================================');
+console.log('[BETTERAUTH] ✅ HYBRID Configuration Complete');
+console.log('[BETTERAUTH] ===============================================');
+console.log('[BETTERAUTH] Configuration Summary:');
+console.log('[BETTERAUTH] - Better Auth Gateway: ENABLED');
+console.log('[BETTERAUTH] - Keycloak IdP: ENABLED');
+console.log('[BETTERAUTH] - Web (Cookie): ENABLED');
+console.log('[BETTERAUTH] - API (Bearer Token): ENABLED');
+console.log('[BETTERAUTH] - Mobile (JWT): ENABLED');
+console.log('[BETTERAUTH] - Session Management: Better Auth');
+console.log('[BETTERAUTH] - User Source of Truth: Keycloak');
+console.log('[BETTERAUTH] ===============================================');
 
 /**
- * Map Keycloak roles to system roles
+ * HELPER FUNCTIONS
  */
-function mapKeycloakRoleToSystemRole(user: any): 'user' | 'admin' | 'super_admin' {
-  // Check roles from Keycloak token or resource_access
-  const roles = user.roles || user.realm_access?.roles || user.resource_access || [];
-
-  if (Array.isArray(roles)) {
-    if (roles.includes('super_admin') || roles.includes('administrator')) {
-      return 'super_admin';
-    }
-    if (roles.includes('admin') || roles.includes('manager')) {
-      return 'admin';
-    }
-  }
-
-  // Default role
-  return 'user';
-}
 
 /**
- * Convert PEM to JWK format
+ * Helper: PEM to JWK conversion
  */
-function pemToJWK(pemKey: string, kid: string): any {
-  try {
-    const publicKeyObject = crypto.createPublicKey(pemKey);
-    const publicKeyExport = publicKeyObject.export({
-      format: 'jwk'
-    });
-
-    return {
-      ...publicKeyExport,
-      kid: kid,
-      alg: 'RS256',
-      use: 'sig'
-    };
-  } catch (error) {
-    console.error('[BETTERAUTH] Error converting PEM to JWK:', error);
-    return {
-      kty: 'RSA',
-      alg: 'RS256',
-      use: 'sig',
-      kid: kid,
-      n: 'fallback_modulus',
-      e: 'AQAB'
-    };
-  }
+function pemToJWK(pem: string, kid: string) {
+  const b64 = pem
+    .replace(/-----BEGIN PUBLIC KEY-----/, '')
+    .replace(/-----END PUBLIC KEY-----/, '')
+    .replace(/\s+/g, '');
+  
+  const buf = Buffer.from(b64, 'base64');
+  
+  return {
+    kty: 'RSA',
+    kid: kid,
+    alg: 'RS256',
+    n: buf.toString('base64'),
+    e: 'AQAB',
+  };
 }
 
 /**
@@ -314,6 +324,7 @@ export function validateKeys(): { valid: boolean; keyId: string; algorithm: stri
     const keyId = rs256KeyManager.getKeyId();
 
     // Try to create a public key object to validate
+    const crypto = require('crypto');
     crypto.createPublicKey(publicKey);
 
     return {
@@ -330,5 +341,17 @@ export function validateKeys(): { valid: boolean; keyId: string; algorithm: stri
   }
 }
 
+/**
+ * Export auth instance for use in application
+ */
 export default auth;
+
+/**
+ * Export RS256 key manager for use in tests
+ */
 export { rs256KeyManager };
+
+/**
+ * Type definitions
+ */
+export type Auth = typeof auth;

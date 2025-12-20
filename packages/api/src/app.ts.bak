@@ -340,7 +340,7 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
 app.all("/api/auth/oauth/*", handleBetterAuthRequest);
 
 // Catch-all for all other /api/auth/* routes
-// app.all("/api/auth/*", handleBetterAuthRequest);
+app.all("/api/auth/*", handleBetterAuthRequest);
 
 // =============================================================================
 // HYBRID AUTHENTICATION MIDDLEWARE (Cookie + JWT)
