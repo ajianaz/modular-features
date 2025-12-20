@@ -46,7 +46,7 @@
   ```
 - [ ] Create database schema migration
 - [ ] Setup feature test folder: `tests/features/{feature}/`
-- [ ] Create `README.md` for feature
+- [ ] Create `readme.md` for feature
 
 ### 1.3 Domain Layer Development
 

@@ -451,7 +451,7 @@ git push -u origin main
 #### 8.2 Document Product
 ```bash
 # Create README for this product
-cat > README.md << 'EOF'
+cat > readme.md << 'EOF'
 # Project Management App
 
 A modular SaaS application for managing projects and tasks.
@@ -476,7 +476,7 @@ A modular SaaS application for managing projects and tasks.
 See docs/ for detailed documentation.
 EOF
 
-git add README.md
+git add readme.md
 git commit -m "docs: Add product-specific README"
 ```
 
@@ -567,7 +567,7 @@ After completing all steps, verify:
 - [ ] API endpoints respond (tested with curl)
 - [ ] Custom features added (projects feature example)
 - [ ] Git branch created and committed
-- [ ] README.md created
+- [ ] readme.md created
 - [ ] Dockerfile ready
 - [ ] docker-compose.yml updated
 - [ ] CI/CD workflow ready
@@ -590,10 +590,10 @@ Product 3: 15 minutes (you know the pattern)
 ## 📚 REFERENCE
 
 See full documentation:
-- **BOILERPLATE_MULTI_PRODUCT.md** - Strategy & architecture
-- **PROJECT_STRUCTURE.md** - Folder organization
-- **IMPLEMENTATION_CHECKLIST.md** - Development standards
-- **SERVICES_OVERVIEW.md** - API reference
+- **boilerplate_multi_product.md** - Strategy & architecture
+- **project_structure.md** - Folder organization
+- **implementation_checklist.md** - Development standards
+- **services_overview.md** - API reference
 
 ---
 

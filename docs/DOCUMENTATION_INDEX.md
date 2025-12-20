@@ -9,7 +9,7 @@
 
 Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Monolith + Feature-Based Clean Architecture.
 
-### 1. **PROJECT_PRD.md** - Project Requirements Document
+### 1. **project_prd.md** - Project Requirements Document
 - Visi dan tujuan project
 - Feature breakdown lengkap
 - Timeline dan milestones
@@ -22,7 +22,7 @@ Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Mo
 
 ---
 
-### 2. **PROJECT_STRUCTURE.md** - Folder Structure & Setup
+### 2. **project_structure.md** - Folder Structure & Setup
 - Folder organization lengkap
 - Feature module anatomy
 - Setup instructions
@@ -36,7 +36,7 @@ Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Mo
 
 ---
 
-### 3. **ARCHITECTURE_GUIDE.md** - Clean Architecture Explained
+### 3. **architecture_guide.md** - Clean Architecture Explained
 - Architecture overview
 - 4 layer explanations (Domain, Application, Infrastructure, Presentation)
 - Data flow diagrams
@@ -50,7 +50,7 @@ Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Mo
 
 ---
 
-### 4. **IMPLEMENTATION_CHECKLIST.md** - Standards & Best Practices
+### 4. **implementation_checklist.md** - Standards & Best Practices
 - Feature development checklist
 - Code quality standards
 - Testing guidelines
@@ -66,7 +66,7 @@ Berikut adalah dokumentasi lengkap untuk project SaaS Platform dengan Modular Mo
 
 ---
 
-### 5. **SERVICES_OVERVIEW.md** - Services & API Reference
+### 5. **services_overview.md** - Services & API Reference
 - Services architecture
 - Per-service endpoints
 - Database tables per service
@@ -163,28 +163,28 @@ curl -X GET http://localhost:3000/auth/me \
 ## 📖 READING ORDER (First 3 Days)
 
 ### **Day 1: Understanding the Project**
-1. Read: **PROJECT_PRD.md** (Executive Summary + Core Features)
+1. Read: **project_prd.md** (Executive Summary + Core Features)
    - Understand what we're building
    - Know all 8 services
    - Timeline & milestones
 
-2. Read: **PROJECT_STRUCTURE.md** (Sections 1-3)
+2. Read: **project_structure.md** (Sections 1-3)
    - Folder organization
    - Feature module anatomy
 
 ### **Day 2: Understanding Architecture**
-1. Read: **ARCHITECTURE_GUIDE.md** (Sections 1-4)
+1. Read: **architecture_guide.md** (Sections 1-4)
    - Architecture overview
    - 4 layers explained
    - Data flow
 
-2. Read: **SERVICES_OVERVIEW.md** (Service you're working on)
+2. Read: **services_overview.md** (Service you're working on)
    - API endpoints
    - Database tables
    - Dependencies
 
 ### **Day 3: Development Standards**
-1. Read: **IMPLEMENTATION_CHECKLIST.md** (Relevant sections)
+1. Read: **implementation_checklist.md** (Relevant sections)
    - Code quality standards
    - Testing guidelines
    - Git workflow
@@ -196,24 +196,24 @@ curl -X GET http://localhost:3000/auth/me \
 ## 🎯 DOCUMENTATION BY ROLE
 
 ### **Product Manager**
-- [ ] Read: PROJECT_PRD.md
-- [ ] Read: SERVICES_OVERVIEW.md (skip technical details)
+- [ ] Read: project_prd.md
+- [ ] Read: services_overview.md (skip technical details)
 
 ### **Backend Developer**
-- [ ] Read: PROJECT_PRD.md (sections 1-2)
-- [ ] Read: PROJECT_STRUCTURE.md (all sections)
-- [ ] Read: ARCHITECTURE_GUIDE.md (all sections)
-- [ ] Read: IMPLEMENTATION_CHECKLIST.md (sections 1-7)
-- [ ] Read: SERVICES_OVERVIEW.md (your service section)
+- [ ] Read: project_prd.md (sections 1-2)
+- [ ] Read: project_structure.md (all sections)
+- [ ] Read: architecture_guide.md (all sections)
+- [ ] Read: implementation_checklist.md (sections 1-7)
+- [ ] Read: services_overview.md (your service section)
 
 ### **DevOps / Infrastructure**
-- [ ] Read: PROJECT_STRUCTURE.md (sections 2.5)
+- [ ] Read: project_structure.md (sections 2.5)
 - [ ] Read: DATABASE_SETUP.md (see appendix)
 
 ### **QA / Tester**
-- [ ] Read: PROJECT_PRD.md (Feature sections)
-- [ ] Read: SERVICES_OVERVIEW.md (API endpoints)
-- [ ] Read: IMPLEMENTATION_CHECKLIST.md (section 3 - Testing)
+- [ ] Read: project_prd.md (Feature sections)
+- [ ] Read: services_overview.md (API endpoints)
+- [ ] Read: implementation_checklist.md (section 3 - Testing)
 
 ### **Tech Lead / Architect**
 - [ ] Read: All documents
@@ -225,30 +225,30 @@ curl -X GET http://localhost:3000/auth/me \
 ### **Adding New Feature**
 
 1. **Plan & Design**
-   - Reference: PROJECT_PRD.md section 2
+   - Reference: project_prd.md section 2
    - Design API endpoints
    - Design database schema
 
 2. **Setup & Structure**
-   - Reference: PROJECT_STRUCTURE.md section 3
+   - Reference: project_structure.md section 3
    - Create folder structure
    - Create database migration
 
 3. **Implement with Clean Architecture**
-   - Reference: ARCHITECTURE_GUIDE.md sections 3-6
+   - Reference: architecture_guide.md sections 3-6
    - Domain layer (entities, interfaces)
    - Application layer (use cases)
    - Infrastructure layer (repositories)
    - Presentation layer (controllers)
 
 4. **Quality & Testing**
-   - Reference: IMPLEMENTATION_CHECKLIST.md section 3
+   - Reference: implementation_checklist.md section 3
    - Write unit tests (>80%)
    - Write integration tests
    - Write E2E tests
 
 5. **Documentation & Review**
-   - Reference: IMPLEMENTATION_CHECKLIST.md section 7
+   - Reference: implementation_checklist.md section 7
    - Document API endpoints
    - Create feature README
    - Code review checklist
@@ -268,7 +268,7 @@ If your feature needs data from another feature:
    import { UserRepository } from '@/features/users/infrastructure'
    ```
 
-2. **Reference: ARCHITECTURE_GUIDE.md section 5**
+2. **Reference: architecture_guide.md section 5**
    - Current phase: same database
    - Future: HTTP calls + RabbitMQ
 
@@ -278,8 +278,8 @@ If your feature needs data from another feature:
 
 When ready to extract:
 
-1. **Reference: ARCHITECTURE_GUIDE.md section 8**
-2. **Reference: PROJECT_STRUCTURE.md section 2.3**
+1. **Reference: architecture_guide.md section 8**
+2. **Reference: project_structure.md section 2.3**
 3. Follow extraction checklist
 4. Setup separate database
 5. Setup communication layer (HTTP + RabbitMQ)
@@ -289,16 +289,16 @@ When ready to extract:
 ### **Code Review Process**
 
 1. **Self-review checklist**
-   - Reference: IMPLEMENTATION_CHECKLIST.md section 1.11
+   - Reference: implementation_checklist.md section 1.11
 
 2. **Code quality check**
-   - Reference: IMPLEMENTATION_CHECKLIST.md section 2
+   - Reference: implementation_checklist.md section 2
 
 3. **Architecture check**
-   - Reference: ARCHITECTURE_GUIDE.md appendix A (common mistakes)
+   - Reference: architecture_guide.md appendix A (common mistakes)
 
 4. **Testing check**
-   - Reference: IMPLEMENTATION_CHECKLIST.md section 3
+   - Reference: implementation_checklist.md section 3
 
 ---
 
@@ -371,28 +371,28 @@ Service A ←RabbitMQ→ Event Bus ←RabbitMQ→ Service B
 ## ❓ FAQ
 
 ### Q: Where do I put my business logic?
-**A:** Domain layer (domain/entities). See ARCHITECTURE_GUIDE.md section 3.1
+**A:** Domain layer (domain/entities). See architecture_guide.md section 3.1
 
 ### Q: How do I test without database?
-**A:** Use repositories with mocked implementations. See IMPLEMENTATION_CHECKLIST.md section 3.1
+**A:** Use repositories with mocked implementations. See implementation_checklist.md section 3.1
 
 ### Q: Can I import from other services?
-**A:** Only from public API (index.ts). See ARCHITECTURE_GUIDE.md section 7.2
+**A:** Only from public API (index.ts). See architecture_guide.md section 7.2
 
 ### Q: What if I find a bug in architecture?
 **A:** File issue, discuss with team, update documentation
 
 ### Q: How do I extract a service to microservice?
-**A:** Follow ARCHITECTURE_GUIDE.md section 8 step-by-step
+**A:** Follow architecture_guide.md section 8 step-by-step
 
 ### Q: Where's the database schema?
-**A:** packages/database/src/schema/ and SERVICES_OVERVIEW.md (per-service tables)
+**A:** packages/database/src/schema/ and services_overview.md (per-service tables)
 
 ### Q: How do I add new API endpoint?
-**A:** Follow IMPLEMENTATION_CHECKLIST.md section 1.6 (Presentation layer)
+**A:** Follow implementation_checklist.md section 1.6 (Presentation layer)
 
 ### Q: What are the service dependencies?
-**A:** See SERVICES_OVERVIEW.md section 10
+**A:** See services_overview.md section 10
 
 ---
 
@@ -400,15 +400,15 @@ Service A ←RabbitMQ→ Event Bus ←RabbitMQ→ Service B
 
 | Need | Document | Section |
 |------|----------|---------|
-| What are we building? | PROJECT_PRD.md | Executive Summary |
-| Project structure | PROJECT_STRUCTURE.md | Section 1 |
-| Feature anatomy | PROJECT_STRUCTURE.md | Section 3 |
-| How to code | ARCHITECTURE_GUIDE.md | Sections 3-4 |
-| Code standards | IMPLEMENTATION_CHECKLIST.md | Section 2 |
-| Testing guidelines | IMPLEMENTATION_CHECKLIST.md | Section 3 |
-| API endpoints | SERVICES_OVERVIEW.md | Sections 2-9 |
-| Service dependencies | SERVICES_OVERVIEW.md | Section 10 |
-| Extract to microservice | ARCHITECTURE_GUIDE.md | Section 8 |
+| What are we building? | project_prd.md | Executive Summary |
+| Project structure | project_structure.md | Section 1 |
+| Feature anatomy | project_structure.md | Section 3 |
+| How to code | architecture_guide.md | Sections 3-4 |
+| Code standards | implementation_checklist.md | Section 2 |
+| Testing guidelines | implementation_checklist.md | Section 3 |
+| API endpoints | services_overview.md | Sections 2-9 |
+| Service dependencies | services_overview.md | Section 10 |
+| Extract to microservice | architecture_guide.md | Section 8 |
 
 ---
 
@@ -416,17 +416,17 @@ Service A ←RabbitMQ→ Event Bus ←RabbitMQ→ Service B
 
 ### If you're stuck on:
 
-1. **Folder structure** → PROJECT_STRUCTURE.md
-2. **Architecture decision** → ARCHITECTURE_GUIDE.md
-3. **Code quality** → IMPLEMENTATION_CHECKLIST.md
-4. **API design** → SERVICES_OVERVIEW.md
-5. **Feature requirement** → PROJECT_PRD.md
+1. **Folder structure** → project_structure.md
+2. **Architecture decision** → architecture_guide.md
+3. **Code quality** → implementation_checklist.md
+4. **API design** → services_overview.md
+5. **Feature requirement** → project_prd.md
 
 ### Before asking for help:
 1. Search relevant document (Ctrl+F)
 2. Check FAQ in documentation
 3. Check similar feature implementation
-4. Check code examples in ARCHITECTURE_GUIDE.md
+4. Check code examples in architecture_guide.md
 
 ---
 

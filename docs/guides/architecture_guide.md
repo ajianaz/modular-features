@@ -865,7 +865,7 @@ class UserMapper {
 
 ### 7.1 Complete Feature: Auth
 
-See `PROJECT_STRUCTURE.md` Section 3.2 for full code examples.
+See `project_structure.md` Section 3.2 for full code examples.
 
 ### 7.2 How to Add New Feature
 

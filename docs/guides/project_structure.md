@@ -89,7 +89,7 @@ saas-platform/
 ├── eslint.config.js
 ├── prettier.config.js
 ├── .gitignore
-├── README.md
+├── readme.md
 └── CHANGELOG.md
 ```
 
@@ -106,7 +106,7 @@ saas-platform/
 - prettier.config.js  # Code formatter config
 - eslint.config.js    # Linter config
 - .gitignore          # Git ignore patterns
-- README.md           # Project overview
+- readme.md           # Project overview
 - CHANGELOG.md        # Version history
 - .env.example        # Environment variables template
 ```
@@ -836,7 +836,7 @@ Infrastructure Repository + Provider
 
 For each feature module, ensure:
 
-- [ ] `README.md` describing the feature
+- [ ] `readme.md` describing the feature
 - [ ] API endpoints documented (route list)
 - [ ] DTO/Request-Response examples
 - [ ] Database schema documented

@@ -86,15 +86,15 @@ Time: 30 minutes per product (after first time)
 
 | File | Purpose | Audience |
 |------|---------|----------|
-| **README.md** | Entry point & overview | Everyone |
-| **DOCUMENTATION_INDEX.md** | Index semua docs | Everyone |
-| **PROJECT_PRD.md** | Requirements & vision | PMs, Leads |
-| **PROJECT_STRUCTURE.md** | Folder organization | Developers |
-| **ARCHITECTURE_GUIDE.md** | Clean architecture patterns | Senior devs |
-| **IMPLEMENTATION_CHECKLIST.md** | Development standards | All devs |
-| **SERVICES_OVERVIEW.md** | API reference per service | Developers |
-| **BOILERPLATE_MULTI_PRODUCT.md** | ⭐ Strategy untuk multiple products | Everyone |
-| **CLONE_TEMPLATE_QUICK_START.md** | ⭐ 30-minute guide to clone template | New products |
+| **readme.md** | Entry point & overview | Everyone |
+| **documentation_index.md** | Index semua docs | Everyone |
+| **project_prd.md** | Requirements & vision | PMs, Leads |
+| **project_structure.md** | Folder organization | Developers |
+| **architecture_guide.md** | Clean architecture patterns | Senior devs |
+| **implementation_checklist.md** | Development standards | All devs |
+| **services_overview.md** | API reference per service | Developers |
+| **boilerplate_multi_product.md** | ⭐ Strategy untuk multiple products | Everyone |
+| **clone_template_quick_start.md** | ⭐ 30-minute guide to clone template | New products |
 
 **Total:** 10 documents, 60+ pages, 100+ examples, 20+ diagrams
 
@@ -103,8 +103,8 @@ Time: 30 minutes per product (after first time)
 ## 🚀 NEXT STEPS FOR YOU
 
 ### Immediate (This Week)
-- [ ] Review BOILERPLATE_MULTI_PRODUCT.md
-- [ ] Review CLONE_TEMPLATE_QUICK_START.md
+- [ ] Review boilerplate_multi_product.md
+- [ ] Review clone_template_quick_start.md
 - [ ] Decide: Monorepo or separate repos?
 - [ ] Setup git strategy for template versioning
 
@@ -288,19 +288,19 @@ Cons:
 ## 🔗 HOW DOCUMENTS RELATE
 
 ```
-README.md
+readme.md
   ↓
-  ├─→ DOCUMENTATION_INDEX.md (Overview all docs)
+  ├─→ documentation_index.md (Overview all docs)
   │    ↓
-  │    ├─→ PROJECT_PRD.md (What are we building?)
-  │    ├─→ PROJECT_STRUCTURE.md (Where is everything?)
-  │    ├─→ ARCHITECTURE_GUIDE.md (How do we code?)
-  │    ├─→ IMPLEMENTATION_CHECKLIST.md (Daily standards)
-  │    └─→ SERVICES_OVERVIEW.md (API reference)
+  │    ├─→ project_prd.md (What are we building?)
+  │    ├─→ project_structure.md (Where is everything?)
+  │    ├─→ architecture_guide.md (How do we code?)
+  │    ├─→ implementation_checklist.md (Daily standards)
+  │    └─→ services_overview.md (API reference)
   │
-  └─→ BOILERPLATE_MULTI_PRODUCT.md (Multi-product strategy) ⭐
+  └─→ boilerplate_multi_product.md (Multi-product strategy) ⭐
        ↓
-       └─→ CLONE_TEMPLATE_QUICK_START.md (Clone in 30 min) ⭐
+       └─→ clone_template_quick_start.md (Clone in 30 min) ⭐
 
 All documents cross-reference each other for easy navigation!
 ```
@@ -311,23 +311,23 @@ All documents cross-reference each other for easy navigation!
 
 ### Day 1: Understanding
 ```
-1. Read: README.md (10 min)
-2. Read: DOCUMENTATION_INDEX.md (20 min)
-3. Read: BOILERPLATE_MULTI_PRODUCT.md (30 min)
+1. Read: readme.md (10 min)
+2. Read: documentation_index.md (20 min)
+3. Read: boilerplate_multi_product.md (30 min)
 4. Understand: Why template-based approach is better
 ```
 
 ### Day 2: Planning
 ```
-1. Read: PROJECT_PRD.md (30 min)
-2. Read: PROJECT_STRUCTURE.md (30 min)
+1. Read: project_prd.md (30 min)
+2. Read: project_structure.md (30 min)
 3. Plan: Your first product
 4. Determine: Which services you need
 ```
 
 ### Day 3: Setup
 ```
-1. Read: CLONE_TEMPLATE_QUICK_START.md (15 min)
+1. Read: clone_template_quick_start.md (15 min)
 2. Follow: Step-by-step guide
 3. Clone: Template for first product (30 min)
 4. Verify: All systems working
@@ -335,8 +335,8 @@ All documents cross-reference each other for easy navigation!
 
 ### Day 4: Development
 ```
-1. Read: ARCHITECTURE_GUIDE.md (45 min)
-2. Read: IMPLEMENTATION_CHECKLIST.md (30 min)
+1. Read: architecture_guide.md (45 min)
+2. Read: implementation_checklist.md (30 min)
 3. Start: Building product-specific features
 ```
 
@@ -351,7 +351,7 @@ All documents cross-reference each other for easy navigation!
 **A:** Feature-based architecture makes it easy to add/remove services. Just add/delete feature folder.
 
 ### Q: How do I handle database migrations?
-**A:** Each product has separate database. Migrations run independently. See CLONE_TEMPLATE_QUICK_START.md.
+**A:** Each product has separate database. Migrations run independently. See clone_template_quick_start.md.
 
 ### Q: Can I share authentication across products?
 **A:** Yes! If needed, you can setup shared Keycloak. But typically each product has isolated auth.
@@ -360,22 +360,22 @@ All documents cross-reference each other for easy navigation!
 **A:** These docs cover backend API. Mobile apps use same API endpoints. Build with Flutter (your expertise!).
 
 ### Q: How do I extract to microservices later?
-**A:** See ARCHITECTURE_GUIDE.md section 8. Copy feature folder → new repo, setup separate database, HTTP + RabbitMQ.
+**A:** See architecture_guide.md section 8. Copy feature folder → new repo, setup separate database, HTTP + RabbitMQ.
 
 ---
 
 ## 📞 SUPPORT
 
 ### If you need help:
-1. **Concept clarity** → BOILERPLATE_MULTI_PRODUCT.md
-2. **Setup issues** → CLONE_TEMPLATE_QUICK_START.md
-3. **Architecture decisions** → ARCHITECTURE_GUIDE.md
-4. **Code standards** → IMPLEMENTATION_CHECKLIST.md
-5. **API details** → SERVICES_OVERVIEW.md
+1. **Concept clarity** → boilerplate_multi_product.md
+2. **Setup issues** → clone_template_quick_start.md
+3. **Architecture decisions** → architecture_guide.md
+4. **Code standards** → implementation_checklist.md
+5. **API details** → services_overview.md
 
 ### Docs are living documents
 - Update when you learn something new
-- Add gotchas to CLONE_TEMPLATE_QUICK_START.md
+- Add gotchas to clone_template_quick_start.md
 - Document customizations per product
 - Share improvements with team
 
@@ -433,15 +433,15 @@ Yang Anda perlukan sekarang adalah **execution**. Ambil dokumentasi, clone templ
 ## 📋 DOCUMENT CHECKLIST
 
 All documentation files created:
-- [x] README.md - Entry point
-- [x] DOCUMENTATION_INDEX.md - Index & navigation
-- [x] PROJECT_PRD.md - Requirements
-- [x] PROJECT_STRUCTURE.md - Folder layout
-- [x] ARCHITECTURE_GUIDE.md - Design patterns
-- [x] IMPLEMENTATION_CHECKLIST.md - Standards
-- [x] SERVICES_OVERVIEW.md - API reference
-- [x] BOILERPLATE_MULTI_PRODUCT.md - Multi-product strategy ⭐
-- [x] CLONE_TEMPLATE_QUICK_START.md - 30-min setup guide ⭐
+- [x] readme.md - Entry point
+- [x] documentation_index.md - Index & navigation
+- [x] project_prd.md - Requirements
+- [x] project_structure.md - Folder layout
+- [x] architecture_guide.md - Design patterns
+- [x] implementation_checklist.md - Standards
+- [x] services_overview.md - API reference
+- [x] boilerplate_multi_product.md - Multi-product strategy ⭐
+- [x] clone_template_quick_start.md - 30-min setup guide ⭐
 - [x] THIS FILE - Final summary & action items
 
 **Total: 10 comprehensive documents**
@@ -452,5 +452,5 @@ All documentation files created:
 **Status:** Complete & Ready to Use  
 **Date:** December 13, 2024
 
-**Next Step:** Read BOILERPLATE_MULTI_PRODUCT.md → Clone template for first product → Launch! 🚀
+**Next Step:** Read boilerplate_multi_product.md → Clone template for first product → Launch! 🚀
 
