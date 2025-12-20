@@ -175,7 +175,7 @@ export const orderReturns = pgTable('order_returns', {
 // Order Reviews table - Customer reviews for orders
 export const orderReviews = pgTable('order_reviews', {
   id: uuid('id').primaryKey().defaultRandom(),
-  orderId: varchar('order_id', { length: 255 }).references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }).notNull(),
   userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   rating: integer('rating').notNull(), // 1-5 rating
   title: varchar('title', { length: 255 }),

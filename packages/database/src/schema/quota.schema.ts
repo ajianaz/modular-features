@@ -78,7 +78,7 @@ export const quotaLimits = pgTable('quota_limits', {
 // User Quota Limits table - User-specific quota overrides
 export const userQuotaLimits = pgTable('user_quota_limits', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   limit: integer('limit').notNull(),
   overrideReason: varchar('override_reason', { length: 500 }), // Why limit was overridden
@@ -98,7 +98,7 @@ export const userQuotaLimits = pgTable('user_quota_limits', {
 // Usage Tracking table - Track real-time usage
 export const usageTracking = pgTable('usage_tracking', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   usage: integer('usage').default(0).notNull(), // Current usage amount
   limit: integer('limit').notNull(), // Current limit
@@ -132,7 +132,7 @@ export const usageTracking = pgTable('usage_tracking', {
 // Usage Events table - Track individual usage events
 export const usageEvents = pgTable('usage_events', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   eventType: varchar('event_type', { length: 50 }).notNull(), // consume, release, reset, etc.
   amount: integer('amount').notNull(), // Positive for consumption, negative for release
@@ -186,7 +186,7 @@ export const quotaPlans = pgTable('quota_plans', {
 // Quota Alerts table - Alert configurations and history
 export const quotaAlerts = pgTable('quota_alerts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   alertType: varchar('alert_type', { length: 50 }).notNull(), // warning, critical, exceeded, etc.
   thresholdPercent: integer('threshold_percent'), // Percentage threshold
@@ -217,7 +217,7 @@ export const quotaAlerts = pgTable('quota_alerts', {
 // Quota Requests table - Request for quota increases
 export const quotaRequests = pgTable('quota_requests', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   requestedLimit: integer('requested_limit').notNull(),
   currentLimit: integer('current_limit').notNull(),
@@ -225,7 +225,7 @@ export const quotaRequests = pgTable('quota_requests', {
   justification: text('justification'),
   urgency: varchar('urgency', { length: 20, enum: ['low', 'medium', 'high', 'critical'] }).default('medium'),
   status: varchar('status', { length: 20, enum: ['pending', 'approved', 'rejected', 'cancelled'] }).default('pending'),
-  reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+  reviewedBy: varchar('reviewed_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   reviewComment: text('review_comment'),
   approvedLimit: integer('approved_limit'), // Limit that was approved
   temporary: boolean('temporary').default(false).notNull(), // Temporary increase?
@@ -254,7 +254,7 @@ export const quotaRequests = pgTable('quota_requests', {
 // Quota History table - Historical quota usage data
 export const quotaHistory = pgTable('quota_history', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
   quotaId: uuid('quota_id').references(() => quotaLimits.id, { onDelete: 'cascade' }).notNull(),
   period: quotaPeriodEnum('period').notNull(),
   periodStart: timestamp('period_start').notNull(),

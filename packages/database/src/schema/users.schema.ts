@@ -86,7 +86,7 @@ export const userRoles = pgTable('user_roles', {
 export const userRoleAssignments = pgTable('user_role_assignments', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: varchar('user_id', { length: 255 }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  roleId: varchar('role_id', { length: 255 }).references(() => userRoles.id, { onDelete: 'cascade' }).notNull(),
+  roleId: uuid('role_id').references(() => userRoles.id, { onDelete: 'cascade' }).notNull(),
   assignedBy: varchar('assigned_by', { length: 255 }).references(() => users.id, { onDelete: 'set null' }),
   assignedAt: timestamp('assigned_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at'), // For temporary role assignments
