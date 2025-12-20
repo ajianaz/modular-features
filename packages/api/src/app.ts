@@ -261,11 +261,70 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
       const session = newSessions[0];
       console.log(`[OAUTH-CALLBACK] Session created:`, session.id);
 
-      // Set session cookie
+      // Set session cookie (for web clients using cookie-based auth)
       c.header('Set-Cookie', `better-auth.session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; MaxAge=${60 * 60 * 24 * 7}`);
 
-      // Redirect to dashboard
-      return c.redirect('/dashboard');
+      // Check if client wants JWT response (for non-web clients)
+      const returnType = c.req.query('return_type') || c.req.header('X-Auth-Return-Type') || 'redirect';
+
+      if (returnType === 'json' || returnType === 'jwt') {
+        // Non-web client: return JSON with JWT
+        const jwtResponse = await fetch(`${config.auth.betterAuth.url}/api/auth/jwt`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': `better-auth.session_token=${sessionToken}`
+          }
+        });
+
+        let jwt = null;
+        if (jwtResponse.ok) {
+          const jwtData = await jwtResponse.json();
+          jwt = jwtData.token;
+          console.log(`[OAUTH-CALLBACK] JWT generated for non-web client`);
+        }
+
+        return c.json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          },
+          session: {
+            id: session.id,
+            token: sessionToken,
+            expires_at: session.expiresAt
+          },
+          jwt: jwt,  // JWT for non-web clients
+          note: "Use JWT token in Authorization header: Bearer <jwt>"
+        });
+      }
+
+      // Web client: generate JWT and redirect to dashboard
+      const jwtResponse = await fetch(`${config.auth.betterAuth.url}/api/auth/jwt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': `better-auth.session_token=${sessionToken}`
+        }
+      });
+
+      let jwt = null;
+      if (jwtResponse.ok) {
+        const jwtData = await jwtResponse.json();
+        jwt = jwtData.token;
+        console.log(`[OAUTH-CALLBACK] JWT generated:`, jwt ? 'present' : 'missing');
+      }
+
+      // Redirect to dashboard with JWT as query parameter (for testing)
+      const redirectUrl = jwt 
+        ? `/dashboard?token=${encodeURIComponent(jwt)}&session_created=true`
+        : `/dashboard?session_created=true`;
+      
+      console.log(`[OAUTH-CALLBACK] Redirecting to:`, redirectUrl);
+      return c.redirect(redirectUrl);
     }
 
     // Fallback: Forward to BetterAuth handler
@@ -283,53 +342,198 @@ app.all("/api/auth/oauth/*", handleBetterAuthRequest);
 app.all("/api/auth/*", handleBetterAuthRequest);
 
 // =============================================================================
+// HYBRID AUTHENTICATION MIDDLEWARE (Cookie + JWT)
+// =============================================================================
+
+/**
+ * Hybrid authentication function
+ * Tries cookie authentication first, then JWT authentication
+ * 
+ * @returns { success: boolean, user?: any, method?: 'cookie' | 'jwt', error?: string }
+ */
+async function hybridAuth(c: Context) {
+  // Try cookie authentication first (for web clients)
+  try {
+    const session = await auth.api.getSession({
+      headers: c.req.header()
+    });
+
+    if (session && session.user) {
+      console.log(`[HYBRID-AUTH] ✅ Cookie authentication successful for user:`, session.user.email);
+      return {
+        success: true,
+        user: session.user,
+        method: 'cookie' as const
+      };
+    }
+  } catch (error) {
+    console.log(`[HYBRID-AUTH] ❌ Cookie authentication failed:`, error.message);
+  }
+
+  // Try JWT authentication (for non-web clients)
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    try {
+      // Verify JWT using BetterAuth JWKS endpoint
+      const verifyResponse = await fetch(`${config.auth.betterAuth.url}/api/auth/verify-jwt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+
+      if (verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+        
+        if (verifyData.valid && verifyData.user) {
+          console.log(`[HYBRID-AUTH] ✅ JWT authentication successful for user:`, verifyData.user.email);
+          return {
+            success: true,
+            user: verifyData.user,
+            method: 'jwt' as const
+          };
+        }
+      }
+
+      console.log(`[HYBRID-AUTH] ❌ JWT authentication failed: Invalid token`);
+      return {
+        success: false,
+        error: 'Invalid JWT token'
+      };
+    } catch (error: any) {
+      console.error(`[HYBRID-AUTH] ❌ JWT authentication error:`, error.message);
+      return {
+        success: false,
+        error: `JWT verification failed: ${error.message}`
+      };
+    }
+  }
+
+  console.log(`[HYBRID-AUTH] ❌ No valid authentication found`);
+  return {
+    success: false,
+    error: 'No valid session or JWT token found'
+  };
+}
+
+// =============================================================================
 // API ROUTES
 // =============================================================================
+
+// Get JWT token endpoint (for non-web clients)
+// Use this to exchange session cookie for JWT token
+app.get("/api/auth/jwt", async (c: Context) => {
+  try {
+    // Get session from cookie
+    const session = await auth.api.getSession({
+      headers: c.req.header()
+    });
+
+    if (!session) {
+      return c.json({ error: 'Unauthorized - No valid session' }, 401);
+    }
+
+    // Generate JWT using BetterAuth
+    const jwtResponse = await fetch(`${config.auth.betterAuth.url}/api/auth/jwt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': c.req.header('Cookie') || ''
+      }
+    });
+
+    if (!jwtResponse.ok) {
+      return c.json({ error: 'Failed to generate JWT' }, 500);
+    }
+
+    const jwtData = await jwtResponse.json();
+
+    return c.json({
+      success: true,
+      jwt: jwtData.token,
+      user: session.user,
+      note: "Use this JWT in Authorization header: Bearer <jwt>"
+    });
+  } catch (error: any) {
+    console.error('[JWT-ENDPOINT] Error:', error);
+    return c.json({ error: 'Failed to get JWT' }, 500);
+  }
+});
+
+// Dashboard route for testing (protected with hybrid auth)
+app.get("/dashboard", async (c: Context) => {
+  try {
+    // Hybrid authentication: try cookie first, then JWT
+    const authResult = await hybridAuth(c);
+
+    if (!authResult.success) {
+      return c.json({
+        message: "Unauthorized",
+        error: authResult.error
+      }, 401);
+    }
+
+    const token = c.req.query('token');
+
+    return c.json({
+      message: "Welcome to Dashboard!",
+      authenticated: true,
+      auth_method: authResult.method,  // 'cookie' or 'jwt'
+      user: authResult.user,
+      jwt_token: token || null,
+      note: "You can use either cookie-based auth or JWT token"
+    });
+  } catch (error: any) {
+    return c.json({
+      message: "Welcome to Dashboard!",
+      authenticated: false,
+      error: error.message
+    }, 401);
+  }
+});
 
 // Feature routes
 app.route("/api/users", userRoutes);
 app.route("/api/notifications", notificationRoutes);
 
-// BetterAuth session middleware for protected routes
+// Hybrid authentication middleware for protected routes
+// Supports both cookie (web) and JWT (non-web) authentication
 app.use("/api/users/*", async (c, next) => {
-  try {
-    const session = await auth.api.getSession({
-      headers: c.req.header()
-    });
+  const authResult = await hybridAuth(c);
 
-    if (!session) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Set user context
-    c.set('user', session.user);
-    c.set('session', session);
-    
-    await next();
-  } catch (error: any) {
-    console.error('[AUTH-MIDDLEWARE] Error:', error);
-    return c.json({ error: 'Authentication failed' }, 401);
+  if (!authResult.success) {
+    return c.json({ 
+      error: 'Unauthorized',
+      message: authResult.error,
+      hint: 'Use session cookie or Authorization: Bearer <jwt> header'
+    }, 401);
   }
+
+  // Set user context
+  c.set('user', authResult.user);
+  c.set('authMethod', authResult.method);
+  
+  console.log(`[AUTH-MIDDLEWARE] ✅ User authenticated via ${authResult.method}:`, authResult.user.email);
+  await next();
 });
 
 app.use("/api/notifications/*", async (c, next) => {
-  try {
-    const session = await auth.api.getSession({
-      headers: c.req.header()
-    });
+  const authResult = await hybridAuth(c);
 
-    if (!session) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    c.set('user', session.user);
-    c.set('session', session);
-    
-    await next();
-  } catch (error: any) {
-    console.error('[AUTH-MIDDLEWARE] Error:', error);
-    return c.json({ error: 'Authentication failed' }, 401);
+  if (!authResult.success) {
+    return c.json({ 
+      error: 'Unauthorized',
+      message: authResult.error,
+      hint: 'Use session cookie or Authorization: Bearer <jwt> header'
+    }, 401);
   }
+
+  c.set('user', authResult.user);
+  c.set('authMethod', authResult.method);
+  
+  console.log(`[AUTH-MIDDLEWARE] ✅ User authenticated via ${authResult.method}:`, authResult.user.email);
+  await next();
 });
 
 export { app };
