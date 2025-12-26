@@ -1,4 +1,4 @@
--- Initial database setup for Modular Monolith
+-- Initial database setup for Modular Features
 -- This file is executed when the PostgreSQL container starts for the first time
 
 -- Create extensions if needed
@@ -25,5 +25,5 @@ $$ language 'plpgsql';
 -- Log initialization
 DO $$
 BEGIN
-    RAISE NOTICE 'Modular Monolith database initialized successfully';
+    RAISE NOTICE 'Modular Features database initialized successfully';
 END $$;

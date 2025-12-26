@@ -13,6 +13,11 @@ build
 .env.production
 .env*.local
 
+# RSA Keys (generated and stored in Infisical)
+keys/
+*.pem
+*.key
+
 # IDEs and editors
 .vscode/*
 !.vscode/settings.json

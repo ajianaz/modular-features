@@ -10,7 +10,7 @@ services:
 
   # Redis - development configuration
   redis:
-    command: redis-server --appendonly yes --requirepass redis123
+    command: redis-server --appendonly yes --requirepass changeme
 
   # API Service - Development Mode with Hot Reload & Infisical
   api:

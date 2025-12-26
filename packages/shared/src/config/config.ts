@@ -31,18 +31,18 @@ const envSchema = z.object({
   // Database
   POSTGRES_DB: z.string().default('modular_features'),
   POSTGRES_USER: z.string().default('postgres'),
-  POSTGRES_PASSWORD: z.string().default('postgres123'),
+  POSTGRES_PASSWORD: z.string().default('changeme'),
   POSTGRES_PORT: z.coerce.number().default(5432),
   POSTGRES_HOST: z.string().default('localhost'),
 
   // Redis
-  REDIS_PASSWORD: z.string().default('redis123'),
+  REDIS_PASSWORD: z.string().default('changeme'),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_HOST: z.string().default('localhost'),
 
   // Better Auth
   BETTER_AUTH_SECRET: z.string().min(32, 'Must be at least 32 characters'),
-  BETTER_AUTH_URL: z.string().url().default('http://localhost:3000/api/auth'),
+  BETTER_AUTH_URL: z.string().url().default('http://localhost:3000'),
 
   // Keycloak (Primary OAuth Provider)
   KEYCLOAK_URL: z.string().url().default('http://localhost:8080'),

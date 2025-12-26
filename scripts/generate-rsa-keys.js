@@ -1,21 +1,43 @@
 #!/usr/bin/env node
+/**
+ * RSA Key Generation Script for BetterAuth RS256 JWT Tokens
+ *
+ * This script generates a 2048-bit RSA key pair for BetterAuth RS256 JWT signing.
+ * The keys are output in both PEM and Base64 formats.
+ *
+ * Usage:
+ *   bun run auth:generate-keys
+ *   node scripts/generate-rsa-keys.js
+ *
+ * Output:
+ *   - keys/private.pem      - Private key in PEM format
+ *   - keys/public.pem       - Public key in PEM format
+ *   - keys/private_base64.txt - Private key in Base64 format
+ *   - keys/public_base64.txt  - Public key in Base64 format
+ *   - keys/key_id.txt       - Key ID (UUID)
+ *
+ * Infisical Setup:
+ *   Copy the Base64 values to Infisical:
+ *   - JWT_RS256_PRIVATE_KEY_BASE64 = contents of private_base64.txt
+ *   - JWT_RS256_PUBLIC_KEY_BASE64 = contents of public_base64.txt
+ *   - JWT_RS256_KEY_ID = contents of key_id.txt
+ */
 
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Create keys directory if it doesn't exist
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const keysDir = path.join(__dirname, '..', 'keys');
-if (!fs.existsSync(keysDir)) {
-  fs.mkdirSync(keysDir, { recursive: true });
-}
 
-console.log('Generating RSA 2048-bit key pair...');
+console.log('╔════════════════════════════════════════════════════════════════╗');
+console.log('║     RSA Key Pair Generator for BetterAuth RS256 JWT           ║');
+console.log('╚════════════════════════════════════════════════════════════════╝\n');
 
-// Generate RSA key pair
+// Generate RSA Key Pair
+console.log('⚙️  Generating 2048-bit RSA key pair...');
+
 const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
   modulusLength: 2048,
   publicKeyEncoding: {
@@ -28,46 +50,78 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
   }
 });
 
-// Save PEM files
-const privateKeyPath = path.join(keysDir, 'private.pem');
-const publicKeyPath = path.join(keysDir, 'public.pem');
+console.log('✅ Key pair generated successfully!\n');
 
-fs.writeFileSync(privateKeyPath, privateKey);
-fs.writeFileSync(publicKeyPath, publicKey);
+// Generate Key ID (UUID)
+const keyId = crypto.randomUUID();
 
-console.log(`Private key saved to: ${privateKeyPath}`);
-console.log(`Public key saved to: ${publicKeyPath}`);
+// Create keys directory
+const keysDir = path.join(__dirname, '..', 'keys');
+if (!fs.existsSync(keysDir)) {
+  fs.mkdirSync(keysDir, { recursive: true });
+}
 
-// Convert to base64 for environment variables
-const privateKeyBase64 = Buffer.from(privateKey, 'utf-8').toString('base64');
-const publicKeyBase64 = Buffer.from(publicKey, 'utf-8').toString('base64');
+// Write PEM files
+fs.writeFileSync(path.join(keysDir, 'private.pem'), privateKey);
+fs.writeFileSync(path.join(keysDir, 'public.pem'), publicKey);
+console.log('📝 PEM files written:');
+console.log(`   - keys/private.pem`);
+console.log(`   - keys/public.pem\n`);
 
-// Save base64 files
-const privateKeyBase64Path = path.join(keysDir, 'private_base64.txt');
-const publicKeyBase64Path = path.join(keysDir, 'public_base64.txt');
+// Convert to Base64
+const privateKeyBase64 = privateKey.toString('base64');
+const publicKeyBase64 = publicKey.toString('base64');
 
-fs.writeFileSync(privateKeyBase64Path, privateKeyBase64);
-fs.writeFileSync(publicKeyBase64Path, publicKeyBase64);
+// Write Base64 files
+fs.writeFileSync(path.join(keysDir, 'private_base64.txt'), privateKeyBase64);
+fs.writeFileSync(path.join(keysDir, 'public_base64.txt'), publicKeyBase64);
+fs.writeFileSync(path.join(keysDir, 'key_id.txt'), keyId);
 
-console.log(`\nBase64 encoded keys:`);
-console.log(`Private key (base64) saved to: ${privateKeyBase64Path}`);
-console.log(`Public key (base64) saved to: ${publicKeyBase64Path}`);
+console.log('📝 Base64 files written:');
+console.log(`   - keys/private_base64.txt`);
+console.log(`   - keys/public_base64.txt`);
+console.log(`   - keys/key_id.txt\n`);
 
-// Display keys for copy-paste
-console.log('\n' + '='.repeat(80));
-console.log('COPY THESE TO YOUR .env FILE:');
-console.log('='.repeat(80));
-console.log(`JWT_RS256_PRIVATE_KEY_BASE64=${privateKeyBase64}`);
-console.log(`JWT_RS256_PUBLIC_KEY_BASE64=${publicKeyBase64}`);
-console.log(`JWT_RS256_KEY_ID=key-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-console.log('='.repeat(80));
+console.log('═══════════════════════════════════════════════════════════════════');
+console.log('🔐 INFISICAL SETUP INSTRUCTIONS');
+console.log('═══════════════════════════════════════════════════════════════════\n');
 
-// Generate key ID
-const keyId = `key-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-console.log(`\nGenerated Key ID: ${keyId}`);
+console.log('Copy the following values to your Infisical project:\n');
 
-console.log('\n✅ RSA keys generated successfully!');
-console.log('\nNext steps:');
-console.log('1. Add the base64 keys to your .env file');
-console.log('2. Set ENABLE_RS256_TOKENS=true to enable RS256');
-console.log('3. Restart your application');
+console.log('┌─────────────────────────────────────────────────────────────────┐');
+console.log('│ Environment Variable Name                                      │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log('│ JWT_RS256_PRIVATE_KEY_BASE64                                    │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log(`│ ${privateKeyBase64.substring(0, 60)}...  │`);
+console.log('└─────────────────────────────────────────────────────────────────┘\n');
+
+console.log('┌─────────────────────────────────────────────────────────────────┐');
+console.log('│ Environment Variable Name                                      │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log('│ JWT_RS256_PUBLIC_KEY_BASE64                                     │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log(`│ ${publicKeyBase64.substring(0, 60)}...  │`);
+console.log('└─────────────────────────────────────────────────────────────────┘\n');
+
+console.log('┌─────────────────────────────────────────────────────────────────┐');
+console.log('│ Environment Variable Name                                      │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log('│ JWT_RS256_KEY_ID                                                │');
+console.log('├─────────────────────────────────────────────────────────────────┤');
+console.log(`│ ${keyId}  │`);
+console.log('└─────────────────────────────────────────────────────────────────┘\n');
+
+console.log('═══════════════════════════════════════════════════════════════════');
+console.log('⚠️  IMPORTANT SECURITY NOTES');
+console.log('═══════════════════════════════════════════════════════════════════\n');
+
+console.log('1. NEVER commit the keys/ folder to git');
+console.log('2. The keys/ folder is already in .gitignore');
+console.log('3. Store ONLY the Base64 values in Infisical, NOT the PEM files');
+console.log('4. Keep the private key SECRET - never share it');
+console.log('5. The public key can be shared for JWT verification\n');
+
+console.log('═══════════════════════════════════════════════════════════════════');
+console.log('✅ RSA Key generation complete!');
+console.log('═══════════════════════════════════════════════════════════════════\n');

@@ -42,7 +42,7 @@ router.get('/.well-known/jwks.json', async (c) => {
   console.log('[AUTH-JWKS] Serving JWKS');
 
   try {
-    const { getJWKS } = await import('../../infrastructure/lib/BetterAuthConfig');
+    const { getJWKS } = await import('../../../infrastructure/lib/BetterAuthConfig');
     const jwks = await getJWKS();
     return c.json(jwks);
   } catch (error) {
