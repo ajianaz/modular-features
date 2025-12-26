@@ -29,7 +29,7 @@
     "clean": "turbo clean",
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
+    "dev:api": "turbo -F @modular-features/api dev",
     "db:setup": "bash scripts/setup-database.sh",
     "db:setup:force": "FORCE_DB_RECREATE=true bash scripts/setup-database.sh",
     "db:push": "turbo -F @modular-features/database db:push",
