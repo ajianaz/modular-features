@@ -9,15 +9,19 @@ Follow this order when setting up the project for the first time:
 ### Phase 1: Infrastructure Setup
 1. **[Docker & Services](./docker/README.md)** - Docker, PostgreSQL, Redis, Keycloak
 2. **[Database](./database/README.md)** - Database schema, migrations, seeding
-3. **[Infisical](./infisical/README.md)** - Secrets management (this guide)
+3. **[Infisical](./infisical/README.md)** - Secrets management
 
 ### Phase 2: Application Setup
 4. **[Authentication](./authentication/README.md)** - BetterAuth + Keycloak OAuth setup
 5. **[Environment Configuration](./environment/README.md)** - Environment variables and config
 
-### Phase 3: Development Setup
-6. **[Development Environment](./development/README.md)** - Local development setup
-7. **[Testing](./testing/README.md)** - Test configuration and running tests
+### Phase 3: Deployment Setup
+6. **[Docker + Infisical Deployment](../deployment/docker-with-infisical.md)** - Run Docker with Infisical for all environments
+7. **[Deployment Overview](../deployment/README.md)** - Deployment strategies and guides
+
+### Phase 4: Development Setup
+8. **[Development Environment](./development/README.md)** - Local development setup
+9. **[Testing](./testing/README.md)** - Test configuration and running tests
 
 ## 📁 Directory Structure
 
@@ -39,22 +43,27 @@ docs/setup/
 If you're setting up the project for the first time:
 
 ```bash
-# 1. Start Docker services
-docker-compose up -d postgres redis keycloak
-
-# 2. Setup Infisical
+# 1. Setup Infisical
 cd docs/setup/infisical
-# Follow README.md
+# Follow README.md for CLI installation and configuration
 
-# 3. Generate RSA keys
-bun run auth:generate-keys
+# 2. Generate RSA keys
+node scripts/generate-rsa-keys.js
+# Copy keys to Infisical Dashboard
 
-# 4. Run database migrations
-bun run db:push
+# 3. Start all services with Infisical (Recommended)
+infisical run --env dev -- docker-compose up -d
 
-# 5. Start the API
-bun run dev:api
+# 4. Check health
+curl http://localhost:3000/api/auth/health
+
+# OR: Start API directly without Docker
+infisical run --env dev -- bun run packages/api/src/server.ts
 ```
+
+**IMPORTANT:** Always use `infisical run` wrapper to inject secrets from Infisical!
+
+**See:** [Docker + Infisical Guide](../deployment/docker-with-infisical.md) for complete deployment instructions.
 
 ## 📖 Available Setup Guides
 
@@ -142,23 +151,25 @@ git clone <repo>
 cd modular-feature
 bun install
 
-# 2. Setup Docker
-docker-compose up -d postgres redis keycloak
-
-# 3. Setup Infisical
+# 2. Setup Infisical CLI
 # Follow: docs/setup/infisical/README.md
-infisical login
-bun run auth:generate-keys
+infisical login --domain https://infisical.ajianaz.dev
+
+# 3. Generate RSA keys
+node scripts/generate-rsa-keys.js
 
 # 4. Copy secrets to Infisical dashboard
-# Use: docs/setup/infisical/SECRETS_QUICK_REF.md
+# Use: docs/setup/infisical/SECRETS_QUICK_REF.md as reference
+# All 26 secrets must be added to Infisical
 
-# 5. Run migrations
-infisical run -- bun run db:push
+# 5. Start Docker services with Infisical
+infisical run --env dev -- docker-compose up -d
 
-# 6. Start API
-infisical run -- bun run dev:api
+# 6. Verify deployment
+curl http://localhost:3000/api/auth/health
 ```
+
+**See [Docker + Infisical Guide](../deployment/docker-with-infisical.md) for complete deployment instructions.**
 
 ### Adding New Environment (Staging/Production)
 

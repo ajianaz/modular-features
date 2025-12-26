@@ -4,9 +4,17 @@ Quick start guide for setting up Infisical self-hosted secrets management.
 
 ## 📖 Documentation Files
 
+### Setup Guides
 - **[SETUP.md](./SETUP.md)** - Complete setup guide (detailed)
 - **[SECRETS_QUICK_REF.md](./SECRETS_QUICK_REF.md)** - All secrets reference
 - **README.md** (this file) - Quick start guide
+
+### Deployment Guides
+- **[Docker + Infisical Guide](../../deployment/docker-with-infisical.md)** - Run Docker with Infisical
+  - Development environment setup
+  - Staging deployment
+  - Production deployment
+- **[Docker Troubleshooting](../../deployment/DOCKER_TROUBLESHOOTING.md)** - Common issues & solutions
 
 ## ⚡ Quick Start (5 minutes)
 
@@ -122,7 +130,7 @@ ENABLE_EMAIL_PASSWORD_AUTH=false
 #### Application (4)
 ```
 NODE_ENV=development
-PORT=3001
+PORT=3000
 CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 API_VERSION=v1
 ```
@@ -251,9 +259,15 @@ docker-compose config
 
 ## 📚 Full Documentation
 
+### Setup & Configuration
 - **[Complete Setup Guide](./SETUP.md)** - Detailed setup with all options
 - **[Secrets Reference](./SECRETS_QUICK_REF.md)** - All environment variables
 - **[Main Setup Docs](../README.md)** - Overall setup order
+
+### Deployment & Operations
+- **[Docker + Infisical Guide](../../deployment/docker-with-infisical.md)** - Docker deployment for all environments
+- **[Docker Troubleshooting](../../deployment/DOCKER_TROUBLESHOOTING.md)** - Troubleshooting Docker + Infisical
+- **[Deployment README](../../deployment/README.md)** - Deployment overview
 
 ## 🔗 Related
 
@@ -277,6 +291,7 @@ Before starting development:
 ## 🎯 Next Steps
 
 1. ✅ Complete Infisical setup
-2. ➡️ [Database Setup](../database/README.md)
-3. ➡️ [Authentication Setup](../authentication/README.md)
-4. ➡️ [Development Guide](../development/README.md)
+2. ➡️ **[Docker + Infisical Deployment](../../deployment/docker-with-infisical.md)** - Run services with Infisical
+3. ➡️ [Database Setup](../database/README.md)
+4. ➡️ [Authentication Setup](../authentication/README.md)
+5. ➡️ [Development Guide](../development/README.md)
