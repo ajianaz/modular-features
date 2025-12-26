@@ -1,6 +1,6 @@
-import { eq, and, or, desc, asc, ilike, getTableColumns, count, db } from '@modular-monolith/database';
-import { users } from '@modular-monolith/database';
-import type { User, NewUser } from '@modular-monolith/database';
+import { eq, and, or, desc, asc, ilike, getTableColumns, count, db } from '@modular-features/database';
+import { users } from '@modular-features/database';
+import type { User, NewUser } from '@modular-features/database';
 
 // Use the users table directly without type assertion
 const usersTable = users;

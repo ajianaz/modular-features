@@ -3,7 +3,7 @@ import { LogoutUseCase } from '../../application/usecases/LogoutUseCase';
 import { LogoutRequest } from '../../application/dtos/input/LogoutRequest';
 import { LogoutResponse } from '../../application/dtos/output/LogoutResponse';
 import { SessionRepository } from '../../infrastructure/repositories/SessionRepository';
-import { ValidationError } from '@modular-monolith/shared';
+import { ValidationError } from '@modular-features/shared';
 
 export class LogoutController {
   private logoutUseCase: LogoutUseCase;

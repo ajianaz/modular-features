@@ -1,7 +1,7 @@
 {
-  "name": "@modular-monolith/shared",
+  "name": "@modular-features/shared",
   "version": "1.0.0",
-  "description": "Shared utilities, types, and error classes for modular monolith",
+  "description": "Shared utilities, types, and error classes for modular features",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -41,10 +41,10 @@
     "typescript",
     "utilities",
     "shared",
-    "modular-monolith",
+    "modular-features",
     "clean-architecture"
   ],
-  "author": "Modular Monolith Team",
+  "author": "Modular Features Team",
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "^1.2.6",

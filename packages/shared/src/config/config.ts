@@ -29,7 +29,7 @@ const envSchema = z.object({
   API_VERSION: z.string().default('v1'),
 
   // Database
-  POSTGRES_DB: z.string().default('modular_monolith'),
+  POSTGRES_DB: z.string().default('modular_features'),
   POSTGRES_USER: z.string().default('postgres'),
   POSTGRES_PASSWORD: z.string().default('postgres123'),
   POSTGRES_PORT: z.coerce.number().default(5432),
@@ -44,10 +44,10 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, 'Must be at least 32 characters'),
   BETTER_AUTH_URL: z.string().url().default('http://localhost:3000/api/auth'),
 
-  // Keycloak
+  // Keycloak (Primary OAuth Provider)
   KEYCLOAK_URL: z.string().url().default('http://localhost:8080'),
-  KEYCLOAK_REALM: z.string().default('modular-monolith'),
-  KEYCLOAK_CLIENT_ID: z.string().default('modular-monolith-api'),
+  KEYCLOAK_REALM: z.string().default('modular-features'),
+  KEYCLOAK_CLIENT_ID: z.string().default('modular-features-api'),
   KEYCLOAK_CLIENT_SECRET: z.string().min(16),
 
   // JWT
@@ -55,56 +55,13 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('24h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
-  // Payment Providers
-  POLAR_API_KEY: z.string().optional(),
-  POLAR_WEBHOOK_SECRET: z.string().optional(),
-  POLAR_API_URL: z.string().url().default('https://api.polar.sh'),
-
-  MIDTRANS_SERVER_KEY: z.string().optional(),
-  MIDTRANS_CLIENT_KEY: z.string().optional(),
-  MIDTRANS_API_URL: z.string().url().default('https://api.sandbox.midtrans.com'),
-
-  XENDIT_SECRET_KEY: z.string().optional(),
-  XENDIT_API_URL: z.string().url().default('https://api.xendit.co'),
-
-  COINBASE_COMMERCE_API_KEY: z.string().optional(),
-  COINBASE_COMMERCE_WEBHOOK_SECRET: z.string().optional(),
-  COINBASE_COMMERCE_API_URL: z.string().url().default('https://api.commerce.coinbase.com'),
-
-  // Email
-  SENDGRID_API_KEY: z.string().optional(),
-  SENDGRID_FROM_EMAIL: z.string().email().optional(),
-  SENDGRID_FROM_NAME: z.string().optional(),
-
-  // SMS
-  TWILIO_ACCOUNT_SID: z.string().optional(),
-  TWILIO_AUTH_TOKEN: z.string().optional(),
-  TWILIO_PHONE_NUMBER: z.string().optional(),
-
-  // Push Notifications
-  FIREBASE_PROJECT_ID: z.string().optional(),
-  FIREBASE_PRIVATE_KEY_ID: z.string().optional(),
-  FIREBASE_PRIVATE_KEY: z.string().optional(),
-  FIREBASE_CLIENT_EMAIL: z.string().email().optional(),
-  FIREBASE_CLIENT_ID: z.string().optional(),
-
   // Logging
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('debug'),
   LOG_FORMAT: z.enum(['json', 'pretty']).default('json'),
 
-  // Monitoring
-  SENTRY_DSN: z.preprocess((val) => val === "" ? undefined : val, z.string().url().optional()),
-  SENTRY_ENVIRONMENT: z.string().default('development'),
-
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
-  QUOTA_CHECK_INTERVAL_MS: z.coerce.number().default(60000),
-
-  // File Upload
-  MAX_FILE_SIZE: z.coerce.number().default(5242880), // 5MB
-  ALLOWED_FILE_TYPES: z.string().default('image/jpeg,image/png,image/gif,image/webp'),
-  UPLOAD_DIR: z.string().default('./uploads'),
 
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:5173'),
@@ -124,24 +81,11 @@ const envSchema = z.object({
   TEST_DATABASE_URL: z.string().optional(),
   TEST_REDIS_URL: z.string().optional(),
 
-  // MinIO
-  MINIO_ROOT_USER: z.string().default('minioadmin'),
-  MINIO_ROOT_PASSWORD: z.string().min(8),
-  MINIO_API_PORT: z.coerce.number().default(9000),
-  MINIO_CONSOLE_PORT: z.coerce.number().default(9001),
-  MINIO_ENDPOINT: z.string().default('http://localhost:9000'),
-  MINIO_BUCKET_NAME: z.string().default('modular-monolith'),
-  MINIO_ACCESS_KEY: z.string(),
-  MINIO_SECRET_KEY: z.string(),
-
   // Feature Flags
   ENABLE_BETTER_AUTH: z.coerce.boolean().default(true),
   ENABLE_KEYCLOAK: z.coerce.boolean().default(true),
   ENABLE_RATE_LIMITING: z.coerce.boolean().default(true),
-  ENABLE_AUDIT_LOGGING: z.coerce.boolean().default(true),
-  ENABLE_NOTIFICATIONS: z.coerce.boolean().default(true),
-  ENABLE_PAYMENT_PROCESSING: z.coerce.boolean().default(true),
-  ENABLE_SUBSCRIPTIONS: z.coerce.boolean().default(true)
+  ENABLE_AUDIT_LOGGING: z.coerce.boolean().default(true)
 })
 
 // Check Infisical status
@@ -208,92 +152,16 @@ const config = {
     }
   },
 
-  // Payment Providers
-  payments: {
-    polar: {
-      apiKey: env.POLAR_API_KEY,
-      webhookSecret: env.POLAR_WEBHOOK_SECRET,
-      apiUrl: env.POLAR_API_URL
-    },
-    midtrans: {
-      serverKey: env.MIDTRANS_SERVER_KEY,
-      clientKey: env.MIDTRANS_CLIENT_KEY,
-      apiUrl: env.MIDTRANS_API_URL
-    },
-    xendit: {
-      secretKey: env.XENDIT_SECRET_KEY,
-      apiUrl: env.XENDIT_API_URL
-    },
-    coinbase: {
-      apiKey: env.COINBASE_COMMERCE_API_KEY,
-      webhookSecret: env.COINBASE_COMMERCE_WEBHOOK_SECRET,
-      apiUrl: env.COINBASE_COMMERCE_API_URL
-    }
-  },
-
-  // Notification Providers
-  notifications: {
-    email: {
-      sendgrid: {
-        apiKey: env.SENDGRID_API_KEY,
-        fromEmail: env.SENDGRID_FROM_EMAIL,
-        fromName: env.SENDGRID_FROM_NAME
-      }
-    },
-    sms: {
-      twilio: {
-        accountSid: env.TWILIO_ACCOUNT_SID,
-        authToken: env.TWILIO_AUTH_TOKEN,
-        phoneNumber: env.TWILIO_PHONE_NUMBER
-      }
-    },
-    push: {
-      firebase: {
-        projectId: env.FIREBASE_PROJECT_ID,
-        privateKeyId: env.FIREBASE_PRIVATE_KEY_ID,
-        privateKey: env.FIREBASE_PRIVATE_KEY,
-        clientEmail: env.FIREBASE_CLIENT_EMAIL,
-        clientId: env.FIREBASE_CLIENT_ID
-      }
-    }
-  },
-
   // Logging
   logging: {
     level: env.LOG_LEVEL,
-    format: env.LOG_FORMAT,
-    sentry: {
-      dsn: env.SENTRY_DSN,
-      environment: env.SENTRY_ENVIRONMENT
-    }
+    format: env.LOG_FORMAT
   },
 
   // Rate Limiting
   rateLimiting: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
-    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
-    quotaCheckIntervalMs: env.QUOTA_CHECK_INTERVAL_MS
-  },
-
-  // File Upload
-  upload: {
-    maxSize: env.MAX_FILE_SIZE,
-    allowedTypes: env.ALLOWED_FILE_TYPES.split(','),
-    directory: env.UPLOAD_DIR
-  },
-
-  // Storage (MinIO)
-  storage: {
-    minio: {
-      rootUser: env.MINIO_ROOT_USER,
-      rootPassword: env.MINIO_ROOT_PASSWORD,
-      apiPort: env.MINIO_API_PORT,
-      consolePort: env.MINIO_CONSOLE_PORT,
-      endpoint: env.MINIO_ENDPOINT,
-      bucketName: env.MINIO_BUCKET_NAME,
-      accessKey: env.MINIO_ACCESS_KEY,
-      secretKey: env.MINIO_SECRET_KEY
-    }
+    maxRequests: env.RATE_LIMIT_MAX_REQUESTS
   },
 
   // Security
@@ -321,10 +189,7 @@ const config = {
     betterAuth: env.ENABLE_BETTER_AUTH,
     keycloak: env.ENABLE_KEYCLOAK,
     rateLimiting: env.ENABLE_RATE_LIMITING,
-    auditLogging: env.ENABLE_AUDIT_LOGGING,
-    notifications: env.ENABLE_NOTIFICATIONS,
-    paymentProcessing: env.ENABLE_PAYMENT_PROCESSING,
-    subscriptions: env.ENABLE_SUBSCRIPTIONS
+    auditLogging: env.ENABLE_AUDIT_LOGGING
   }
 } as const
 
@@ -338,7 +203,7 @@ export { config }
  *
  * @example
  * ```typescript
- * import { loadConfig } from '@modular-monolith/shared/config'
+ * import { loadConfig } from '@modular-features/shared/config'
  *
  * // In your app entry point
  * const config = await loadConfig()
@@ -372,32 +237,6 @@ export async function loadConfig(): Promise<Config> {
 		'JWT_SECRET',
 		'SESSION_SECRET',
 		'CSRF_SECRET',
-
-		// Payment Providers
-		'POLAR_API_KEY',
-		'POLAR_WEBHOOK_SECRET',
-		'MIDTRANS_SERVER_KEY',
-		'MIDTRANS_CLIENT_KEY',
-		'XENDIT_SECRET_KEY',
-		'COINBASE_COMMERCE_API_KEY',
-		'COINBASE_COMMERCE_WEBHOOK_SECRET',
-
-		// Email
-		'SENDGRID_API_KEY',
-
-		// SMS
-		'TWILIO_ACCOUNT_SID',
-		'TWILIO_AUTH_TOKEN',
-
-		// Push Notifications
-		'FIREBASE_PRIVATE_KEY',
-
-		// Sentry
-		'SENTRY_DSN',
-
-		// MinIO
-		'MINIO_ROOT_PASSWORD',
-		'MINIO_SECRET_KEY',
 	];
 
 	try {
@@ -472,86 +311,14 @@ export async function loadConfig(): Promise<Config> {
 				},
 			},
 
-			payments: {
-				polar: {
-					apiKey: envWithInfisical.POLAR_API_KEY,
-					webhookSecret: envWithInfisical.POLAR_WEBHOOK_SECRET,
-					apiUrl: envWithInfisical.POLAR_API_URL,
-				},
-				midtrans: {
-					serverKey: envWithInfisical.MIDTRANS_SERVER_KEY,
-					clientKey: envWithInfisical.MIDTRANS_CLIENT_KEY,
-					apiUrl: envWithInfisical.MIDTRANS_API_URL,
-				},
-				xendit: {
-					secretKey: envWithInfisical.XENDIT_SECRET_KEY,
-					apiUrl: envWithInfisical.XENDIT_API_URL,
-				},
-				coinbase: {
-					apiKey: envWithInfisical.COINBASE_COMMERCE_API_KEY,
-					webhookSecret: envWithInfisical.COINBASE_COMMERCE_WEBHOOK_SECRET,
-					apiUrl: envWithInfisical.COINBASE_COMMERCE_API_URL,
-				},
-			},
-
-			notifications: {
-				email: {
-					sendgrid: {
-						apiKey: envWithInfisical.SENDGRID_API_KEY,
-						fromEmail: envWithInfisical.SENDGRID_FROM_EMAIL,
-						fromName: envWithInfisical.SENDGRID_FROM_NAME,
-					},
-				},
-				sms: {
-					twilio: {
-						accountSid: envWithInfisical.TWILIO_ACCOUNT_SID,
-						authToken: envWithInfisical.TWILIO_AUTH_TOKEN,
-						phoneNumber: envWithInfisical.TWILIO_PHONE_NUMBER,
-					},
-				},
-				push: {
-					firebase: {
-						projectId: envWithInfisical.FIREBASE_PROJECT_ID,
-						privateKeyId: envWithInfisical.FIREBASE_PRIVATE_KEY_ID,
-						privateKey: envWithInfisical.FIREBASE_PRIVATE_KEY,
-						clientEmail: envWithInfisical.FIREBASE_CLIENT_EMAIL,
-						clientId: envWithInfisical.FIREBASE_CLIENT_ID,
-					},
-				},
-			},
-
 			logging: {
 				level: envWithInfisical.LOG_LEVEL,
 				format: envWithInfisical.LOG_FORMAT,
-				sentry: {
-					dsn: envWithInfisical.SENTRY_DSN,
-					environment: envWithInfisical.SENTRY_ENVIRONMENT,
-				},
 			},
 
 			rateLimiting: {
 				windowMs: envWithInfisical.RATE_LIMIT_WINDOW_MS,
 				maxRequests: envWithInfisical.RATE_LIMIT_MAX_REQUESTS,
-				quotaCheckIntervalMs: envWithInfisical.QUOTA_CHECK_INTERVAL_MS,
-			},
-
-			upload: {
-				maxSize: envWithInfisical.MAX_FILE_SIZE,
-				allowedTypes: envWithInfisical.ALLOWED_FILE_TYPES.split(','),
-				directory: envWithInfisical.UPLOAD_DIR,
-			},
-
-			storage: {
-				minio: {
-					rootUser: envWithInfisical.MINIO_ROOT_USER,
-					rootPassword: envWithInfisical.MINIO_ROOT_PASSWORD,
-					apiPort: envWithInfisical.MINIO_API_PORT,
-					consolePort: envWithInfisical.MINIO_CONSOLE_PORT,
-					endpoint: envWithInfisical.MINIO_ENDPOINT,
-					bucketName: envWithInfisical.MINIO_BUCKET_NAME,
-					accessKey: envWithInfisical.MINIO_ACCESS_KEY,
-					secretKey: envWithInfisical.MINIO_SECRET_KEY,
-				},
 			},
 
 			security: {
@@ -576,9 +343,6 @@ export async function loadConfig(): Promise<Config> {
 				keycloak: envWithInfisical.ENABLE_KEYCLOAK,
 				rateLimiting: envWithInfisical.ENABLE_RATE_LIMITING,
 				auditLogging: envWithInfisical.ENABLE_AUDIT_LOGGING,
-				notifications: envWithInfisical.ENABLE_NOTIFICATIONS,
-				paymentProcessing: envWithInfisical.ENABLE_PAYMENT_PROCESSING,
-				subscriptions: envWithInfisical.ENABLE_SUBSCRIPTIONS,
 			},
 		} as const;
 

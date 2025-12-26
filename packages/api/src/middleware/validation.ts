@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { z } from 'zod';
-import { ValidationError } from '@modular-monolith/shared';
+import { ValidationError } from '@modular-features/shared';
 
 // Validation middleware factory
 export const validate = (schema: z.ZodSchema, target: 'json' | 'query' | 'param' = 'json') => {

@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { ValidationError } from '@modular-monolith/shared';
+import { ValidationError } from '@modular-features/shared';
 
 // Error handling middleware
 export const errorHandler = (error: Error, c: Context) => {

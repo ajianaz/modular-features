@@ -1,9 +1,9 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { genericOAuth, keycloak, jwt, bearer } from 'better-auth/plugins';
-import { db } from '@modular-monolith/database';
-import { config } from '@modular-monolith/shared';
-import { users, sessions, oauthAccounts, emailVerifications } from '@modular-monolith/database';
+import { db } from '@modular-features/database';
+import { config } from '@modular-features/shared';
+import { users, sessions, oauthAccounts, emailVerifications } from '@modular-features/database';
 import { RS256KeyManager } from './RS256KeyManager';
 
 console.log('[BETTERAUTH] ===============================================');
@@ -81,17 +81,16 @@ export const auth = betterAuth({
   advanced: {
     // Cookie prefix for cross-subdomain support
     cookiePrefix: 'better-auth',
-    
+
     // Cross-subdomain cookies for SSO
     crossSubDomainCookies: {
       enabled: true,
     },
-    
+
     // Secure cookies
     useSecureCookies: config.nodeEnv === 'production',
-    
-    // Generate secure random tokens
-    generateId: () => crypto.randomUUID(),
+
+    // Note: generateId is handled internally by BetterAuth
   },
 
   // ============================================================================
@@ -109,9 +108,9 @@ export const auth = betterAuth({
         const bcrypt = await import('bcrypt');
         return bcrypt.hash(password, 12);
       },
-      verify: async (password: string, hash: string) => {
+      verify: async (data: { password: string; hash: string }) => {
         const bcrypt = await import('bcrypt');
-        return bcrypt.compare(password, hash);
+        return bcrypt.compare(data.password, data.hash);
       },
     },
   },
@@ -123,26 +122,23 @@ export const auth = betterAuth({
     // ==========================================================================
     // 1. JWT PLUGIN - For API/Mobile Token Authentication
     // ==========================================================================
-    ...(process.env.ENABLE_RS256_TOKENS === 'true' ? [{
-      ...jwt(),
-      jwks: {
-        // JWKS endpoint for public key distribution
-        keyPairConfig: {
-          alg: 'RS256',
-          modulusLength: 2048,
+    ...(process.env.ENABLE_RS256_TOKENS === 'true' ? [jwt({
+      // JWKS endpoint for public key distribution
+      keyPairConfig: {
+        alg: 'RS256',
+        modulusLength: 2048,
+      },
+      adapter: {
+        // Get public keys for JWT verification
+        getJwks: async (ctx: any) => {
+          const publicKeyPem = rs256KeyManager.getPublicKey();
+          const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
+          return [jwk];
         },
-        adapter: {
-          // Get public keys for JWT verification
-          getJwks: async () => {
-            const publicKeyPem = rs256KeyManager.getPublicKey();
-            const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
-            return { keys: [jwk] };
-          },
-          getLatestKey: async () => {
-            const publicKeyPem = rs256KeyManager.getPublicKey();
-            const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
-            return { keys: [jwk] };
-          },
+        getLatestKey: async (ctx: any) => {
+          const publicKeyPem = rs256KeyManager.getPublicKey();
+          const jwk = pemToJWK(publicKeyPem, rs256KeyManager.getKeyId());
+          return [jwk];
         },
       },
       jwt: {
@@ -154,64 +150,48 @@ export const auth = betterAuth({
             email: user.email,
             name: user.name,
             role: user.role || 'user',
-            
+
             // Custom claims
             auth_provider: user.authProvider || 'keycloak',
             auth_method: user.authMethod || 'oauth',
             session_id: session.id,
-            
+
             // Token type
             type: 'access',
-            
+
             // Issuer and audience
-            iss: 'modular-monolith-better-auth',
-            aud: 'modular-monolith-api',
-            
+            iss: 'modular-features-better-auth',
+            aud: 'modular-features-api',
+
             // Expiration
             exp: Math.floor(Date.now() / 1000) + (3 * 60 * 60), // 3 hours
             iat: Math.floor(Date.now() / 1000),
           };
         },
       },
-    }] : []),
+    })] : []),
 
     // ==========================================================================
     // 2. GENERIC OAUTH + KEYCLOAK - Gateway to Keycloak IdP
     // ==========================================================================
-    ...(process.env.ENABLE_KEYCLOAK === 'true' ? [
-      genericOAuth({
-        config: [
-          keycloak({
-            clientId: process.env.KEYCLOAK_CLIENT_ID || config.auth.keycloak.clientId,
-            clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || config.auth.keycloak.clientSecret,
-            issuer: process.env.KEYCLOAK_ISSUER || `${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}`,
-            scopes: ['openid', 'email', 'profile'],
-            redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `${config.auth.betterAuth.url}/oauth/callback/keycloak`,
-          })
-        ],
-        
-        // User account mapping
-        account: {
-          accountLinking: {
-            enabled: true,
-            // Link accounts by email (when same email across providers)
-            trustedProviders: ['keycloak', 'google', 'github'],
-          },
-        },
-      })
-    ] : []),
+    ...(process.env.ENABLE_KEYCLOAK === 'true' ? [genericOAuth({
+      config: [
+        keycloak({
+          clientId: process.env.KEYCLOAK_CLIENT_ID || config.auth.keycloak.clientId,
+          clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || config.auth.keycloak.clientSecret,
+          issuer: process.env.KEYCLOAK_ISSUER || `${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}`,
+          scopes: ['openid', 'email', 'profile'],
+          redirectURI: process.env.KEYCLOAK_REDIRECT_URI || `${config.auth.betterAuth.url}/oauth/callback/keycloak`,
+        })
+      ],
+
+      // Note: Account linking is handled by BetterAuth internally
+    })] : []),
 
     // ==========================================================================
     // 3. BEARER PLUGIN - For API Token Authentication (Non-Web)
     // ==========================================================================
-    bearer({
-      // Bearer token validation for API routes
-      fallback: (req, res) => {
-        // Called when bearer token is invalid/missing
-        res.setHeader('WWW-Authenticate', 'Bearer realm="API", error="invalid_token"');
-        throw new Error('Unauthorized: Invalid or missing bearer token');
-      },
-    }),
+    bearer(),
   ],
 
   // ============================================================================
@@ -247,15 +227,15 @@ export const auth = betterAuth({
   },
 
   // ============================================================================
-  // SECURITY
+  // TRUSTED ORIGINS
   // ============================================================================
   trustedOrigins: [
     // Web applications
-    process.env.CORS_ORIGIN?.split(',') || [
+    ...(process.env.CORS_ORIGIN?.split(',') || [
       'http://localhost:3000',
       'http://localhost:5173',
       'https://app.yourdomain.com',
-    ],
+    ]),
   ],
 });
 

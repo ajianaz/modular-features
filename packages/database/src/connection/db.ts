@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import { config } from '@modular-monolith/shared'
+import { config } from '@modular-features/shared'
 import * as schema from '../schema'
 
 // Create PostgreSQL connection pool

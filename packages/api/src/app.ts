@@ -1,14 +1,12 @@
 import { Hono } from "hono";
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { userRoutes } from './features/users/presentation/routes';
-import { notificationRoutes } from './features/notifications/presentation/routes';
 import authRoutes from './features/auth/interfaces/http/routes/auth.routes';
 import { auth, getJWKS, getPublicKeyPEM, validateKeys } from './features/auth/infrastructure/lib/BetterAuthConfig';
 import { errorHandler } from './middleware/error';
 import type { Context } from 'hono';
-import { config } from '@modular-monolith/shared';
-import { db } from '@modular-monolith/database';
+import { config } from '@modular-features/shared';
+import { db } from '@modular-features/database';
 import * as crypto from 'crypto';
 
 // Create Hono app instance
@@ -44,7 +42,8 @@ app.get("/.well-known/jwks.json", async (c: Context) => {
     const jwks = await getJWKS();
     return c.json(jwks);
   } catch (error: any) {
-    console.error('[JWKS] Error:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('[JWKS] Error:', errorMessage);
     return c.json({ error: 'Failed to retrieve JWKS' }, 500);
   }
 });
@@ -55,7 +54,8 @@ app.get("/api/auth/jwks", async (c: Context) => {
     const jwks = await getJWKS();
     return c.json(jwks);
   } catch (error: any) {
-    console.error('[JWKS] Error:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('[JWKS] Error:', errorMessage);
     return c.json({ error: 'Failed to retrieve JWKS' }, 500);
   }
 });
@@ -68,7 +68,8 @@ app.get("/api/auth/public-key", async (c: Context) => {
       'Content-Type': 'text/plain'
     });
   } catch (error: any) {
-    console.error('[PUBLIC-KEY] Error:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('[PUBLIC-KEY] Error:', errorMessage);
     return c.json({ error: 'Failed to retrieve public key' }, 500);
   }
 });
@@ -79,10 +80,11 @@ app.get("/api/auth/keys/validate", async (c: Context) => {
     const validation = validateKeys();
     return c.json(validation);
   } catch (error: any) {
-    console.error('[KEYS-VALIDATE] Error:', error);
-    return c.json({ 
-      valid: false, 
-      error: error.message 
+    const errorMessage = error?.message || String(error);
+    console.error('[KEYS-VALIDATE] Error:', errorMessage);
+    return c.json({
+      valid: false,
+      error: errorMessage
     }, 500);
   }
 });
@@ -135,15 +137,16 @@ async function handleBetterAuthRequest(c: Context) {
 
     return c.text('Not Found', 404);
   } catch (error: any) {
-    console.error('BetterAuth middleware error:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('BetterAuth middleware error:', errorMessage);
 
-    if (error.name === 'AbortError') {
+    if (error?.name === 'AbortError') {
       return c.json({ error: 'BetterAuth request timeout' }, 504);
     }
 
     return c.json({
       error: 'Internal Server Error',
-      message: error.message
+      message: errorMessage
     }, 500);
   }
 }
@@ -157,7 +160,7 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
   const provider = c.req.param('provider');
   const state = c.req.query('state');
   const code = c.req.query('code');
-  
+
   console.log(`[OAUTH-CALLBACK] Received callback for provider: ${provider}`);
   console.log(`[OAUTH-CALLBACK] State: ${state}`);
   console.log(`[OAUTH-CALLBACK] Code: ${code ? 'present' : 'missing'}`);
@@ -166,14 +169,14 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
     // Manual OAuth callback handling for Keycloak
     if (provider === 'keycloak' && code) {
       console.log(`[OAUTH-CALLBACK] Processing Keycloak OAuth callback...`);
-      
+
       // Exchange code for tokens
       // IMPORTANT: redirect_uri must match exactly what was sent to Keycloak
       // The correct redirect_uri is: http://localhost:3000/api/auth/oauth/keycloak/callback
       const redirectUri = `http://localhost:3000/api/auth/oauth/keycloak/callback`;
-      
+
       console.log(`[OAUTH-CALLBACK] Exchanging code with redirect_uri: ${redirectUri}`);
-      
+
       const tokenResponse = await fetch(`${config.auth.keycloak.url}/realms/${config.auth.keycloak.realm}/protocol/openid-connect/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -213,11 +216,11 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
 
       // Create or update user and session using BetterAuth API
       const { auth: betterAuth } = await import('./features/auth/infrastructure/lib/BetterAuthConfig');
-      
+
       // Check if user exists
-      const { db } = await import('@modular-monolith/database');
-      const { users, eq } = await import('@modular-monolith/database');
-      
+      const { db } = await import('@modular-features/database');
+      const { users, eq } = await import('@modular-features/database');
+
       let user = await db.query.users.findFirst({
         where: eq(users.id, keycloakUser.sub)
       });
@@ -234,21 +237,27 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
           role: 'user',
           status: 'active',
         }).returning();
+
         user = newUsers[0];
+
+        if (!user) {
+          console.error(`[OAUTH-CALLBACK] Failed to create user - no user returned from database`);
+          return c.text('Failed to create user', 500);
+        }
       }
 
       // Create session using BetterAuth API
       // BetterAuth doesn't have createSession method, use signUp or signIn instead
       // Or directly insert into database
-      
+
       console.log(`[OAUTH-CALLBACK] Creating session for user:`, user.id);
-      
-      const { sessions } = await import('@modular-monolith/database');
-      
+
+      const { sessions } = await import('@modular-features/database');
+
       // Generate session token
       const sessionToken = crypto.randomBytes(32).toString('base64url');
       const expiresAt = new Date(Date.now() + (60 * 60 * 24 * 7 * 1000)); // 7 days
-      
+
       // Insert session into database
       const newSessions = await db.insert(sessions).values({
         // id is auto-generated (serial), don't provide it
@@ -258,8 +267,14 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
         ipAddress: c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown',
         userAgent: c.req.header('user-agent') || 'unknown'
       }).returning();
-      
+
       const session = newSessions[0];
+
+      if (!session) {
+        console.error(`[OAUTH-CALLBACK] Failed to create session - no session returned from database`);
+        return c.text('Failed to create session', 500);
+      }
+
       console.log(`[OAUTH-CALLBACK] Session created:`, session.id);
 
       // Set session cookie (for web clients using cookie-based auth)
@@ -320,10 +335,10 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
       }
 
       // Redirect to dashboard with JWT as query parameter (for testing)
-      const redirectUrl = jwt 
+      const redirectUrl = jwt
         ? `/dashboard?token=${encodeURIComponent(jwt)}&session_created=true`
         : `/dashboard?session_created=true`;
-      
+
       console.log(`[OAUTH-CALLBACK] Redirecting to:`, redirectUrl);
       return c.redirect(redirectUrl);
     }
@@ -331,8 +346,9 @@ app.get("/api/auth/oauth/:provider/callback", async (c: Context) => {
     // Fallback: Forward to BetterAuth handler
     console.log(`[OAUTH-CALLBACK] Fallback to BetterAuth handler`);
     return handleBetterAuthRequest(c);
-  } catch (error) {
-    console.error(`[OAUTH-CALLBACK] Error:`, error);
+  } catch (error: any) {
+    const errorMessage = error?.message || String(error);
+    console.error(`[OAUTH-CALLBACK] Error:`, errorMessage);
     return c.text('OAuth callback failed', 500);
   }
 });
@@ -349,7 +365,7 @@ app.all("/api/auth/oauth/*", handleBetterAuthRequest);
 /**
  * Hybrid authentication function
  * Tries cookie authentication first, then JWT authentication
- * 
+ *
  * @returns { success: boolean, user?: any, method?: 'cookie' | 'jwt', error?: string }
  */
 async function hybridAuth(c: Context) {
@@ -367,8 +383,9 @@ async function hybridAuth(c: Context) {
         method: 'cookie' as const
       };
     }
-  } catch (error) {
-    console.log(`[HYBRID-AUTH] ❌ Cookie authentication failed:`, error.message);
+  } catch (error: any) {
+    const errorMessage = error?.message || String(error);
+    console.log(`[HYBRID-AUTH] ❌ Cookie authentication failed:`, errorMessage);
   }
 
   // Try JWT authentication (for non-web clients)
@@ -386,7 +403,7 @@ async function hybridAuth(c: Context) {
 
       if (verifyResponse.ok) {
         const verifyData = await verifyResponse.json();
-        
+
         if (verifyData.valid && verifyData.user) {
           console.log(`[HYBRID-AUTH] ✅ JWT authentication successful for user:`, verifyData.user.email);
           return {
@@ -403,10 +420,11 @@ async function hybridAuth(c: Context) {
         error: 'Invalid JWT token'
       };
     } catch (error: any) {
-      console.error(`[HYBRID-AUTH] ❌ JWT authentication error:`, error.message);
+      const errorMessage = error?.message || String(error);
+      console.error(`[HYBRID-AUTH] ❌ JWT authentication error:`, errorMessage);
       return {
         success: false,
-        error: `JWT verification failed: ${error.message}`
+        error: `JWT verification failed: ${errorMessage}`
       };
     }
   }
@@ -457,7 +475,8 @@ app.get("/api/auth/jwt", async (c: Context) => {
       note: "Use this JWT in Authorization header: Bearer <jwt>"
     });
   } catch (error: any) {
-    console.error('[JWT-ENDPOINT] Error:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('[JWT-ENDPOINT] Error:', errorMessage);
     return c.json({ error: 'Failed to get JWT' }, 500);
   }
 });
@@ -486,10 +505,11 @@ app.get("/dashboard", async (c: Context) => {
       note: "You can use either cookie-based auth or JWT token"
     });
   } catch (error: any) {
+    const errorMessage = error?.message || String(error);
     return c.json({
       message: "Welcome to Dashboard!",
       authenticated: false,
-      error: error.message
+      error: errorMessage
     }, 401);
   }
 });
@@ -499,51 +519,7 @@ app.get("/dashboard", async (c: Context) => {
 // =============================================================================
 
 // Hybrid auth routes (Better Auth + Keycloak)
-// Must be mounted before feature routes
 app.route('/api/auth', authRoutes);
-
-// Feature routes
-app.route("/api/users", userRoutes);
-app.route("/api/notifications", notificationRoutes);
-
-// Hybrid authentication middleware for protected routes
-// Supports both cookie (web) and JWT (non-web) authentication
-app.use("/api/users/*", async (c, next) => {
-  const authResult = await hybridAuth(c);
-
-  if (!authResult.success) {
-    return c.json({ 
-      error: 'Unauthorized',
-      message: authResult.error,
-      hint: 'Use session cookie or Authorization: Bearer <jwt> header'
-    }, 401);
-  }
-
-  // Set user context
-  c.set('user', authResult.user);
-  c.set('authMethod', authResult.method);
-  
-  console.log(`[AUTH-MIDDLEWARE] ✅ User authenticated via ${authResult.method}:`, authResult.user.email);
-  await next();
-});
-
-app.use("/api/notifications/*", async (c, next) => {
-  const authResult = await hybridAuth(c);
-
-  if (!authResult.success) {
-    return c.json({ 
-      error: 'Unauthorized',
-      message: authResult.error,
-      hint: 'Use session cookie or Authorization: Bearer <jwt> header'
-    }, 401);
-  }
-
-  c.set('user', authResult.user);
-  c.set('authMethod', authResult.method);
-  
-  console.log(`[AUTH-MIDDLEWARE] ✅ User authenticated via ${authResult.method}:`, authResult.user.email);
-  await next();
-});
 
 export { app };
 export type App = typeof app;

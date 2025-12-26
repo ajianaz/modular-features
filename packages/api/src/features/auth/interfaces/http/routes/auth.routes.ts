@@ -1,6 +1,6 @@
 /**
  * AUTHENTICATION ROUTES
- * 
+ *
  * Hybrid Better Auth + Keycloak Gateway
  * Supports: Web (cookie), API (bearer), Mobile (JWT)
  */
@@ -30,74 +30,17 @@ router.get('/health', (c) => {
 
 /**
  * ============================================================================
- * WEB AUTHENTICATION (Cookie-Based)
- * ============================================================================
- */
-
-/**
- * GET /signin
- * Initiate Keycloak OAuth flow for web apps
- */
-router.get('/signin', async (c) => {
-  console.log('[AUTH-WEB] Initiating Keycloak sign-in flow');
-  return auth.api.handler(c);
-});
-
-/**
- * GET /signout
- * Sign out and clear session cookie
- */
-router.get('/signout', async (c) => {
-  console.log('[AUTH-WEB] Processing sign-out');
-  return auth.api.handler(c);
-});
-
-/**
- * GET /session
- * Get current session from cookie
- */
-router.get('/session', async (c) => {
-  console.log('[AUTH-WEB] Fetching session from cookie');
-  return auth.api.handler(c);
-});
-
-/**
- * ============================================================================
- * API/MOBILE AUTHENTICATION (Token-Based)
- * ============================================================================
- */
-
-/**
- * GET /me
- * Get current user from bearer token
- */
-router.get('/me', async (c) => {
-  console.log('[AUTH-API] Fetching user from bearer token');
-  return auth.api.handler(c);
-});
-
-/**
- * POST /signout
- * Sign out and invalidate token
- */
-router.post('/signout', async (c) => {
-  console.log('[AUTH-API] Processing API sign-out');
-  return auth.api.handler(c);
-});
-
-/**
- * ============================================================================
- * JWKS ENDPOINT
+ * JWKS ENDPOINT (For JWT Verification)
  * ============================================================================
  */
 
 /**
  * GET /.well-known/jwks.json
- * JWKS endpoint for JWT verification
+ * JWKS endpoint for JWT verification - Mobile clients use this to verify JWT tokens
  */
 router.get('/.well-known/jwks.json', async (c) => {
   console.log('[AUTH-JWKS] Serving JWKS');
-  
+
   try {
     const { getJWKS } = await import('../../infrastructure/lib/BetterAuthConfig');
     const jwks = await getJWKS();
@@ -110,13 +53,51 @@ router.get('/.well-known/jwks.json', async (c) => {
 
 /**
  * ============================================================================
- * BETTER AUTH HANDLER (Catch-all for other auth endpoints)
+ * BETTER AUTH HANDLER (Forward all requests to BetterAuth)
  * ============================================================================
  */
 
+/**
+ * All other auth endpoints are handled by BetterAuth
+ * This includes:
+ * - /signin, /signout, /session (web)
+ * - /me (API/Mobile)
+ * - OAuth callbacks
+ * - Token management
+ */
 router.all('/*', async (c) => {
   console.log(`[AUTH] Handling ${c.req.method} ${c.req.url}`);
-  return auth.api.handler(c);
+
+  try {
+    // Forward to BetterAuth handler
+    const request = new Request(c.req.url, {
+      method: c.req.method,
+      headers: c.req.raw.headers,
+      body: ['POST', 'PUT', 'PATCH'].includes(c.req.method) ? c.req.raw.body : undefined,
+    });
+
+    const response = await auth.handler(request);
+
+    if (response) {
+      const contentType = response.headers.get('content-type');
+
+      if (contentType?.includes('application/json')) {
+        const jsonData = await response.json();
+        return c.json(jsonData, response.status as any);
+      } else {
+        const textData = await response.text();
+        return c.body(textData, response.status as any);
+      }
+    }
+
+    return c.text('Not Found', 404);
+  } catch (error: any) {
+    console.error('[AUTH] Error:', error);
+    return c.json({
+      error: 'Authentication failed',
+      message: error?.message || 'Unknown error'
+    }, 500);
+  }
 });
 
 export default router;

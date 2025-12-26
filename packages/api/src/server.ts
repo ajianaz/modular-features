@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server'
-import { loadConfig } from '@modular-monolith/shared'
+import { loadConfig } from '@modular-features/shared'
 import { app } from './app'
-import { db, healthCheck } from '@modular-monolith/database'
+import { db, healthCheck } from '@modular-features/database'
 
 async function startServer() {
   try {

@@ -1,7 +1,7 @@
 {
-  "name": "@modular-monolith/database",
+  "name": "@modular-features/database",
   "version": "1.0.0",
-  "description": "Database layer with Drizzle ORM for modular monolith",
+  "description": "Database layer with Drizzle ORM for modular features",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -46,9 +46,9 @@
     "drizzle-orm",
     "postgresql",
     "typescript",
-    "modular-monolith"
+    "modular-features"
   ],
-  "author": "Modular Monolith Team",
+  "author": "Modular Features Team",
   "license": "MIT",
   "dependencies": {
     "drizzle-orm": "catalog:",
@@ -56,7 +56,7 @@
     "dotenv": "catalog:",
     "zod": "catalog:",
     "nanoid": "catalog:",
-    "@modular-monolith/shared": "workspace:*"
+    "@modular-features/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.2.6",

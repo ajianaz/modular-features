@@ -1,6 +1,5 @@
 // Seed data management
+// Note: Auth-related seeding is handled through BetterAuth flows
+// Additional seeds can be added here as needed
 
-export * from './users'
-export * from './subscriptions'
-export * from './notifications'
-export * from './quotas'
+export {};

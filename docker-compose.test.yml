@@ -4,9 +4,9 @@ services:
   # Test PostgreSQL Database
   postgres-test:
     image: postgres:15-alpine
-    container_name: modular-monolith-postgres-test
+    container_name: modular-features-postgres-test
     environment:
-      POSTGRES_DB: modular_monolith_test
+      POSTGRES_DB: modular_features_test
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
       POSTGRES_HOST: localhost
@@ -16,12 +16,12 @@ services:
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
     networks:
-      - modular-monolith-network
+      - modular-features-network
 
   # Test Redis
   redis-test:
     image: redis:7-alpine
-    container_name: modular-monolith-redis-test
+    container_name: modular-features-redis-test
     command: redis-server --appendonly yes --requirepass redis123
     environment:
       REDIS_PASSWORD: redis123
@@ -30,12 +30,12 @@ services:
     volumes:
       - redis_test_data:/data
     networks:
-      - modular-monolith-network
+      - modular-features-network
 
 volumes:
   postgres_test_data:
   redis_test_data:
 
 networks:
-  modular-monolith-network:
+  modular-features-network:
     driver: bridge

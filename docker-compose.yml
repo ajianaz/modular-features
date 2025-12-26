@@ -2,10 +2,10 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: modular-monolith-postgres
+    container_name: modular-features-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-modular_monolith}
+      POSTGRES_DB: ${POSTGRES_DB:-modular_features}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -17,7 +17,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-modular_monolith}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-modular_features}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@ services:
   # Redis for caching and rate limiting
   redis:
     image: redis:7-alpine
-    container_name: modular-monolith-redis
+    container_name: modular-features-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
     ports:
@@ -49,7 +49,7 @@ services:
       context: .
       dockerfile: packages/api/Dockerfile
       target: release
-    container_name: modular-monolith-api
+    container_name: modular-features-api
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"
@@ -72,7 +72,7 @@ services:
       # These are only service host/port configurations
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-modular_monolith}
+      POSTGRES_DB: ${POSTGRES_DB:-modular_features}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
 
       REDIS_HOST: redis
@@ -81,9 +81,9 @@ services:
       # Better Auth Configuration
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000/api/auth}
 
-      # Keycloak Configuration (for OIDC provider)
+      # Keycloak Configuration (Primary OAuth Provider)
       KEYCLOAK_URL: ${KEYCLOAK_URL}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-azfirazka}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-modular-features}
       ENABLE_KEYCLOAK: ${ENABLE_KEYCLOAK:-true}
 
       # Feature Flags
@@ -116,7 +116,7 @@ services:
   # pgAdmin for database management
   # pgadmin:
   #   image: dpage/pgadmin4:latest
-  #   container_name: modular-monolith-pgadmin
+  #   container_name: modular-features-pgadmin
   #   restart: unless-stopped
   #   environment:
   #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
@@ -134,7 +134,7 @@ services:
   # Redis Commander for Redis management
   # redis-commander:
   #   image: rediscommander/redis-commander:latest
-  #   container_name: modular-monolith-redis-commander
+  #   container_name: modular-features-redis-commander
   #   restart: unless-stopped
   #   environment:
   #     REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis123}
@@ -148,7 +148,7 @@ services:
   # MinIO for S3-compatible storage
   # minio:
   #   image: minio/minio:latest
-  #   container_name: modular-monolith-minio
+  #   container_name: modular-features-minio
   #   restart: unless-stopped
   #   command: server /data --console-address ":9001"
   #   environment:

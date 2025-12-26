@@ -5,7 +5,7 @@ import { RefreshTokenResponse } from '../../application/dtos/output/RefreshToken
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { SessionRepository } from '../../infrastructure/repositories/SessionRepository';
 import { UnifiedRS256TokenGenerator } from '../../infrastructure/lib/JWTTokenGenerator';
-import { ValidationError } from '@modular-monolith/shared';
+import { ValidationError } from '@modular-features/shared';
 
 export class RefreshTokenController {
   private refreshTokenUseCase: RefreshTokenUseCase;

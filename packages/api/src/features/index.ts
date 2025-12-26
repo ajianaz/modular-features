@@ -1,4 +1,2 @@
-// Export all features
+// Export auth feature only
 export * from './auth';
-export * from './users';
-export * from './notifications';

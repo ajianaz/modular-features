@@ -1,10 +1,10 @@
 import { Context } from 'hono';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
-import { db } from '@modular-monolith/database';
-import { users } from '@modular-monolith/database';
+import { db } from '@modular-features/database';
+import { users } from '@modular-features/database';
 import { eq } from 'drizzle-orm';
-import { config } from '@modular-monolith/shared';
+import { config } from '@modular-features/shared';
 
 /**
  * Keycloak Sync Controller

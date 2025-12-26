@@ -1,4 +1,4 @@
-// Main entry point for @modular-monolith/api package
+// Main entry point for @modular-features/api package
 
 // Export the main application
 export { app } from './app'

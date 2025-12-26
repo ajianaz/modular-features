@@ -1,4 +1,4 @@
-import { DomainError } from '@modular-monolith/shared';
+import { DomainError } from '@modular-features/shared';
 
 // Authentication related errors
 export class InvalidCredentialsError extends DomainError {

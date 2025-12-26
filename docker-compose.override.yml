@@ -18,7 +18,7 @@ services:
       context: .
       dockerfile: packages/api/Dockerfile
       target: development  # Use development stage from Dockerfile
-    container_name: modular-monolith-api-dev
+    container_name: modular-features-api-dev
     environment:
       # Application Environment
       NODE_ENV: development
@@ -36,7 +36,7 @@ services:
       # Service Connection Configuration (Not secrets)
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: modular_monolith
+      POSTGRES_DB: modular_features
       POSTGRES_USER: postgres
 
       REDIS_HOST: redis
@@ -45,11 +45,11 @@ services:
       # Better Auth Configuration
       BETTER_AUTH_URL: http://localhost:3000/api/auth
 
-      # Keycloak Configuration
+      # Keycloak Configuration (Primary OAuth Provider)
       KEYCLOAK_URL: https://auth.azfirazka.com
       KEYCLOAK_REALM: azfirazka
       KEYCLOAK_ISSUER: https://auth.azfirazka.com/realms/azfirazka
-      KEYCLOAK_CLIENT_ID: modular-monolith-api
+      KEYCLOAK_CLIENT_ID: modular-features-api
       KEYCLOAK_REDIRECT_URI: http://localhost:3000/api/auth/oauth/keycloak/callback
 
       # JWT Configuration
@@ -73,13 +73,6 @@ services:
 
       # Security Configuration
       BCRYPT_ROUNDS: "12"
-
-      # MinIO (S3-compatible storage) Configuration
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ENDPOINT: http://localhost:9000
-      MINIO_BUCKET_NAME: modular-monolith
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
 
       # Rate Limiting Configuration
       ENABLE_RATE_LIMITING: "true"

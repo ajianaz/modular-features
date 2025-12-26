@@ -1,6 +1,6 @@
-import { eq, and, or, desc, asc, lt, db } from '@modular-monolith/database';
-import { sessions } from '@modular-monolith/database';
-import type { Session, NewSession } from '@modular-monolith/database';
+import { eq, and, or, desc, asc, lt, db } from '@modular-features/database';
+import { sessions } from '@modular-features/database';
+import type { Session, NewSession } from '@modular-features/database';
 
 // Use sessions table directly without type assertion
 const sessionsTable = sessions;
