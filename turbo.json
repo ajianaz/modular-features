@@ -8,10 +8,30 @@
 			"outputs": ["dist/**"]
 		},
 		"lint": {
-			"dependsOn": ["^lint"]
+			"dependsOn": ["^lint"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"]
+		},
+		"lint:fix": {
+			"dependsOn": ["^lint:fix"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"]
 		},
 		"check-types": {
-			"dependsOn": ["^check-types"]
+			"dependsOn": ["^check-types"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"]
+		},
+		"test": {
+			"dependsOn": ["^build", "^check-types"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": ["coverage/**"]
+		},
+		"test:coverage": {
+			"dependsOn": ["^build", "^check-types"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": ["coverage/**"]
+		},
+		"clean": {
+			"dependsOn": ["^clean"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"]
 		},
 		"dev": {
 			"cache": false,

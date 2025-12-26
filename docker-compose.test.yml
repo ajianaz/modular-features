@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Test PostgreSQL Database
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: modular-features-postgres-test
+    environment:
+      POSTGRES_DB: modular_features_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5433
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - modular-features-network
+
+  # Test Redis
+  redis-test:
+    image: redis:7-alpine
+    container_name: modular-features-redis-test
+    command: redis-server --appendonly yes --requirepass changeme
+    environment:
+      REDIS_PASSWORD: changeme
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    networks:
+      - modular-features-network
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  modular-features-network:
+    driver: bridge

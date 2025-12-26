@@ -1,41 +1,63 @@
 {
-  "name": "modular-monolith",
+  "name": "modular-features",
   "private": true,
   "type": "module",
   "workspaces": {
     "packages": [
-      "apps/*",
       "packages/*"
     ],
     "catalog": {
       "better-auth": "^1.4.5",
       "dotenv": "^17.2.2",
-      "zod": "^4.1.13"
+      "zod": "^4.1.13",
+      "drizzle-orm": "0.44.7",
+      "drizzle-kit": "^0.31.8",
+      "pg": "^8.16.3",
+      "hono": "^4.9.6",
+      "@hono/node-server": "^1.14.0",
+      "nanoid": "^5.0.9"
     }
   },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "clean": "turbo clean",
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @modular-monolith/db db:push",
-    "db:studio": "turbo -F @modular-monolith/db db:studio",
-    "db:generate": "turbo -F @modular-monolith/db db:generate",
-    "db:migrate": "turbo -F @modular-monolith/db db:migrate",
-    "db:start": "turbo -F @modular-monolith/db db:start",
-    "db:watch": "turbo -F @modular-monolith/db db:watch",
-    "db:stop": "turbo -F @modular-monolith/db db:stop",
-    "db:down": "turbo -F @modular-monolith/db db:down"
+    "db:setup": "bash scripts/setup-database.sh",
+    "db:setup:force": "FORCE_DB_RECREATE=true bash scripts/setup-database.sh",
+    "db:push": "turbo -F @modular-features/database db:push",
+    "db:studio": "turbo -F @modular-features/database db:studio",
+    "db:generate": "turbo -F @modular-features/database db:generate",
+    "db:migrate": "turbo -F @modular-features/database db:migrate",
+    "db:start": "turbo -F @modular-features/database db:start",
+    "db:watch": "turbo -F @modular-features/database db:watch",
+    "db:stop": "turbo -F @modular-features/database db:stop",
+    "db:down": "turbo -F @modular-features/database db:down",
+    "db:reset": "bun run db:down && bun run db:start && bun run db:migrate",
+    "auth:generate-keys": "node scripts/generate-rsa-keys.js"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "zod": "^4.1.13"
+    "@infisical/sdk": "^4.0.6",
+    "@polar-sh/sdk": "^0.41.5",
+    "@types/node": "^25.0.2",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "turbo": "^2.5.4",
-    "@types/bun": "^1.2.6"
+    "@types/bun": "^1.2.6",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
+    "turbo": "^2.5.4"
   },
   "packageManager": "bun@1.2.23"
 }

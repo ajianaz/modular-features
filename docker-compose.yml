@@ -1,0 +1,187 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: modular-features-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-modular_features}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-modular_features}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: modular-features-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      target: release
+    container_name: modular-features-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # Application Environment
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+
+      # Infisical Secrets Management Configuration
+      USE_INFISICAL: ${USE_INFISICAL:-false}
+      INFISICAL_SITE_URL: ${INFISICAL_SITE_URL}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-prod}
+      INFISICAL_CACHE_TTL: ${INFISICAL_CACHE_TTL:-300000}
+
+      # Service Connection Configuration
+      # NOTE: Secrets (POSTGRES_PASSWORD, REDIS_PASSWORD) will be fetched from Infisical
+      # These are only service host/port configurations
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-modular_features}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Better Auth Configuration
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000/api/auth}
+
+      # Keycloak Configuration (Primary OAuth Provider)
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-modular-features}
+      ENABLE_KEYCLOAK: ${ENABLE_KEYCLOAK:-true}
+
+      # Feature Flags
+      ENABLE_RS256_TOKENS: ${ENABLE_RS256_TOKENS:-true}
+
+      # Optional: Fallback secrets (only used if Infisical fails or is disabled)
+      # WARNING: These are fallback values - prefer Infisical in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'bun', '-e', "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # pgAdmin for database management
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: modular-features-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   networks:
+  #     - app-network
+  #   depends_on:
+  #     - postgres
+
+  # Redis Commander for Redis management
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: modular-features-redis-commander
+  #   restart: unless-stopped
+  #   environment:
+  #     REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis123}
+  #   ports:
+  #     - "${REDIS_COMMANDER_PORT:-8081}:8081"
+  #   networks:
+  #     - app-network
+  #   depends_on:
+  #     - redis
+
+  # MinIO for S3-compatible storage
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: modular-features-minio
+  #   restart: unless-stopped
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+  #     MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+  #   ports:
+  #     - "${MINIO_API_PORT:-9000}:9000"
+  #     - "${MINIO_CONSOLE_PORT:-9001}:9001"
+  #   volumes:
+  #     - minio_data:/data
+  #   networks:
+  #     - app-network
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'curl -f http://localhost:9000/minio/health/live || exit 1']
+  #     interval: 30s
+  #     timeout: 20s
+  #     retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

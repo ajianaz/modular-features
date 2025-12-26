@@ -1,0 +1,72 @@
+{
+  "name": "@modular-features/database",
+  "version": "1.0.0",
+  "description": "Database layer with Drizzle ORM for modular features",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./src/*.ts",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "migrations/**/*",
+    "drizzle.config.ts"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "db:pull": "drizzle-kit pull",
+    "db:drop": "drizzle-kit drop",
+    "db:seed": "bun run src/seed.ts"
+  },
+  "keywords": [
+    "database",
+    "drizzle-orm",
+    "postgresql",
+    "typescript",
+    "modular-features"
+  ],
+  "author": "Modular Features Team",
+  "license": "MIT",
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "nanoid": "catalog:",
+    "@modular-features/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.6",
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "typescript": "^5",
+    "eslint": "^8",
+    "prettier": "^3",
+    "vitest": "^2",
+    "@vitest/coverage-v8": "^2",
+    "drizzle-kit": "^0.31.8"
+  }
+}

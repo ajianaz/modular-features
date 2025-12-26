@@ -1,0 +1,68 @@
+{
+  "name": "@modular-features/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities, types, and error classes for modular features",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "require": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
+    },
+    "./errors": {
+      "require": "./dist/errors/index.js",
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "typescript",
+    "utilities",
+    "shared",
+    "modular-features",
+    "clean-architecture"
+  ],
+  "author": "Modular Features Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "^1.2.6",
+    "@types/node": "^20",
+    "typescript": "^5",
+    "eslint": "^8",
+    "prettier": "^3",
+    "vitest": "^2",
+    "@vitest/coverage-v8": "^2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "better-auth": "catalog:",
+    "hono": "catalog:",
+    "@infisical/sdk": "^4.0.4"
+  }
+}
