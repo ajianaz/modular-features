@@ -92,6 +92,16 @@ const envSchema = z.object({
 const infisicalStatus = getInfisicalStatus();
 console.log('[CONFIG] Infisical Status:', JSON.stringify(infisicalStatus));
 
+// Debug: Check if Infisical secrets are available
+const debugSecrets = {
+  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET?.substring(0, 10) + '...',
+  JWT_SECRET: process.env.JWT_SECRET?.substring(0, 10) + '...',
+  SESSION_SECRET: process.env.SESSION_SECRET?.substring(0, 10) + '...',
+  CSRF_SECRET: process.env.CSRF_SECRET?.substring(0, 10) + '...',
+  KEYCLOAK_CLIENT_SECRET: process.env.KEYCLOAK_CLIENT_SECRET?.substring(0, 10) + '...',
+};
+console.log('[CONFIG] Debug secrets from process.env:', JSON.stringify(debugSecrets));
+
 // Validate and parse environment variables
 // Note: When Infisical is enabled, we use the sync schema first,
 // then async loadConfig() will override with Infisical values
